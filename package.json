@@ -1,0 +1,13 @@
+{
+  "name": "snet-sdk",
+  "version": "0.0.1",
+  "description": "SingularityNET SDK for JS",
+  "main": "index.js",
+  "keywords": [
+    "snet-sdk",
+    "singularitynet-sdk",
+    "singularitynet"
+  ],
+  "author": "SingularityNET Foundation",
+  "license": "MIT"
+}
