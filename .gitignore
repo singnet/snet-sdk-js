@@ -68,3 +68,6 @@ typings/
 
 ### JetBrains
 /.idea/
+
+### node
+/node_modules

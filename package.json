@@ -8,6 +8,18 @@
     "singularitynet-sdk",
     "singularitynet"
   ],
+  "scripts": {
+    "test": "mocha --require @babel/register --colors",
+    "test:watch": "mocha --require @babel/register --colors -w"
+  },
   "author": "SingularityNET Foundation",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/cli": "^7.2.3",
+    "@babel/core": "^7.3.4",
+    "@babel/preset-env": "^7.3.4",
+    "@babel/register": "^7.0.0",
+    "chai": "^4.2.0",
+    "mocha": "^6.0.2"
+  }
 }
