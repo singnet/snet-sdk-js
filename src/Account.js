@@ -28,8 +28,16 @@ export default class Account {
 
   async depositToEscrowAccount(agiTokens) {
     const amountInCogs = new BigNumber(this._web3.utils.toWei(agiTokens, 'ether') / (10 ** (10))).toNumber();
-    await this._approve(amountInCogs);
+    await this.approveTransfer(amountInCogs);
     return this._deposit(amountInCogs);
+  }
+
+  async approveTransfer(amountInCogs) {
+    const approveOperation = this._getTokenContract().methods.approve(this._getMPEAddress(), amountInCogs);
+    const txObject = this._baseTransactionObject(approveOperation);
+    const signedTransaction = this._signTransaction(txObject);
+
+    return this._web3.eth.sendSignedTransaction(signedTransaction);
   }
 
   async withdrawFromEscrowAccount(agiTokens) {
@@ -63,14 +71,6 @@ export default class Account {
 
   _generateMPEContract() {
     return new this._web3.eth.Contract(MPEAbi, this._getMPEAddress());
-  }
-
-  async _approve(amountInCogs) {
-    const approveOperation = this._getTokenContract().methods.approve(this._getMPEAddress(), amountInCogs);
-    const txObject = this._baseTransactionObject(approveOperation);
-    const signedTransaction = this._signTransaction(txObject);
-
-    return this._web3.eth.sendSignedTransaction(signedTransaction);
   }
 
   async _deposit(amountInCogs) {
