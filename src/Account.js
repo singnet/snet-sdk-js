@@ -26,18 +26,16 @@ export default class Account {
       .then(balanceInCogs => (balanceInCogs / 100000000).toFixed(8));
   }
 
+  async depositToEscrowAccount(agiTokens) {
+    const amountInCogs = new BigNumber(this._web3.utils.toWei(agiTokens, 'ether') / (10 ** (10))).toNumber();
+    await this._approve(amountInCogs);
+    return this._deposit(amountInCogs);
+  }
+
   async withdrawFromEscrowAccount(agiTokens) {
     const amountInCogs = new BigNumber(this._web3.utils.toWei(agiTokens, 'ether') / (10 ** (10))).toNumber();
     const withdrawOperation = this._getMPEContract().methods.withdraw(amountInCogs);
-    const gas = await this._getGas(withdrawOperation);
-    const nonce = await this._transactionCount();
-    const txObject = {
-      nonce,
-      gasLimit: gas.gasLimit,
-      gasPrice: this._web3.utils.toHex(gas.gasPrice),
-      to: this._getMPEAddress(),
-      data: withdrawOperation.encodeABI(),
-    };
+    const txObject = this._baseTransactionObject(withdrawOperation);
     const signedTransaction = this._signTransaction(txObject);
 
     return this._web3.eth.sendSignedTransaction(signedTransaction);
@@ -65,6 +63,34 @@ export default class Account {
 
   _generateMPEContract() {
     return new this._web3.eth.Contract(MPEAbi, this._getMPEAddress());
+  }
+
+  async _approve(amountInCogs) {
+    const approveOperation = this._getTokenContract().methods.approve(this._getMPEAddress(), amountInCogs);
+    const txObject = this._baseTransactionObject(approveOperation);
+    const signedTransaction = this._signTransaction(txObject);
+
+    return this._web3.eth.sendSignedTransaction(signedTransaction);
+  }
+
+  async _deposit(amountInCogs) {
+    const depositOperation = this._getMPEContract().methods.deposit(amountInCogs);
+    const txObject = this._baseTransactionObject(depositOperation);
+    const signedTransaction = this._signTransaction(txObject);
+
+    return this._web3.eth.sendSignedTransaction(signedTransaction);
+  }
+
+  async _baseTransactionObject(operation) {
+    const gas = await this._getGas(operation);
+    const nonce = await this._transactionCount();
+    return {
+      nonce,
+      gasLimit: gas.gasLimit,
+      gasPrice: this._web3.utils.toHex(gas.gasPrice),
+      to: this._getMPEAddress(),
+      data: operation.encodeABI(),
+    };
   }
 
   async _getGas(operation) {
