@@ -8,8 +8,8 @@ import Tx from 'ethereumjs-tx';
 export default class Account {
   constructor(web3) {
     this._web3 = web3;
-    this._network = 42;
-    this._privateKey = Buffer.from(process.env.SNET_RAW_PRIVATE_KEY, 'hex');
+    this._network = process.env.NETWORK_ID;
+    this._privateKey = Buffer.from(process.env.RAW_PRIVATE_KEY, 'hex');
     this._tokenContract = this._generateTokenContract();
     this._mpeContract = this._generateMPEContract();
   }

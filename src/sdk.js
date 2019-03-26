@@ -6,7 +6,7 @@ export const DEFAULT_GAS = 4700000;
 export const DEFAULT_ESTIMATED_GAS_PRICE = 210000;
 
 const { HttpProvider } = Web3.providers;
-const providerHost = 'https://kovan.infura.io';
+const providerHost = process.env.PROVIDER_HOST;
 const httpProvider = new HttpProvider(providerHost);
 
 export default class SnetSDK {
@@ -16,7 +16,7 @@ export default class SnetSDK {
       defaultGasPrice: DEFAULT_ESTIMATED_GAS_PRICE,
     };
     const web3 = new Web3(httpProvider, null, options);
-    const account = web3.eth.accounts.privateKeyToAccount(process.env.SNET_PRIVATE_KEY);
+    const account = web3.eth.accounts.privateKeyToAccount(process.env.PRIVATE_KEY);
     web3.eth.accounts.wallet.add(account);
     web3.eth.defaultAccount = account.address;
 
