@@ -2,26 +2,24 @@ import Web3 from 'web3';
 
 import Account from './Account';
 
-export const DEFAULT_GAS = 4700000;
-export const DEFAULT_ESTIMATED_GAS_PRICE = 210000;
-
 const { HttpProvider } = Web3.providers;
-const providerHost = process.env.PROVIDER_HOST;
-const httpProvider = new HttpProvider(providerHost);
 
 export default class SnetSDK {
-  constructor() {
+  constructor(config) {
+    this._config = config;
     const options = {
-      defaultGas: DEFAULT_GAS,
-      defaultGasPrice: DEFAULT_ESTIMATED_GAS_PRICE,
+      defaultGas: this._config.defaultGasLimit,
+      defaultGasPrice: this._config.defaultGasPrice,
     };
+    this._networkId = config.networkId;
+    const httpProvider = new HttpProvider(config.web3Provider);
     const web3 = new Web3(httpProvider, null, options);
-    const account = web3.eth.accounts.privateKeyToAccount(process.env.PRIVATE_KEY);
+    const account = web3.eth.accounts.privateKeyToAccount(config.privateKey);
     web3.eth.accounts.wallet.add(account);
     web3.eth.defaultAccount = account.address;
 
     this._web3 = web3;
-    this._account = new Account(this._web3);
+    this._account = new Account(this._web3, this._config);
   }
 
   get account() {

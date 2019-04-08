@@ -6,35 +6,36 @@ import BigNumber from 'bignumber.js';
 import Tx from 'ethereumjs-tx';
 
 export default class Account {
-  constructor(web3) {
+  constructor(web3, config) {
     this._web3 = web3;
-    this._network = process.env.NETWORK_ID;
-    this._privateKey = Buffer.from(process.env.RAW_PRIVATE_KEY, 'hex');
+    this._config = config;
+    this._network = this._config.networkId;
     this._tokenContract = this._generateTokenContract();
     this._mpeContract = this._generateMPEContract();
   }
 
   async balance() {
-    return this._getTokenContract().methods.balanceOf(this._getAddress())
+    return this._getTokenContract().methods.balanceOf(this.address)
       .call()
       .then(balanceInCogs => (balanceInCogs / 100000000).toFixed(8));
   }
 
   async escrowBalance() {
-    return this._getMPEContract().methods.balances(this._getAddress())
+    return this._getMPEContract().methods.balances(this.address)
       .call()
       .then(balanceInCogs => (balanceInCogs / 100000000).toFixed(8));
   }
 
   async depositToEscrowAccount(agiTokens) {
     const amountInCogs = new BigNumber(this._web3.utils.toWei(agiTokens, 'ether') / (10 ** (10))).toNumber();
-    await this.approveTransfer(amountInCogs);
+    await this.approveTransfer(agiTokens);
     return this._deposit(amountInCogs);
   }
 
-  async approveTransfer(amountInCogs) {
+  async approveTransfer(agiTokens) {
+    const amountInCogs = new BigNumber(this._web3.utils.toWei(agiTokens, 'ether') / (10 ** (10))).toNumber();
     const approveOperation = this._getTokenContract().methods.approve(this._getMPEAddress(), amountInCogs);
-    const txObject = this._baseTransactionObject(approveOperation);
+    const txObject = await this._baseTransactionObject(approveOperation);
     const signedTransaction = this._signTransaction(txObject);
 
     return this._web3.eth.sendSignedTransaction(signedTransaction);
@@ -49,8 +50,12 @@ export default class Account {
     return this._web3.eth.sendSignedTransaction(signedTransaction);
   }
 
-  _getAddress() {
+  get address() {
     return this._web3.eth.defaultAccount;
+  }
+
+  sign(message) {
+    return this._web3.eth.accounts.sign(message, this._config.privateKey);
   }
 
   _getMPEAddress() {
@@ -75,19 +80,19 @@ export default class Account {
 
   async _deposit(amountInCogs) {
     const depositOperation = this._getMPEContract().methods.deposit(amountInCogs);
-    const txObject = this._baseTransactionObject(depositOperation);
+    const txObject = await this._baseTransactionObject(depositOperation);
     const signedTransaction = this._signTransaction(txObject);
 
     return this._web3.eth.sendSignedTransaction(signedTransaction);
   }
 
   async _baseTransactionObject(operation) {
-    const gas = await this._getGas(operation);
+    const { gasLimit, gasPrice } = await this._getGas(operation);
     const nonce = await this._transactionCount();
     return {
-      nonce,
-      gasLimit: gas.gasLimit,
-      gasPrice: this._web3.utils.toHex(gas.gasPrice),
+      nonce: this._web3.utils.toHex(nonce),
+      gas: this._web3.utils.toHex(gasLimit),
+      gasPrice: this._web3.utils.toHex(gasPrice),
       to: this._getMPEAddress(),
       data: operation.encodeABI(),
     };
@@ -102,23 +107,24 @@ export default class Account {
   async _getGasPrice() {
     return this._web3.eth.getGasPrice()
       .then(gasPrice => gasPrice)
-      .catch(() => this._web3.eth.defaultGas);
+      .catch(() => this._web3.eth.defaultGasPrice);
   }
 
   async _estimateGas(operation) {
     return operation
       .estimateGas()
       .then(estimatedGas => estimatedGas)
-      .catch(() => this._web3.eth.defaultGasPrice);
+      .catch(() => this._web3.eth.defaultGas);
   }
 
   async _transactionCount() {
-    return this._web3.eth.getTransactionCount(this._getAddress());
+    return this._web3.eth.getTransactionCount(this.address);
   }
 
   _signTransaction(txObject) {
     const transaction = new Tx(txObject);
-    transaction.sign(this._privateKey);
+    const privateKey = Buffer.from(this._config.privateKey.slice(2), 'hex');
+    transaction.sign(privateKey);
     const serializedTransaction = transaction.serialize();
     return `0x${serializedTransaction.toString('hex')}`;
   }
