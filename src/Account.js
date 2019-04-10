@@ -15,15 +15,11 @@ export default class Account {
   }
 
   async balance() {
-    return this._getTokenContract().methods.balanceOf(this.address)
-      .call()
-      .then(balanceInCogs => (balanceInCogs / 100000000).toFixed(8));
+    return this._getTokenContract().methods.balanceOf(this.address).call();
   }
 
   async escrowBalance() {
-    return this._getMPEContract().methods.balances(this.address)
-      .call()
-      .then(balanceInCogs => (balanceInCogs / 100000000).toFixed(8));
+    return this._getMPEContract().methods.balances(this.address).call();
   }
 
   async depositToEscrowAccount(amountInCogs) {
