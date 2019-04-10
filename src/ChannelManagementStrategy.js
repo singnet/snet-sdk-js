@@ -89,10 +89,10 @@ export default class ChannelManagementStrategy {
         if(err) {
           reject(err);
         } else {
-          const currentSignedAmountBuffer = Buffer.from(response.getCurrentSignedAmount());
-          const currentSignedAmount = currentSignedAmountBuffer.readUInt32BE(28);
           const nonceBuffer = Buffer.from(response.getCurrentNonce());
           const nonce = nonceBuffer.readUInt32BE(28);
+          const currentSignedAmountBuffer = Buffer.from(response.getCurrentSignedAmount());
+          const currentSignedAmount = currentSignedAmountBuffer.length > 0 ? currentSignedAmountBuffer.readUInt32BE(28) : 0;
           const channelState = {
             lastSignedAmount: currentSignedAmount,
             nonce,
