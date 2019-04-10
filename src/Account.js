@@ -38,6 +38,10 @@ export default class Account {
     return this.sendSignedTransaction(approveOperation, this._getTokenContract().address);
   }
 
+  async allowance() {
+    return this._getTokenContract().methods.allowance(this.address, this._getMPEContract().address).call();
+  }
+
   async withdrawFromEscrowAccount(agiTokens) {
     const amountInCogs = new BigNumber(this._web3.utils.toWei(agiTokens, 'ether') / (10 ** (10))).toNumber();
     const withdrawOperation = this._getMPEContract().methods.withdraw(amountInCogs);
