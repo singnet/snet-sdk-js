@@ -41,4 +41,9 @@ export default class MPEContract {
     const channelAddFundsOperation = this.contract.methods.channelAddFunds(channelId, amount);
     return this._account.sendSignedTransaction(channelAddFundsOperation, this.address);
   }
+
+  async channelExtend(channelId, expiration) {
+    const channelExtendOperation = this.contract.methods.channelExtend(channelId, expiration);
+    return this._account.sendSignedTransaction(channelExtendOperation, this.address);
+  }
 }
