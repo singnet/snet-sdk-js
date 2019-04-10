@@ -35,18 +35,13 @@ export default class Account {
   async approveTransfer(agiTokens) {
     const amountInCogs = new BigNumber(this._web3.utils.toWei(agiTokens, 'ether') / (10 ** (10))).toNumber();
     const approveOperation = this._getTokenContract().methods.approve(this._getMPEAddress(), amountInCogs);
-    const txObject = await this._baseTransactionObject(approveOperation, this._getTokenContract().address);
-    const signedTransaction = this._signTransaction(txObject);
-    return this._web3.eth.sendSignedTransaction(signedTransaction)
+    return this.sendSignedTransaction(approveOperation, this._getTokenContract().address);
   }
 
   async withdrawFromEscrowAccount(agiTokens) {
     const amountInCogs = new BigNumber(this._web3.utils.toWei(agiTokens, 'ether') / (10 ** (10))).toNumber();
     const withdrawOperation = this._getMPEContract().methods.withdraw(amountInCogs);
-    const txObject = this._baseTransactionObject(withdrawOperation, this._getMPEContract().address);
-    const signedTransaction = this._signTransaction(txObject);
-
-    return this._web3.eth.sendSignedTransaction(signedTransaction);
+    return this.sendSignedTransaction(withdrawOperation, this._getMPEContract().address);
   }
 
   get address() {
@@ -55,6 +50,12 @@ export default class Account {
 
   sign(message) {
     return this._web3.eth.accounts.sign(message, this._config.privateKey);
+  }
+
+  async sendSignedTransaction(operation, to) {
+    const txObject = await this._baseTransactionObject(operation, to);
+    const signedTransaction = this._signTransaction(txObject);
+    return this._web3.eth.sendSignedTransaction(signedTransaction);
   }
 
   _getMPEAddress() {
@@ -79,10 +80,7 @@ export default class Account {
 
   async _deposit(amountInCogs) {
     const depositOperation = this._getMPEContract().methods.deposit(amountInCogs);
-    const txObject = await this._baseTransactionObject(depositOperation, this._getMPEContract().address);
-    const signedTransaction = this._signTransaction(txObject);
-
-    return this._web3.eth.sendSignedTransaction(signedTransaction);
+    return this.sendSignedTransaction(depositOperation, this._getMPEContract().address);
   }
 
   async _baseTransactionObject(operation, to) {
