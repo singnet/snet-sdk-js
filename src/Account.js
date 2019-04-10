@@ -58,7 +58,7 @@ export default class Account {
   }
 
   _getMPEAddress() {
-    return MPENetworks[this._network].address;
+    return this._getMPEContract().address;
   }
 
   _getTokenContract() {
@@ -74,7 +74,7 @@ export default class Account {
   }
 
   _generateMPEContract() {
-    return new this._web3.eth.Contract(MPEAbi, this._getMPEAddress());
+    return new this._web3.eth.Contract(MPEAbi, MPENetworks[this._network].address);
   }
 
   async _deposit(amountInCogs) {
