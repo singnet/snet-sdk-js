@@ -40,7 +40,7 @@ export default class SnetSDK {
   async createServiceClient(orgId, serviceId, ServiceStub) {
     const serviceMetadata = await this._getServiceMetadata(orgId, serviceId);
     this._serviceClient.metadata = serviceMetadata;
-    const channelManagementStrategy = new ChannelManagementStrategy(this._web3, this._config, serviceMetadata);
+    const channelManagementStrategy = new ChannelManagementStrategy(this._web3, this._account, this._config, serviceMetadata);
     await channelManagementStrategy.setup();
 
     const grpcOptions = {
