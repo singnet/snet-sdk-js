@@ -81,7 +81,7 @@ export default class SnetSDK {
 
   async _getServiceMetadata(orgId, serviceId) {
     const { protocol = 'http', hostname: host, port = 5001 } = url.parse(this._config.ipfsEndpoint);
-    const ipfsHostOrMultiaddr = { protocol, host, port };
+    const ipfsHostOrMultiaddr = { protocol: protocol.replace(':', ''), host, port };
     const ipfsClient = IPFSClient(ipfsHostOrMultiaddr);
     const orgIdBytes = this._web3.utils.fromAscii(orgId);
     const serviceIdBytes = this._web3.utils.fromAscii(serviceId);
@@ -99,16 +99,16 @@ export default class SnetSDK {
   _getServiceEndpoint() {
     const { group_name: defaultGroupName } = this._serviceClient.metadata.groups[0];
     const { endpoints } = this._serviceClient.metadata;
-    const endpoint = find(endpoints, ({ group_name: groupName }) => groupName === defaultGroupName);
+    const { endpoint } = find(endpoints, ({ group_name: groupName }) => groupName === defaultGroupName);
     return endpoint && url.parse(endpoint);
   }
 
   _getGrpcChannel(serviceEndpoint) {
-    if(serviceEndpoint.protocol === 'https') {
+    if(serviceEndpoint.protocol === 'https:') {
       return grpc.credentials.createSsl();
     }
 
-    if(serviceEndpoint.protocol === 'http') {
+    if(serviceEndpoint.protocol === 'http:') {
       return grpc.credentials.createInsecure();
     }
 
