@@ -31,4 +31,14 @@ export default class MPEContract {
     const depositAndOpenChannelOperation = this.contract.methods.depositAndOpenChannel(signerAddress, recipientAddress, groupId, amount, expiration);
     return this._account.sendSignedTransaction(depositAndOpenChannelOperation, this.address);
   }
+
+  async channelAddFunds(channelId, amount) {
+    const currentEscrowBalance = await this._account.escrowBalance();
+    if(amount > currentEscrowBalance) {
+      await this._account.depositToEscrowAccount(amount - currentEscrowBalance);
+    }
+
+    const channelAddFundsOperation = this.contract.methods.channelAddFunds(channelId, amount);
+    return this._account.sendSignedTransaction(channelAddFundsOperation, this.address);
+  }
 }
