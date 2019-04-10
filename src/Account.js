@@ -35,16 +35,15 @@ export default class Account {
   async approveTransfer(agiTokens) {
     const amountInCogs = new BigNumber(this._web3.utils.toWei(agiTokens, 'ether') / (10 ** (10))).toNumber();
     const approveOperation = this._getTokenContract().methods.approve(this._getMPEAddress(), amountInCogs);
-    const txObject = await this._baseTransactionObject(approveOperation);
+    const txObject = await this._baseTransactionObject(approveOperation, this._getTokenContract().address);
     const signedTransaction = this._signTransaction(txObject);
-
-    return this._web3.eth.sendSignedTransaction(signedTransaction);
+    return this._web3.eth.sendSignedTransaction(signedTransaction)
   }
 
   async withdrawFromEscrowAccount(agiTokens) {
     const amountInCogs = new BigNumber(this._web3.utils.toWei(agiTokens, 'ether') / (10 ** (10))).toNumber();
     const withdrawOperation = this._getMPEContract().methods.withdraw(amountInCogs);
-    const txObject = this._baseTransactionObject(withdrawOperation);
+    const txObject = this._baseTransactionObject(withdrawOperation, this._getMPEContract().address);
     const signedTransaction = this._signTransaction(txObject);
 
     return this._web3.eth.sendSignedTransaction(signedTransaction);
@@ -80,20 +79,20 @@ export default class Account {
 
   async _deposit(amountInCogs) {
     const depositOperation = this._getMPEContract().methods.deposit(amountInCogs);
-    const txObject = await this._baseTransactionObject(depositOperation);
+    const txObject = await this._baseTransactionObject(depositOperation, this._getMPEContract().address);
     const signedTransaction = this._signTransaction(txObject);
 
     return this._web3.eth.sendSignedTransaction(signedTransaction);
   }
 
-  async _baseTransactionObject(operation) {
+  async _baseTransactionObject(operation, to) {
     const { gasLimit, gasPrice } = await this._getGas(operation);
     const nonce = await this._transactionCount();
     return {
       nonce: this._web3.utils.toHex(nonce),
       gas: this._web3.utils.toHex(gasLimit),
       gasPrice: this._web3.utils.toHex(gasPrice),
-      to: this._getMPEAddress(),
+      to,
       data: operation.encodeABI(),
     };
   }
