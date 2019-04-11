@@ -1,29 +1,35 @@
 import MPENetworks from 'singularitynet-platform-contracts/networks/MultiPartyEscrow';
 import grpc from 'grpc';
+import { find, map } from 'lodash';
 
 import paymentChannelStateServices from './payment_channel_state_service_grpc_pb';
 import paymentChannelStateMessages from './payment_channel_state_service_pb';
+import MPEContract from './MPEContract';
 
 export default class ChannelManagementStrategy {
   constructor(web3, account, config, serviceMetadata) {
     this._web3 = web3;
     this._account = account;
     this._config = config;
+    this._mpeContract = new MPEContract(this._web3, this._account, this._config);
     this._networkId = this._config.networkId;
     this._openChannels = [];
     this._serviceMetadata = serviceMetadata;
     this._serviceEndpoint = this._serviceMetadata.endpoints[0].endpoint.replace('https://', '');
     this._pricePerCall = this._serviceMetadata.pricing.price_in_cogs;
+    this._expiryThreshold = this._serviceMetadata.payment_expiration_threshold;
   }
 
   async setup() {
     const defaultGroup = this._serviceMetadata.groups[0];
     const { payment_address: servicePaymentAddress } = defaultGroup;
-    this._openChannels = await this._fetchOpenChannels(servicePaymentAddress);
+    const { transactionHash } = MPENetworks[this._networkId];
+    const { blockNumber } = await this._web3.eth.getTransactionReceipt(transactionHash);
+    this._openChannels = await this._fetchOpenChannels(servicePaymentAddress, blockNumber);
   }
 
   async callMetadata() {
-    const channelId = await this.select(this._openChannels);
+    const channelId = await this.select();
     const { lastSignedAmount, nonce } = await this._fetchChannelState(channelId);
 
     return {
@@ -33,17 +39,78 @@ export default class ChannelManagementStrategy {
     };
   }
 
-  async select(channels) {
-    return channels[0].channelId.toString();
+  async select() {
+    const mpeBalance = await this._account.escrowBalance();
+    const updatedChannels = await this._getUpdatedChannelDetails();
+    const defaultGroup = this._serviceMetadata.groups[0];
+    const { payment_address: servicePaymentAddress, group_id: groupId } = defaultGroup;
+    const defaultExpiration = await this._getDefaultChannelExpiration();
+    const groupIdBytes = Buffer.from(groupId, 'base64');
+
+    if(updatedChannels.length === 0) {
+      if(mpeBalance > this._pricePerCall) {
+        const newChannelReceipt = await this._mpeContract.openChannel(this._account.address, servicePaymentAddress, groupIdBytes, this._pricePerCall, defaultExpiration);
+        const openChannels = await this._fetchOpenChannels(servicePaymentAddress, newChannelReceipt.blockNumber);
+        return openChannels[0].channelId.toString();
+      }
+
+      const newfundedChannelReceipt = await this._mpeContract.depositAndOpenChannel(this._account.address, servicePaymentAddress, groupIdBytes, this._pricePerCall, defaultExpiration);
+      const openChannels = await this._fetchOpenChannels(servicePaymentAddress, newfundedChannelReceipt.blockNumber);
+      return openChannels[0].channelId.toString();
+    }
+
+    const firstFundedValidChannel = find(updatedChannels, ({ hasSufficientFunds, isValid }) => hasSufficientFunds && isValid);
+    if(firstFundedValidChannel) {
+      return firstFundedValidChannel.channelId.toString();
+    }
+
+    const firstFundedChannel = find(updatedChannels, 'hasSufficientFunds');
+    if(firstFundedChannel) {
+      return firstFundedChannel.channelId.toString();
+    }
+
+    const firstValidChannel = find(updatedChannels, 'isValid');
+    if(firstValidChannel) {
+      return firstValidChannel.channelId.toString();
+    }
+
+    await this._mpeContract.channelExtendAndAddFunds(updatedChannels[0].channelId, defaultExpiration, this._pricePerCall);
+    return updatedChannels[0].channelId.toString();
   }
 
-  async _fetchOpenChannels(recipientAddress) {
-    const { transactionHash } = MPENetworks[this._networkId];
-    const mpeDeploymentReceipt = await this._web3.eth.getTransactionReceipt(transactionHash);
+  async _getUpdatedChannelDetails() {
+    const openChannels = this._openChannels;
+    const currentBlockNumber = await this._web3.eth.getBlockNumber();
+    const updatedChannelPromises = map(openChannels, ({ channelId }) => {
+      const channelPromise = new Promise(resolve => resolve(channelId));
+      const updatedOpenChannelPromise = this._account._getMPEContract().methods.channels(channelId.toString()).call();
+      const currentChannelStatePromise = this._fetchChannelState(channelId);
+      return Promise.all([channelPromise, updatedOpenChannelPromise, currentChannelStatePromise]);
+    });
+    const resolvedUpdatedChannels = await Promise.all(updatedChannelPromises);
+    return map(resolvedUpdatedChannels, ([channelId, updatedOpenChannel, currentChannelState]) => {
+      const { lastSignedAmount, nonce: currentNonce, value: initialAmount } = currentChannelState;
+      const { nonce, expiration } = updatedOpenChannel;
+      const availableAmount = initialAmount - lastSignedAmount;
+      return {
+        channelId,
+        nonce,
+        currentNonce,
+        expiration,
+        initialAmount,
+        lastSignedAmount,
+        availableAmount,
+        hasSufficientFunds: availableAmount >= this._pricePerCall,
+        isValid: expiration > (currentBlockNumber + this._expiryThreshold),
+      };
+    });
+  }
+
+  async _fetchOpenChannels(recipientAddress, blockNumber) {
     const channelOpenTopic = this._web3.utils.sha3('ChannelOpen(uint256,uint256,address,address,address,bytes32,uint256,uint256)');
     const topics = [channelOpenTopic];
     const options = {
-      fromBlock: mpeDeploymentReceipt.blockNumber,
+      fromBlock: blockNumber,
       address: MPENetworks[this._networkId].address,
       topics,
     };
@@ -101,5 +168,10 @@ export default class ChannelManagementStrategy {
         }
       });
     });
+  }
+
+  async _getDefaultChannelExpiration() {
+    const currentBlockNumber = await this._web3.eth.getBlockNumber();
+    return currentBlockNumber + this._serviceMetadata.payment_expiration_threshold + (3600 * 24 * 7);
   }
 }

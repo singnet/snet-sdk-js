@@ -52,7 +52,27 @@ export default class Account {
   async sendSignedTransaction(operation, to) {
     const txObject = await this._baseTransactionObject(operation, to);
     const signedTransaction = this._signTransaction(txObject);
-    return this._web3.eth.sendSignedTransaction(signedTransaction);
+    return new Promise((resolve, reject) => {
+      this._web3.eth.sendSignedTransaction(signedTransaction, (error, txHash) => {
+        this._waitForTransaction(txHash).then(resolve).catch(reject);
+      });
+    });
+  }
+
+  async _waitForTransaction(hash) {
+    let receipt;
+    while(!receipt) {
+      // eslint-disable-next-line no-await-in-loop
+      receipt = await this._web3.eth.getTransactionReceipt(hash);
+    }
+
+    return new Promise((resolve, reject) => {
+      if(!receipt.status) {
+        reject(receipt);
+      }
+
+      resolve(receipt);
+    });
   }
 
   _getMPEAddress() {
