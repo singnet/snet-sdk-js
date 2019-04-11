@@ -91,8 +91,8 @@ export default class ChannelManagementStrategy {
     });
     const resolvedUpdatedChannels = await Promise.all(updatedChannelPromises);
     return map(resolvedUpdatedChannels, ([channelId, updatedOpenChannel, currentChannelState]) => {
-      const { lastSignedAmount, nonce: currentNonce, value: initialAmount } = currentChannelState;
-      const { nonce, expiration } = updatedOpenChannel;
+      const { lastSignedAmount, nonce: currentNonce } = currentChannelState;
+      const { nonce, expiration, value: initialAmount } = updatedOpenChannel;
       const availableAmount = initialAmount - lastSignedAmount;
       return {
         channelId,
