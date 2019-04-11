@@ -66,11 +66,13 @@ export default class ChannelManagementStrategy {
 
     const firstFundedChannel = find(updatedChannels, 'hasSufficientFunds');
     if(firstFundedChannel) {
+      await this._mpeContract.channelExtend(firstFundedChannel.channelId, defaultExpiration);
       return firstFundedChannel.channelId.toString();
     }
 
     const firstValidChannel = find(updatedChannels, 'isValid');
     if(firstValidChannel) {
+      await this._mpeContract.channelAddFunds(firstValidChannel.channelId, this._pricePerCall);
       return firstValidChannel.channelId.toString();
     }
 
