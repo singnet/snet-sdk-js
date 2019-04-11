@@ -16,7 +16,6 @@
   "author": "SingularityNET Foundation",
   "license": "MIT",
   "dependencies": {
-    "bignumber.js": "^8.1.1",
     "dotenv": "^7.0.0",
     "es6-promise": "^4.2.6",
     "ethereumjs-tx": "^1.3.7",

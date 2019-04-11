@@ -2,7 +2,6 @@ import AGITokenAbi from 'singularitynet-token-contracts/abi/SingularityNetToken'
 import AGITokenNetworks from 'singularitynet-token-contracts/networks/SingularityNetToken';
 import MPENetworks from 'singularitynet-platform-contracts/networks/MultiPartyEscrow';
 import MPEAbi from 'singularitynet-platform-contracts/abi/MultiPartyEscrow';
-import BigNumber from 'bignumber.js';
 import Tx from 'ethereumjs-tx';
 
 export default class Account {
