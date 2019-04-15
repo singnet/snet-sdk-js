@@ -1,5 +1,8 @@
 import MPEAbi from 'singularitynet-platform-contracts/abi/MultiPartyEscrow';
 import MPENetworks from 'singularitynet-platform-contracts/networks/MultiPartyEscrow';
+import { map } from 'lodash';
+
+import PaymentChannel from './PaymentChannel';
 
 export default class MPEContract {
   constructor(web3, account, config) {
@@ -55,5 +58,25 @@ export default class MPEContract {
 
     const channelExtendAndAddFundsOperation = this.contract.methods.channelExtendAndAddFunds(channelId, expiration, amount);
     return this._account.sendSignedTransaction(channelExtendAndAddFundsOperation, this.address);
+  }
+
+  async getPastOpenChannels(recipient, startingBlockNumber) {
+    const fromBlock = startingBlockNumber ? startingBlockNumber : await this._deploymentBlockNumber();
+    const options = {
+      filter: {
+        sender: this._account.address,
+        recipient,
+      },
+      fromBlock,
+      toBlock: 'latest'
+    };
+    const channelsOpened = await this.contract.getPastEvents('ChannelOpen', options);
+    return map(channelsOpened, channel => new PaymentChannel(channel, this._web3, this._account, this._contract));
+  }
+
+  async _deploymentBlockNumber() {
+    const { transactionHash } = MPENetworks[this._config.networkId];
+    const { blockNumber } = await this._web3.eth.getTransactionReceipt(transactionHash);
+    return blockNumber;
   }
 }
