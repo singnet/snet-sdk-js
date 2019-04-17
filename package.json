@@ -1,6 +1,6 @@
 {
   "name": "snet-sdk",
-  "version": "0.0.1",
+  "version": "1.0.0-alpha",
   "description": "SingularityNET SDK for JS",
   "main": "index.js",
   "keywords": [
