@@ -56,6 +56,10 @@ typings/
 
 # dotenv environment variables file
 .env
+.env.kovan
+.env.ropsten
+.env.dev
+.env.local
 
 # next.js build output
 .next

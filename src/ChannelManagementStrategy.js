@@ -50,6 +50,6 @@ export default class ChannelManagementStrategy {
 
   async _getDefaultChannelExpiration(expiryThreshold) {
     const currentBlockNumber = await this._web3.eth.getBlockNumber();
-    return currentBlockNumber + expiryThreshold + (3600 * 24 * 7);
+    return currentBlockNumber + expiryThreshold + this._config.blockOffset;
   }
 }
