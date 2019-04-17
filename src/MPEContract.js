@@ -60,6 +60,10 @@ export default class MPEContract {
     return this._account.sendSignedTransaction(channelExtendAndAddFundsOperation, this.address);
   }
 
+  async channels(channelId) {
+    return this.contract.methods.channels(channelId).call();
+  }
+
   async getPastOpenChannels(recipient, startingBlockNumber) {
     const fromBlock = startingBlockNumber ? startingBlockNumber : await this._deploymentBlockNumber();
     const options = {
@@ -71,7 +75,7 @@ export default class MPEContract {
       toBlock: 'latest'
     };
     const channelsOpened = await this.contract.getPastEvents('ChannelOpen', options);
-    return map(channelsOpened, channel => new PaymentChannel(channel, this._web3, this._account, this._contract));
+    return map(channelsOpened, channel => new PaymentChannel(channel, this._web3, this._account, this));
   }
 
   async _deploymentBlockNumber() {

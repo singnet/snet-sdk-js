@@ -1,148 +1,55 @@
-import MPENetworks from 'singularitynet-platform-contracts/networks/MultiPartyEscrow';
-import grpc from 'grpc';
-import { find, map } from 'lodash';
+import { find } from 'lodash';
 
-import paymentChannelStateServices from './payment_channel_state_service_grpc_pb';
-import paymentChannelStateMessages from './payment_channel_state_service_pb';
 import MPEContract from './MPEContract';
 
 export default class ChannelManagementStrategy {
-  constructor(web3, account, config, serviceMetadata) {
+  constructor(web3, account, config) {
     this._web3 = web3;
     this._account = account;
     this._config = config;
     this._mpeContract = new MPEContract(this._web3, this._account, this._config);
-    this._networkId = this._config.networkId;
-    this._openChannels = [];
-    this._serviceMetadata = serviceMetadata;
-    this._serviceEndpoint = this._serviceMetadata.endpoints[0].endpoint.replace('https://', '');
-    this._pricePerCall = this._serviceMetadata.pricing.price_in_cogs;
-    this._expiryThreshold = this._serviceMetadata.payment_expiration_threshold;
   }
 
-  async setup() {
-    const defaultGroup = this._serviceMetadata.groups[0];
-    const { payment_address: servicePaymentAddress } = defaultGroup;
-    this._openChannels = await this._mpeContract.getPastOpenChannels(servicePaymentAddress);
-  }
-
-  async callMetadata() {
-    const channelId = await this.select();
-    const { lastSignedAmount, nonce } = await this._fetchChannelState(channelId);
-
-    return {
-      channelId,
-      lastSignedAmount: lastSignedAmount + this._pricePerCall,
-      nonce,
-    };
-  }
-
-  async select() {
+  async selectChannel(paymentChannels, servicePaymentAddress, groupId, serviceCallPrice, expiryThreshold) {
     const mpeBalance = await this._account.escrowBalance();
-    const updatedChannels = await this._getUpdatedChannelDetails();
-    const defaultGroup = this._serviceMetadata.groups[0];
-    const { payment_address: servicePaymentAddress, group_id: groupId } = defaultGroup;
-    const defaultExpiration = await this._getDefaultChannelExpiration();
+    const defaultExpiration = await this._getDefaultChannelExpiration(expiryThreshold);
     const groupIdBytes = Buffer.from(groupId, 'base64');
 
-    if(updatedChannels.length === 0) {
-      if(mpeBalance > this._pricePerCall) {
-        const newChannelReceipt = await this._mpeContract.openChannel(this._account.address, servicePaymentAddress, groupIdBytes, this._pricePerCall, defaultExpiration);
+    if(paymentChannels.length === 0) {
+      if(mpeBalance > serviceCallPrice) {
+        const newChannelReceipt = await this._mpeContract.openChannel(this._account.address, servicePaymentAddress, groupIdBytes, serviceCallPrice, defaultExpiration);
         const openChannels = await this._mpeContract.getPastOpenChannels(servicePaymentAddress, newChannelReceipt.blockNumber);
-        return openChannels[0].channelId.toString();
+        return openChannels[0];
       }
 
-      const newfundedChannelReceipt = await this._mpeContract.depositAndOpenChannel(this._account.address, servicePaymentAddress, groupIdBytes, this._pricePerCall, defaultExpiration);
+      const newfundedChannelReceipt = await this._mpeContract.depositAndOpenChannel(this._account.address, servicePaymentAddress, groupIdBytes, serviceCallPrice, defaultExpiration);
       const openChannels = await this._mpeContract.getPastOpenChannels(servicePaymentAddress, newfundedChannelReceipt.blockNumber);
-      return openChannels[0].channelId.toString();
+      return openChannels[0];
     }
 
-    const firstFundedValidChannel = find(updatedChannels, ({ hasSufficientFunds, isValid }) => hasSufficientFunds && isValid);
+    const firstFundedValidChannel = find(paymentChannels, (paymentChanel) => paymentChanel.hasSufficientFunds(serviceCallPrice) && paymentChanel.isValid(defaultExpiration));
     if(firstFundedValidChannel) {
-      return firstFundedValidChannel.channelId.toString();
+      return firstFundedValidChannel;
     }
 
-    const firstFundedChannel = find(updatedChannels, 'hasSufficientFunds');
+    const firstFundedChannel = find(paymentChannels, (paymentChanel) => paymentChanel.hasSufficientFunds(serviceCallPrice));
     if(firstFundedChannel) {
       await this._mpeContract.channelExtend(firstFundedChannel.channelId, defaultExpiration);
-      return firstFundedChannel.channelId.toString();
+      return firstFundedChannel;
     }
 
-    const firstValidChannel = find(updatedChannels, 'isValid');
+    const firstValidChannel = find(paymentChannels, (paymentChanel) => paymentChanel.isValid(defaultExpiration));
     if(firstValidChannel) {
-      await this._mpeContract.channelAddFunds(firstValidChannel.channelId, this._pricePerCall);
-      return firstValidChannel.channelId.toString();
+      await this._mpeContract.channelAddFunds(firstValidChannel.channelId, serviceCallPrice);
+      return firstValidChannel;
     }
 
-    await this._mpeContract.channelExtendAndAddFunds(updatedChannels[0].channelId, defaultExpiration, this._pricePerCall);
-    return updatedChannels[0].channelId.toString();
+    await this._mpeContract.channelExtendAndAddFunds(paymentChannels[0].channelId, defaultExpiration, serviceCallPrice);
+    return paymentChannels[0];
   }
 
-  async _getUpdatedChannelDetails() {
-    const openChannels = this._openChannels;
+  async _getDefaultChannelExpiration(expiryThreshold) {
     const currentBlockNumber = await this._web3.eth.getBlockNumber();
-    const updatedChannelPromises = map(openChannels, ({ channelId }) => {
-      const channelPromise = new Promise(resolve => resolve(channelId));
-      const updatedOpenChannelPromise = this._account._getMPEContract().methods.channels(channelId.toString()).call();
-      const currentChannelStatePromise = this._fetchChannelState(channelId);
-      return Promise.all([channelPromise, updatedOpenChannelPromise, currentChannelStatePromise]);
-    });
-    const resolvedUpdatedChannels = await Promise.all(updatedChannelPromises);
-    return map(resolvedUpdatedChannels, ([channelId, updatedOpenChannel, currentChannelState]) => {
-      const { lastSignedAmount, nonce: currentNonce } = currentChannelState;
-      const { nonce, expiration, value: initialAmount } = updatedOpenChannel;
-      const availableAmount = initialAmount - lastSignedAmount;
-      return {
-        channelId,
-        nonce,
-        currentNonce,
-        expiration,
-        initialAmount,
-        lastSignedAmount,
-        availableAmount,
-        hasSufficientFunds: availableAmount >= this._pricePerCall,
-        isValid: expiration > (currentBlockNumber + this._expiryThreshold),
-      };
-    });
-  }
-
-  async _fetchChannelState(channelId) {
-    const paymentChannelStateServiceClient = new paymentChannelStateServices.PaymentChannelStateServiceClient(this._serviceEndpoint, grpc.credentials.createSsl());
-
-    const sha3Message = this._web3.utils.soliditySha3({ t: 'uint256', v: channelId });
-    const { signature } = this._account.sign(sha3Message);
-    const stripped = signature.substring(2, signature.length);
-    const byteSig = Buffer.from(stripped, 'hex');
-    const signatureBytes = Buffer.from(byteSig);
-
-    const channelIdBytes = Buffer.alloc(4);
-    channelIdBytes.writeUInt32BE(channelId, 0);
-
-    const channelStateRequest = new paymentChannelStateMessages.ChannelStateRequest();
-    channelStateRequest.setChannelId(channelIdBytes);
-    channelStateRequest.setSignature(signatureBytes);
-
-    return new Promise((resolve, reject) => {
-      paymentChannelStateServiceClient.getChannelState(channelStateRequest, (err, response) => {
-        if(err) {
-          reject(err);
-        } else {
-          const nonceBuffer = Buffer.from(response.getCurrentNonce());
-          const nonce = nonceBuffer.readUInt32BE(28);
-          const currentSignedAmountBuffer = Buffer.from(response.getCurrentSignedAmount());
-          const currentSignedAmount = currentSignedAmountBuffer.length > 0 ? currentSignedAmountBuffer.readUInt32BE(28) : 0;
-          const channelState = {
-            lastSignedAmount: currentSignedAmount,
-            nonce,
-          };
-          resolve(channelState);
-        }
-      });
-    });
-  }
-
-  async _getDefaultChannelExpiration() {
-    const currentBlockNumber = await this._web3.eth.getBlockNumber();
-    return currentBlockNumber + this._serviceMetadata.payment_expiration_threshold + (3600 * 24 * 7);
+    return currentBlockNumber + expiryThreshold + (3600 * 24 * 7);
   }
 }
