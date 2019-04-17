@@ -19,6 +19,20 @@ export default class MPEContract {
     return this.contract.address;
   }
 
+  async balance(address) {
+    return this.contract.methods.balances(address).call()
+  }
+
+  async deposit(account, amountInCogs) {
+    const depositOperation = this.contract.methods.deposit(amountInCogs);
+    return account.sendSignedTransaction(depositOperation, this.address);
+  }
+
+  async withdraw(account, amountInCogs) {
+    const withdrawOperation = this.contract.methods.withdraw(amountInCogs);
+    return account.sendSignedTransaction(withdrawOperation, this.address);
+  }
+
   async openChannel(account, recipientAddress, groupId, amount, expiration) {
     const openChannelOperation = this.contract.methods.openChannel(account.signerAddress, recipientAddress, groupId, amount, expiration);
     return account.sendSignedTransaction(openChannelOperation, this.address);

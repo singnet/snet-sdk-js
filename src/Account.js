@@ -1,16 +1,14 @@
 import AGITokenAbi from 'singularitynet-token-contracts/abi/SingularityNetToken';
 import AGITokenNetworks from 'singularitynet-token-contracts/networks/SingularityNetToken';
-import MPENetworks from 'singularitynet-platform-contracts/networks/MultiPartyEscrow';
-import MPEAbi from 'singularitynet-platform-contracts/abi/MultiPartyEscrow';
 import Tx from 'ethereumjs-tx';
 
 export default class Account {
-  constructor(web3, config) {
+  constructor(web3, config, mpeContract) {
     this._web3 = web3;
     this._config = config;
     this._network = this._config.networkId;
     this._tokenContract = this._generateTokenContract();
-    this._mpeContract = this._generateMPEContract();
+    this._mpeContract = mpeContract;
   }
 
   async balance() {
@@ -18,26 +16,25 @@ export default class Account {
   }
 
   async escrowBalance() {
-    return this._getMPEContract().methods.balances(this.address).call();
+    return this._mpeContract.balance(this.address);
   }
 
   async depositToEscrowAccount(amountInCogs) {
     await this.approveTransfer(amountInCogs);
-    return this._deposit(amountInCogs);
+    return this._mpeContract.deposit(this, amountInCogs);
   }
 
   async approveTransfer(amountInCogs) {
-    const approveOperation = this._getTokenContract().methods.approve(this._getMPEAddress(), amountInCogs);
+    const approveOperation = this._getTokenContract().methods.approve(this._mpeContract.address, amountInCogs);
     return this.sendSignedTransaction(approveOperation, this._getTokenContract().address);
   }
 
   async allowance() {
-    return this._getTokenContract().methods.allowance(this.address, this._getMPEContract().address).call();
+    return this._getTokenContract().methods.allowance(this.address, this._mpeContract.address).call();
   }
 
   async withdrawFromEscrowAccount(amountInCogs) {
-    const withdrawOperation = this._getMPEContract().methods.withdraw(amountInCogs);
-    return this.sendSignedTransaction(withdrawOperation, this._getMPEContract().address);
+    return this._mpeContract.withdraw(this, amountInCogs);
   }
 
   get address() {
@@ -78,29 +75,12 @@ export default class Account {
     });
   }
 
-  _getMPEAddress() {
-    return this._getMPEContract().address;
-  }
-
   _getTokenContract() {
     return this._tokenContract;
   }
 
-  _getMPEContract() {
-    return this._mpeContract;
-  }
-
   _generateTokenContract() {
     return new this._web3.eth.Contract(AGITokenAbi, AGITokenNetworks[this._network].address);
-  }
-
-  _generateMPEContract() {
-    return new this._web3.eth.Contract(MPEAbi, MPENetworks[this._network].address);
-  }
-
-  async _deposit(amountInCogs) {
-    const depositOperation = this._getMPEContract().methods.deposit(amountInCogs);
-    return this.sendSignedTransaction(depositOperation, this._getMPEContract().address);
   }
 
   async _baseTransactionObject(operation, to) {
