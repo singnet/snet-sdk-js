@@ -76,7 +76,7 @@ export default class ServiceClient {
     const currentBlockNumber = await this._web3.eth.getBlockNumber();
     const defaultGroup = this._metadata.groups[0];
     const { payment_address: servicePaymentAddress, group_id: groupId } = defaultGroup;
-    const newPaymentChannels = await this._mpeContract.getPastOpenChannels(this._paymentAddress, this._lastReadBlock);
+    const newPaymentChannels = await this._mpeContract.getPastOpenChannels(this._account, this._paymentAddress, this._lastReadBlock);
     this._paymentChannels = [...this._paymentChannels, ...newPaymentChannels];
     this._lastReadBlock = currentBlockNumber;
 

@@ -44,6 +44,10 @@ export default class Account {
     return this._web3.eth.defaultAccount;
   }
 
+  get signerAddress() {
+    return this.address;
+  }
+
   sign(message) {
     return this._web3.eth.accounts.sign(message, this._config.privateKey);
   }

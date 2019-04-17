@@ -5,9 +5,8 @@ import { map } from 'lodash';
 import PaymentChannel from './PaymentChannel';
 
 export default class MPEContract {
-  constructor(web3, account, config) {
+  constructor(web3, config) {
     this._web3 = web3;
-    this._account = account;
     this._config = config;
     this._contract = this._web3.eth.Contract(MPEAbi, MPENetworks[this._config.networkId].address);
   }
@@ -20,62 +19,62 @@ export default class MPEContract {
     return this.contract.address;
   }
 
-  async openChannel(signerAddress, recipientAddress, groupId, amount, expiration) {
-    const openChannelOperation = this.contract.methods.openChannel(signerAddress, recipientAddress, groupId, amount, expiration);
-    return this._account.sendSignedTransaction(openChannelOperation, this.address);
+  async openChannel(account, recipientAddress, groupId, amount, expiration) {
+    const openChannelOperation = this.contract.methods.openChannel(account.signerAddress, recipientAddress, groupId, amount, expiration);
+    return account.sendSignedTransaction(openChannelOperation, this.address);
   }
 
-  async depositAndOpenChannel(signerAddress, recipientAddress, groupId, amount, expiration) {
-    const alreadyApprovedAmount = await this._account.allowance();
+  async depositAndOpenChannel(account, recipientAddress, groupId, amount, expiration) {
+    const alreadyApprovedAmount = await account.allowance();
     if(amount > alreadyApprovedAmount) {
-      await this._account.approveTransfer(amount);
+      await account.approveTransfer(amount);
     }
 
-    const depositAndOpenChannelOperation = this.contract.methods.depositAndOpenChannel(signerAddress, recipientAddress, groupId, amount, expiration);
-    return this._account.sendSignedTransaction(depositAndOpenChannelOperation, this.address);
+    const depositAndOpenChannelOperation = this.contract.methods.depositAndOpenChannel(account.signerAddress, recipientAddress, groupId, amount, expiration);
+    return account.sendSignedTransaction(depositAndOpenChannelOperation, this.address);
   }
 
-  async channelAddFunds(channelId, amount) {
-    const currentEscrowBalance = await this._account.escrowBalance();
+  async channelAddFunds(account, channelId, amount) {
+    const currentEscrowBalance = await account.escrowBalance();
     if(amount > currentEscrowBalance) {
-      await this._account.depositToEscrowAccount(amount - currentEscrowBalance);
+      await account.depositToEscrowAccount(amount - currentEscrowBalance);
     }
 
     const channelAddFundsOperation = this.contract.methods.channelAddFunds(channelId, amount);
-    return this._account.sendSignedTransaction(channelAddFundsOperation, this.address);
+    return account.sendSignedTransaction(channelAddFundsOperation, this.address);
   }
 
-  async channelExtend(channelId, expiration) {
+  async channelExtend(account, channelId, expiration) {
     const channelExtendOperation = this.contract.methods.channelExtend(channelId, expiration);
-    return this._account.sendSignedTransaction(channelExtendOperation, this.address);
+    return account.sendSignedTransaction(channelExtendOperation, this.address);
   }
 
-  async channelExtendAndAddFunds(channelId, expiration, amount) {
-    const currentEscrowBalance = await this._account.escrowBalance();
+  async channelExtendAndAddFunds(account, channelId, expiration, amount) {
+    const currentEscrowBalance = await account.escrowBalance();
     if(amount > currentEscrowBalance) {
-      await this._account.depositToEscrowAccount(amount - currentEscrowBalance);
+      await account.depositToEscrowAccount(amount - currentEscrowBalance);
     }
 
     const channelExtendAndAddFundsOperation = this.contract.methods.channelExtendAndAddFunds(channelId, expiration, amount);
-    return this._account.sendSignedTransaction(channelExtendAndAddFundsOperation, this.address);
+    return account.sendSignedTransaction(channelExtendAndAddFundsOperation, this.address);
   }
 
   async channels(channelId) {
     return this.contract.methods.channels(channelId).call();
   }
 
-  async getPastOpenChannels(recipient, startingBlockNumber) {
+  async getPastOpenChannels(account, recipient, startingBlockNumber) {
     const fromBlock = startingBlockNumber ? startingBlockNumber : await this._deploymentBlockNumber();
     const options = {
       filter: {
-        sender: this._account.address,
+        sender: account.address,
         recipient,
       },
       fromBlock,
       toBlock: 'latest'
     };
     const channelsOpened = await this.contract.getPastEvents('ChannelOpen', options);
-    return map(channelsOpened, channel => new PaymentChannel(channel, this._web3, this._account, this));
+    return map(channelsOpened, channel => new PaymentChannel(channel, this._web3, account, this));
   }
 
   async _deploymentBlockNumber() {

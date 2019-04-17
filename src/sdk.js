@@ -27,7 +27,7 @@ export default class SnetSDK {
 
     this._web3 = web3;
     this._account = new Account(this._web3, this._config);
-    this._mpeContract = new MPEContract(this._web3, this._account, this._config);
+    this._mpeContract = new MPEContract(this._web3, this._config);
     const registryAddress = RegistryNetworks[this._networkId].address;
     this._registryContract = new this._web3.eth.Contract(RegistryAbi, registryAddress, { from: this._account.address });
     this._serviceClient = {};

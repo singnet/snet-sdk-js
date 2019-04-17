@@ -7,7 +7,7 @@ export default class ChannelManagementStrategy {
     this._web3 = web3;
     this._account = account;
     this._config = config;
-    this._mpeContract = new MPEContract(this._web3, this._account, this._config);
+    this._mpeContract = new MPEContract(this._web3, this._config);
   }
 
   async selectChannel(paymentChannels, servicePaymentAddress, groupId, serviceCallPrice, expiryThreshold) {
@@ -17,13 +17,13 @@ export default class ChannelManagementStrategy {
 
     if(paymentChannels.length === 0) {
       if(mpeBalance > serviceCallPrice) {
-        const newChannelReceipt = await this._mpeContract.openChannel(this._account.address, servicePaymentAddress, groupIdBytes, serviceCallPrice, defaultExpiration);
-        const openChannels = await this._mpeContract.getPastOpenChannels(servicePaymentAddress, newChannelReceipt.blockNumber);
+        const newChannelReceipt = await this._mpeContract.openChannel(this._account, servicePaymentAddress, groupIdBytes, serviceCallPrice, defaultExpiration);
+        const openChannels = await this._mpeContract.getPastOpenChannels(this._account, servicePaymentAddress, newChannelReceipt.blockNumber);
         return openChannels[0];
       }
 
-      const newfundedChannelReceipt = await this._mpeContract.depositAndOpenChannel(this._account.address, servicePaymentAddress, groupIdBytes, serviceCallPrice, defaultExpiration);
-      const openChannels = await this._mpeContract.getPastOpenChannels(servicePaymentAddress, newfundedChannelReceipt.blockNumber);
+      const newfundedChannelReceipt = await this._mpeContract.depositAndOpenChannel(this._account, servicePaymentAddress, groupIdBytes, serviceCallPrice, defaultExpiration);
+      const openChannels = await this._mpeContract.getPastOpenChannels(this._account, servicePaymentAddress, newfundedChannelReceipt.blockNumber);
       return openChannels[0];
     }
 
@@ -34,17 +34,17 @@ export default class ChannelManagementStrategy {
 
     const firstFundedChannel = find(paymentChannels, (paymentChanel) => paymentChanel.hasSufficientFunds(serviceCallPrice));
     if(firstFundedChannel) {
-      await this._mpeContract.channelExtend(firstFundedChannel.channelId, defaultExpiration);
+      await this._mpeContract.channelExtend(this._account, firstFundedChannel.channelId, defaultExpiration);
       return firstFundedChannel;
     }
 
     const firstValidChannel = find(paymentChannels, (paymentChanel) => paymentChanel.isValid(defaultExpiration));
     if(firstValidChannel) {
-      await this._mpeContract.channelAddFunds(firstValidChannel.channelId, serviceCallPrice);
+      await this._mpeContract.channelAddFunds(this._account, firstValidChannel.channelId, serviceCallPrice);
       return firstValidChannel;
     }
 
-    await this._mpeContract.channelExtendAndAddFunds(paymentChannels[0].channelId, defaultExpiration, serviceCallPrice);
+    await this._mpeContract.channelExtendAndAddFunds(this._account, paymentChannels[0].channelId, defaultExpiration, serviceCallPrice);
     return paymentChannels[0];
   }
 
