@@ -1,13 +1,11 @@
 import { find } from 'lodash';
 
-import MPEContract from './MPEContract';
-
 export default class ChannelManagementStrategy {
-  constructor(web3, account, config) {
+  constructor(web3, account, config, mpeContract) {
     this._web3 = web3;
     this._account = account;
     this._config = config;
-    this._mpeContract = new MPEContract(this._web3, this._config);
+    this._mpeContract = mpeContract;
   }
 
   async selectChannel(paymentChannels, servicePaymentAddress, groupId, serviceCallPrice, expiryThreshold) {
