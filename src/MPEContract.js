@@ -49,7 +49,7 @@ export default class MPEContract {
   }
 
   async channelAddFunds(account, channelId, amount) {
-    const currentEscrowBalance = await account.escrowBalance();
+    const currentEscrowBalance = await this.balance(account.address);
     if(amount > currentEscrowBalance) {
       await account.depositToEscrowAccount(amount - currentEscrowBalance);
     }
@@ -64,7 +64,7 @@ export default class MPEContract {
   }
 
   async channelExtendAndAddFunds(account, channelId, expiration, amount) {
-    const currentEscrowBalance = await account.escrowBalance();
+    const currentEscrowBalance = await this.balance(account.address);
     if(amount > currentEscrowBalance) {
       await account.depositToEscrowAccount(amount - currentEscrowBalance);
     }
