@@ -2,13 +2,16 @@
   "name": "snet-sdk",
   "version": "1.0.0-alpha",
   "description": "SingularityNET SDK for JS",
-  "main": "index.js",
+  "main": "./dist/index.js",
   "keywords": [
     "snet-sdk",
     "singularitynet-sdk",
     "singularitynet"
   ],
   "scripts": {
+    "build": "babel src --out-dir dist",
+    "clean": "rimraf dist",
+    "prepublishOnly": "npm run clean && npm run build",
     "lint": "eslint src test",
     "test": "nyc mocha --require @babel/register --colors",
     "test:watch": "mocha --require @babel/register --colors -w"
@@ -38,6 +41,7 @@
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-plugin-import": "^2.16.0",
     "mocha": "^6.0.2",
-    "nyc": "^13.3.0"
+    "nyc": "^13.3.0",
+    "rimraf": "^2.6.3"
   }
 }

@@ -1,1 +1,3 @@
-console.log('Hello World!');
+import SnetSdk from './sdk';
+
+export default SnetSdk;
