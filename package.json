@@ -3,6 +3,9 @@
   "version": "1.0.0-alpha",
   "description": "SingularityNET SDK for JS",
   "main": "./dist/index.js",
+  "files": [
+    "dist"
+  ],
   "keywords": [
     "snet-sdk",
     "singularitynet-sdk",
