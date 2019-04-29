@@ -38,6 +38,14 @@ export default class SnetSDK {
     return this._account;
   }
 
+  get mpeContract() {
+    return this._mpeContract;
+  }
+
+  get web3() {
+    return this._web3;
+  }
+
   get blockOffset() {
     return this._config.blockOffset;
   }
@@ -45,7 +53,7 @@ export default class SnetSDK {
   async createServiceClient(orgId, serviceId, groupName, ServiceStub) {
     const serviceMetadata = await this._getServiceMetadata(orgId, serviceId);
     this._serviceClient.metadata = serviceMetadata;
-    const channelManagementStrategy = new ChannelManagementStrategy(this._web3, this._account, this._config, this._mpeContract);
+    const channelManagementStrategy = new ChannelManagementStrategy();
     const group = find(serviceMetadata.groups, ({ group_name }) => group_name === groupName);
     if(!group) {
       throw new Error(`Group not found: ${groupName} for orgId: ${orgId} and serviceId: ${serviceId}`);

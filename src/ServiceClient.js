@@ -97,7 +97,7 @@ export default class ServiceClient {
     this._lastReadBlock = currentBlockNumber;
 
     await this._updateChannelStates();
-    return channelManagementStrategy.selectChannel(this);
+    return channelManagementStrategy.selectChannel(this, this._sdk);
   }
 
   async _updateChannelStates() {
