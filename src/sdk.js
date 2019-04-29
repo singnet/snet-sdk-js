@@ -8,6 +8,7 @@ import Account from './Account';
 import ChannelManagementStrategy from './ChannelManagementStrategy';
 import MPEContract from './MPEContract';
 import ServiceClient from './ServiceClient';
+import { find } from 'lodash';
 
 const { HttpProvider } = Web3.providers;
 
@@ -37,11 +38,15 @@ export default class SnetSDK {
     return this._account;
   }
 
-  async createServiceClient(orgId, serviceId, ServiceStub) {
+  async createServiceClient(orgId, serviceId, groupName, ServiceStub) {
     const serviceMetadata = await this._getServiceMetadata(orgId, serviceId);
     this._serviceClient.metadata = serviceMetadata;
     const channelManagementStrategy = new ChannelManagementStrategy(this._web3, this._account, this._config, this._mpeContract);
-    return new ServiceClient(serviceMetadata, this._web3, this.account, this._mpeContract, ServiceStub, channelManagementStrategy);
+    const group = find(serviceMetadata.groups, ({ group_name }) => group_name === groupName);
+    if(!group) {
+      throw new Error(`Group not found: ${groupName} for orgId: ${orgId} and serviceId: ${serviceId}`);
+    }
+    return new ServiceClient(serviceMetadata, group, this._web3, this.account, this._mpeContract, ServiceStub, channelManagementStrategy);
   }
 
   async _getServiceMetadata(orgId, serviceId) {

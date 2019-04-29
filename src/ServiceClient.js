@@ -4,8 +4,9 @@ import { find, map } from 'lodash';
 import paymentChannelStateServices from './payment_channel_state_service_grpc_pb';
 
 export default class ServiceClient {
-  constructor(metadata, web3, account, mpeContract, ServiceStub, channelManagementStrategy) {
+  constructor(metadata, group, web3, account, mpeContract, ServiceStub, channelManagementStrategy) {
     this._metadata = metadata;
+    this._group = group;
     this._web3 = web3;
     this._account = account;
     this._mpeContract = mpeContract;
@@ -29,8 +30,7 @@ export default class ServiceClient {
   }
 
   get _paymentAddress() {
-    const defaultGroup = this._metadata.groups[0];
-    return defaultGroup.payment_address;
+    return this._group.payment_address;
   }
 
   get _pricePerServiceCall() {
@@ -74,8 +74,7 @@ export default class ServiceClient {
 
   async _getFundedChannel(channelManagementStrategy) {
     const currentBlockNumber = await this._web3.eth.getBlockNumber();
-    const defaultGroup = this._metadata.groups[0];
-    const { payment_address: servicePaymentAddress, group_id: groupId } = defaultGroup;
+    const { payment_address: servicePaymentAddress, group_id: groupId } = this._group;
     const newPaymentChannels = await this._mpeContract.getPastOpenChannels(this._account, this._paymentAddress, this._lastReadBlock);
     this._paymentChannels = [...this._paymentChannels, ...newPaymentChannels];
     this._lastReadBlock = currentBlockNumber;
@@ -98,7 +97,7 @@ export default class ServiceClient {
   }
 
   _getServiceEndpoint() {
-    const { group_name: defaultGroupName } = this._metadata.groups[0];
+    const { group_name: defaultGroupName } = this._group;
     const { endpoints } = this._metadata;
     const { endpoint } = find(endpoints, ({ group_name: groupName }) => groupName === defaultGroupName);
     return endpoint && url.parse(endpoint);
