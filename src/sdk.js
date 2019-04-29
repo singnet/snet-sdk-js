@@ -5,7 +5,6 @@ import RegistryNetworks from 'singularitynet-platform-contracts/networks/Registr
 import RegistryAbi from 'singularitynet-platform-contracts/abi/Registry.json';
 
 import Account from './Account';
-import ChannelManagementStrategy from './ChannelManagementStrategy';
 import MPEContract from './MPEContract';
 import ServiceClient from './ServiceClient';
 import { find } from 'lodash';
@@ -50,10 +49,9 @@ export default class SnetSDK {
     return this._config.blockOffset;
   }
 
-  async createServiceClient(orgId, serviceId, groupName, ServiceStub) {
+  async createServiceClient(orgId, serviceId, groupName, channelManagementStrategy, ServiceStub) {
     const serviceMetadata = await this._getServiceMetadata(orgId, serviceId);
     this._serviceClient.metadata = serviceMetadata;
-    const channelManagementStrategy = new ChannelManagementStrategy();
     const group = find(serviceMetadata.groups, ({ group_name }) => group_name === groupName);
     if(!group) {
       throw new Error(`Group not found: ${groupName} for orgId: ${orgId} and serviceId: ${serviceId}`);
