@@ -2,15 +2,16 @@ import { find } from 'lodash';
 
 export default class ChannelManagementStrategy {
   constructor(web3, account, config, mpeContract) {
-    this._web3 = web3;
     this._account = account;
-    this._config = config;
     this._mpeContract = mpeContract;
   }
 
-  async selectChannel(paymentChannels, servicePaymentAddress, groupId, serviceCallPrice, expiryThreshold) {
+  async selectChannel(serviceClient) {
+    const paymentChannels = serviceClient.paymentChannels;
+    const { payment_address: servicePaymentAddress, group_id: groupId } = serviceClient.group;
+    const serviceCallPrice = serviceClient.metadata.pricing.price_in_cogs;
     const mpeBalance = await this._account.escrowBalance();
-    const defaultExpiration = await this._getDefaultChannelExpiration(expiryThreshold);
+    const defaultExpiration = await serviceClient.defaultChannelExpiration();
     const groupIdBytes = Buffer.from(groupId, 'base64');
 
     if(paymentChannels.length === 0) {
@@ -44,10 +45,5 @@ export default class ChannelManagementStrategy {
 
     await this._mpeContract.channelExtendAndAddFunds(this._account, paymentChannels[0].channelId, defaultExpiration, serviceCallPrice);
     return paymentChannels[0];
-  }
-
-  async _getDefaultChannelExpiration(expiryThreshold) {
-    const currentBlockNumber = await this._web3.eth.getBlockNumber();
-    return currentBlockNumber + expiryThreshold + this._config.blockOffset;
   }
 }

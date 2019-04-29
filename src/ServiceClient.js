@@ -4,7 +4,8 @@ import { find, map } from 'lodash';
 import paymentChannelStateServices from './payment_channel_state_service_grpc_pb';
 
 export default class ServiceClient {
-  constructor(metadata, group, web3, account, mpeContract, ServiceStub, channelManagementStrategy) {
+  constructor(sdk, metadata, group, web3, account, mpeContract, ServiceStub, channelManagementStrategy) {
+    this._sdk = sdk;
     this._metadata = metadata;
     this._group = group;
     this._web3 = web3;
@@ -17,6 +18,23 @@ export default class ServiceClient {
 
   get stub() {
     return this._grpcStub;
+  }
+
+  get group() {
+    return this._group;
+  }
+
+  get paymentChannels() {
+    return this._paymentChannels;
+  }
+
+  get metadata() {
+    return this._metadata;
+  }
+
+  async defaultChannelExpiration() {
+    const currentBlockNumber = await this._web3.eth.getBlockNumber();
+    return currentBlockNumber + this._expiryThreshold + this._sdk.blockOffset;
   }
 
   _generateGrpcStub(ServiceStub, channelManagementStrategy) {
@@ -74,13 +92,12 @@ export default class ServiceClient {
 
   async _getFundedChannel(channelManagementStrategy) {
     const currentBlockNumber = await this._web3.eth.getBlockNumber();
-    const { payment_address: servicePaymentAddress, group_id: groupId } = this._group;
     const newPaymentChannels = await this._mpeContract.getPastOpenChannels(this._account, this._paymentAddress, this._lastReadBlock);
     this._paymentChannels = [...this._paymentChannels, ...newPaymentChannels];
     this._lastReadBlock = currentBlockNumber;
 
     await this._updateChannelStates();
-    return channelManagementStrategy.selectChannel(this._paymentChannels, servicePaymentAddress, groupId, this._pricePerServiceCall, this._expiryThreshold);
+    return channelManagementStrategy.selectChannel(this);
   }
 
   async _updateChannelStates() {
