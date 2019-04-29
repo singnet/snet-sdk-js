@@ -58,7 +58,7 @@ export default class SnetSDK {
     if(!group) {
       throw new Error(`Group not found: ${groupName} for orgId: ${orgId} and serviceId: ${serviceId}`);
     }
-    return new ServiceClient(this, serviceMetadata, group, this._web3, this.account, this._mpeContract, ServiceStub, channelManagementStrategy);
+    return new ServiceClient(this, serviceMetadata, group, ServiceStub, channelManagementStrategy);
   }
 
   async _getServiceMetadata(orgId, serviceId) {

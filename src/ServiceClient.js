@@ -4,13 +4,13 @@ import { find, map } from 'lodash';
 import paymentChannelStateServices from './payment_channel_state_service_grpc_pb';
 
 export default class ServiceClient {
-  constructor(sdk, metadata, group, web3, account, mpeContract, ServiceStub, channelManagementStrategy) {
+  constructor(sdk, metadata, group, ServiceStub, channelManagementStrategy) {
     this._sdk = sdk;
+    this._web3 = this._sdk.web3;
+    this._account = this._sdk.account;
+    this._mpeContract = this._sdk.mpeContract;
     this._metadata = metadata;
     this._group = group;
-    this._web3 = web3;
-    this._account = account;
-    this._mpeContract = mpeContract;
     this._grpcStub = this._generateGrpcStub(ServiceStub, channelManagementStrategy);
     this._paymentChannelStateServiceClient = this._generatePaymentChannelStateServiceClient();
     this._paymentChannels = [];
