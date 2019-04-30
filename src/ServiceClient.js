@@ -43,8 +43,8 @@ export default class ServiceClient {
     };
 
     const serviceEndpoint = this._getServiceEndpoint();
-    const grpcChannel = this._getGrpcChannel(serviceEndpoint);
-    return new ServiceStub(serviceEndpoint.host, grpcChannel, grpcOptions);
+    const grpcChannelCredentials = this._getGrpcChannelCredentials(serviceEndpoint);
+    return new ServiceStub(serviceEndpoint.host, grpcChannelCredentials, grpcOptions);
   }
 
   get _paymentAddress() {
@@ -109,8 +109,8 @@ export default class ServiceClient {
 
   _generatePaymentChannelStateServiceClient() {
     const serviceEndpoint = this._getServiceEndpoint();
-    const grpcChannel = this._getGrpcChannel(serviceEndpoint);
-    return new paymentChannelStateServices.PaymentChannelStateServiceClient(serviceEndpoint.host, grpcChannel);
+    const grpcChannelCredentials = this._getGrpcChannelCredentials(serviceEndpoint);
+    return new paymentChannelStateServices.PaymentChannelStateServiceClient(serviceEndpoint.host, grpcChannelCredentials);
   }
 
   _getServiceEndpoint() {
@@ -120,7 +120,7 @@ export default class ServiceClient {
     return endpoint && url.parse(endpoint);
   }
 
-  _getGrpcChannel(serviceEndpoint) {
+  _getGrpcChannelCredentials(serviceEndpoint) {
     if(serviceEndpoint.protocol === 'https:') {
       return grpc.credentials.createSsl();
     }
