@@ -34,6 +34,18 @@ export default class PaymentChannel {
     return this.state.expiration > expiry;
   }
 
+  async addFunds(amount) {
+    return this._mpeContract.channelAddFunds(this._account, this.channelId, amount);
+  }
+
+  async extendExpiration(expiration) {
+    return this._mpeContract.channelExtend(this._account, this.channelId, expiration);
+  }
+
+  async extendAndAddFunds(expiration, amount) {
+    await this._mpeContract.channelExtendAndAddFunds(this._account, this.channelId, expiration, amount);
+  }
+
   async syncState(paymentChannelStateService) {
     const latestChannelInfoOnBlockchain = await this._mpeContract.channels(this.channelId);
     const currentState = await this._currentChannelState(paymentChannelStateService);

@@ -30,17 +30,18 @@ export default class ChannelManagementStrategy {
 
     const firstFundedChannel = find(paymentChannels, (paymentChanel) => paymentChanel.hasSufficientFunds(serviceCallPrice));
     if(firstFundedChannel) {
-      await mpeContract.channelExtend(account, firstFundedChannel.channelId, defaultExpiration);
+      await firstFundedChannel.extendExpiration(defaultExpiration);
       return firstFundedChannel;
     }
 
     const firstValidChannel = find(paymentChannels, (paymentChanel) => paymentChanel.isValid(defaultExpiration));
     if(firstValidChannel) {
-      await mpeContract.channelAddFunds(account, firstValidChannel.channelId, serviceCallPrice);
+      await firstValidChannel.addFunds(serviceCallPrice);
       return firstValidChannel;
     }
 
-    await mpeContract.channelExtendAndAddFunds(account, paymentChannels[0].channelId, defaultExpiration, serviceCallPrice);
-    return paymentChannels[0];
+    const firstExpiredAndUnfundedChannel = paymentChannels[0];
+    await firstExpiredAndUnfundedChannel.extendAndAddFunds(defaultExpiration, serviceCallPrice);
+    return firstExpiredAndUnfundedChannel;
   }
 }
