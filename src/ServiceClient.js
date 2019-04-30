@@ -37,6 +37,25 @@ export default class ServiceClient {
     return currentBlockNumber + this._expiryThreshold + this._sdk.blockOffset;
   }
 
+  async openChannel(amount, expiration) {
+    const newChannelReceipt = await this._mpeContract.openChannel(this._account, this._paymentAddress, this._groupIdInBytes, amount, expiration);
+    return this._getNewlyOpenedChannel(newChannelReceipt);
+  }
+
+  async depositAndOpenChannel(amount, expiration) {
+    const newFundedChannelReceipt = await this._mpeContract.depositAndOpenChannel(this._account, this._paymentAddress, this._groupIdInBytes, amount, expiration);
+    return this._getNewlyOpenedChannel(newFundedChannelReceipt);
+  }
+
+  async _getNewlyOpenedChannel(receipt) {
+    const openChannels = await this._mpeContract.getPastOpenChannels(this._account, this._paymentAddress, receipt.blockNumber);
+    return openChannels[0];
+  }
+
+  get _groupIdInBytes() {
+    return Buffer.from(this.group.group_id, 'base64');
+  }
+
   _generateGrpcStub(ServiceStub, channelManagementStrategy) {
     const grpcOptions = {
       interceptors: [this._generateInterceptor(channelManagementStrategy)],
@@ -48,7 +67,7 @@ export default class ServiceClient {
   }
 
   get _paymentAddress() {
-    return this._group.payment_address;
+    return this.group.payment_address;
   }
 
   get _pricePerServiceCall() {
@@ -114,7 +133,7 @@ export default class ServiceClient {
   }
 
   _getServiceEndpoint() {
-    const { group_name: defaultGroupName } = this._group;
+    const { group_name: defaultGroupName } = this.group;
     const { endpoints } = this._metadata;
     const { endpoint } = find(endpoints, ({ group_name: groupName }) => groupName === defaultGroupName);
     return endpoint && url.parse(endpoint);
