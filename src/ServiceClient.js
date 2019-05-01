@@ -111,7 +111,7 @@ export default class ServiceClient {
 
   async _getFundedChannel(channelManagementStrategy) {
     const currentBlockNumber = await this._web3.eth.getBlockNumber();
-    const newPaymentChannels = await this._mpeContract.getPastOpenChannels(this._account, this._paymentAddress, this._lastReadBlock);
+    const newPaymentChannels = await this._mpeContract.getPastOpenChannels(this._account, this._paymentAddress, this._groupIdInBytes, this._lastReadBlock);
     this._paymentChannels = [...this._paymentChannels, ...newPaymentChannels];
     this._lastReadBlock = currentBlockNumber;
 

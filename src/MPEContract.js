@@ -77,12 +77,13 @@ export default class MPEContract {
     return this.contract.methods.channels(channelId).call();
   }
 
-  async getPastOpenChannels(account, recipient, startingBlockNumber) {
+  async getPastOpenChannels(account, recipient, groupId, startingBlockNumber) {
     const fromBlock = startingBlockNumber ? startingBlockNumber : await this._deploymentBlockNumber();
     const options = {
       filter: {
         sender: account.address,
         recipient,
+        groupId,
       },
       fromBlock,
       toBlock: 'latest'

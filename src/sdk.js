@@ -50,7 +50,7 @@ export default class SnetSDK {
   }
 
   async createServiceClient(orgId, serviceId, groupName, channelManagementStrategy, ServiceStub) {
-    const serviceMetadata = await this._getServiceMetadata(orgId, serviceId);
+    const serviceMetadata = await this.serviceMetadata(orgId, serviceId);
     this._serviceClient.metadata = serviceMetadata;
     const group = find(serviceMetadata.groups, ({ group_name }) => group_name === groupName);
     if(!group) {
@@ -59,7 +59,7 @@ export default class SnetSDK {
     return new ServiceClient(this, serviceMetadata, group, ServiceStub, channelManagementStrategy);
   }
 
-  async _getServiceMetadata(orgId, serviceId) {
+  async serviceMetadata(orgId, serviceId) {
     const { protocol = 'http', hostname: host, port = 5001 } = url.parse(this._config.ipfsEndpoint);
     const ipfsHostOrMultiaddr = { protocol: protocol.replace(':', ''), host, port };
     const ipfsClient = IPFSClient(ipfsHostOrMultiaddr);
