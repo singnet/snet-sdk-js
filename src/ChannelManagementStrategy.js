@@ -13,7 +13,7 @@ export default class ChannelManagementStrategy {
         return serviceClient.openChannel(serviceCallPrice, defaultExpiration);
       }
 
-      return serviceCallPrice.depositAndOpenChannel(serviceCallPrice, defaultExpiration);
+      return serviceClient.depositAndOpenChannel(serviceCallPrice, defaultExpiration);
     }
 
     const firstFundedValidChannel = find(paymentChannels, (paymentChanel) => paymentChanel.hasSufficientFunds(serviceCallPrice) && paymentChanel.isValid(defaultExpiration));

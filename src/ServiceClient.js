@@ -48,7 +48,7 @@ export default class ServiceClient {
   }
 
   async _getNewlyOpenedChannel(receipt) {
-    const openChannels = await this._mpeContract.getPastOpenChannels(this._account, this._paymentAddress, receipt.blockNumber);
+    const openChannels = await this._mpeContract.getPastOpenChannels(this._account, this._paymentAddress, this._groupIdInBytes, receipt.blockNumber);
     return openChannels[0];
   }
 
