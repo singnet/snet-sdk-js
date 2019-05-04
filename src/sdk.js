@@ -16,13 +16,13 @@ export default class SnetSDK {
       defaultGas: this._config.defaultGasLimit,
       defaultGasPrice: this._config.defaultGasPrice,
     };
-    this._networkId = config.networkId;
     const web3 = new Web3(config.web3Provider, null, options);
     const account = web3.eth.accounts.privateKeyToAccount(config.privateKey);
     web3.eth.accounts.wallet.add(account);
     web3.eth.defaultAccount = account.address;
 
     this._web3 = web3;
+    this._networkId = config.networkId;
     this._mpeContract = new MPEContract(this._web3, this._config);
     this._account = new Account(this._web3, this._config, this._mpeContract);
     const registryAddress = RegistryNetworks[this._networkId].address;
