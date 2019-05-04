@@ -9,8 +9,6 @@ import MPEContract from './MPEContract';
 import ServiceClient from './ServiceClient';
 import { find } from 'lodash';
 
-const { HttpProvider } = Web3.providers;
-
 export default class SnetSDK {
   constructor(config) {
     this._config = config;
@@ -19,8 +17,7 @@ export default class SnetSDK {
       defaultGasPrice: this._config.defaultGasPrice,
     };
     this._networkId = config.networkId;
-    const httpProvider = new HttpProvider(config.web3Provider);
-    const web3 = new Web3(httpProvider, null, options);
+    const web3 = new Web3(config.web3Provider, null, options);
     const account = web3.eth.accounts.privateKeyToAccount(config.privateKey);
     web3.eth.accounts.wallet.add(account);
     web3.eth.defaultAccount = account.address;
