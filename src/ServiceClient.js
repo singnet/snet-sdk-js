@@ -1,5 +1,6 @@
 import grpc, { InterceptingCall } from "grpc";
 import url from "url";
+import { BigNumber } from 'bignumber.js';
 import { find, map } from 'lodash';
 import paymentChannelStateServices from './payment_channel_state_service_grpc_pb';
 
@@ -71,7 +72,7 @@ export default class ServiceClient {
   }
 
   get _pricePerServiceCall() {
-    return this._metadata.pricing.price_in_cogs;
+    return new BigNumber(this._metadata.pricing.price_in_cogs);
   }
 
   get _expiryThreshold() {
@@ -85,7 +86,7 @@ export default class ServiceClient {
           const channel = await this._getFundedChannel(channelManagementStrategy);
 
           const { channelId, nonce, lastSignedAmount } = channel;
-          const signingAmount = lastSignedAmount + this._pricePerServiceCall;
+          const signingAmount = lastSignedAmount.plus(this._pricePerServiceCall);
           const sha3Message = this._web3.utils.soliditySha3(
             { t: 'address', v: this._mpeContract.address },
             { t: 'uint256', v: channelId },

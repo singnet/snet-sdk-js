@@ -1,3 +1,5 @@
+import BigNumber from 'bignumber.js';
+
 import paymentChannelStateMessages from './payment_channel_state_service_pb';
 
 export default class PaymentChannel {
@@ -82,10 +84,8 @@ export default class PaymentChannel {
         if(err) {
           reject(err);
         } else {
-          const nonceBuffer = Buffer.from(response.getCurrentNonce());
-          const nonce = nonceBuffer.readUInt32BE(28);
-          const currentSignedAmountBuffer = Buffer.from(response.getCurrentSignedAmount());
-          const currentSignedAmount = currentSignedAmountBuffer.length > 0 ? currentSignedAmountBuffer.readUInt32BE(28) : 0;
+          const nonce = this._uint8ArrayToBN(response.getCurrentNonce());
+          const currentSignedAmount = this._uint8ArrayToBN(response.getCurrentSignedAmount());
           const channelState = {
             lastSignedAmount: currentSignedAmount,
             nonce,
@@ -94,5 +94,11 @@ export default class PaymentChannel {
         }
       });
     });
+  }
+
+  _uint8ArrayToBN(uint8Array) {
+    const buffer = Buffer.from(uint8Array);
+    const hex = `0x${buffer.toString('hex')}`;
+    return new BigNumber(hex);
   }
 }

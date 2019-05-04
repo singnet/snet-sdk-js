@@ -31,7 +31,8 @@
     "lodash": "latest",
     "singularitynet-platform-contracts": "^0.3.0",
     "singularitynet-token-contracts": "^2.0.1",
-    "web3": "1.0.0-beta.52"
+    "web3": "1.0.0-beta.52",
+    "bignumber.js": "^8.1.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.2.3",
