@@ -25,6 +25,10 @@ export default class ServiceClient {
     return this._group;
   }
 
+  get groupIdInBytes() {
+    return Buffer.from(this.group.group_id, 'base64');
+  }
+
   get paymentChannels() {
     return this._paymentChannels;
   }
@@ -33,28 +37,28 @@ export default class ServiceClient {
     return this._metadata;
   }
 
+  get paymentAddress() {
+    return this.group.payment_address;
+  }
+
   async defaultChannelExpiration() {
     const currentBlockNumber = await this._web3.eth.getBlockNumber();
     return currentBlockNumber + this._expiryThreshold + this._sdk.blockOffset;
   }
 
   async openChannel(amount, expiration) {
-    const newChannelReceipt = await this._mpeContract.openChannel(this._account, this._paymentAddress, this._groupIdInBytes, amount, expiration);
+    const newChannelReceipt = await this._mpeContract.openChannel(this._account, this, amount, expiration);
     return this._getNewlyOpenedChannel(newChannelReceipt);
   }
 
   async depositAndOpenChannel(amount, expiration) {
-    const newFundedChannelReceipt = await this._mpeContract.depositAndOpenChannel(this._account, this._paymentAddress, this._groupIdInBytes, amount, expiration);
+    const newFundedChannelReceipt = await this._mpeContract.depositAndOpenChannel(this._account, this, amount, expiration);
     return this._getNewlyOpenedChannel(newFundedChannelReceipt);
   }
 
   async _getNewlyOpenedChannel(receipt) {
-    const openChannels = await this._mpeContract.getPastOpenChannels(this._account, this._paymentAddress, this._groupIdInBytes, receipt.blockNumber);
+    const openChannels = await this._mpeContract.getPastOpenChannels(this._account, this, receipt.blockNumber, this);
     return openChannels[0];
-  }
-
-  get _groupIdInBytes() {
-    return Buffer.from(this.group.group_id, 'base64');
   }
 
   _generateGrpcStub(ServiceStub, paymentChannelManagementStrategy) {
@@ -65,10 +69,6 @@ export default class ServiceClient {
     const serviceEndpoint = this._getServiceEndpoint();
     const grpcChannelCredentials = this._getGrpcChannelCredentials(serviceEndpoint);
     return new ServiceStub(serviceEndpoint.host, grpcChannelCredentials, grpcOptions);
-  }
-
-  get _paymentAddress() {
-    return this.group.payment_address;
   }
 
   get _pricePerServiceCall() {
@@ -112,7 +112,7 @@ export default class ServiceClient {
 
   async _getFundedChannel(paymentChannelManagementStrategy) {
     const currentBlockNumber = await this._web3.eth.getBlockNumber();
-    const newPaymentChannels = await this._mpeContract.getPastOpenChannels(this._account, this._paymentAddress, this._groupIdInBytes, this._lastReadBlock);
+    const newPaymentChannels = await this._mpeContract.getPastOpenChannels(this._account, this, this._lastReadBlock);
     this._paymentChannels = [...this._paymentChannels, ...newPaymentChannels];
     this._lastReadBlock = currentBlockNumber;
 

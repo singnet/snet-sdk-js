@@ -33,12 +33,21 @@ export default class MPEContract {
     return account.sendSignedTransaction(withdrawOperation, this.address);
   }
 
-  async openChannel(account, recipientAddress, groupId, amount, expiration) {
+  async openChannel(account, service, amount, expiration) {
+    const {
+      paymentAddress: recipientAddress,
+      groupIdInBytes: groupId
+    } = service;
+
     const openChannelOperation = this.contract.methods.openChannel(account.signerAddress, recipientAddress, groupId, amount, expiration);
     return account.sendSignedTransaction(openChannelOperation, this.address);
   }
 
-  async depositAndOpenChannel(account, recipientAddress, groupId, amount, expiration) {
+  async depositAndOpenChannel(account, service, amount, expiration) {
+    const {
+      paymentAddress: recipientAddress,
+      groupIdInBytes: groupId
+    } = service;
     const alreadyApprovedAmount = await account.allowance();
     if(amount > alreadyApprovedAmount) {
       await account.approveTransfer(amount);
@@ -77,13 +86,13 @@ export default class MPEContract {
     return this.contract.methods.channels(channelId).call();
   }
 
-  async getPastOpenChannels(account, recipient, groupId, startingBlockNumber) {
+  async getPastOpenChannels(account, service, startingBlockNumber) {
     const fromBlock = startingBlockNumber ? startingBlockNumber : await this._deploymentBlockNumber();
     const options = {
       filter: {
         sender: account.address,
-        recipient,
-        groupId,
+        recipient: service.paymentAddress,
+        groupId: service.groupIdInBytes,
       },
       fromBlock,
       toBlock: 'latest'
