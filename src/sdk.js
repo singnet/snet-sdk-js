@@ -51,7 +51,7 @@ export default class SnetSDK {
     this._serviceClient.metadata = serviceMetadata;
     const group = find(serviceMetadata.groups, ({ group_name }) => group_name === groupName);
     if(!group) {
-      throw new Error(`Group not found: ${groupName} for orgId: ${orgId} and serviceId: ${serviceId}`);
+      throw new Error(`Group[name: ${groupName}] not found for orgId: ${orgId} and serviceId: ${serviceId}`);
     }
     return new ServiceClient(this, serviceMetadata, group, ServiceStub, paymentChannelManagementStrategy);
   }
