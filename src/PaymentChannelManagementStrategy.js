@@ -1,6 +1,6 @@
 import { find } from 'lodash';
 
-export default class ChannelManagementStrategy {
+export default class PaymentChannelManagementStrategy {
   async selectChannel(serviceClient, sdk) {
     const account = sdk.account;
     const paymentChannels = serviceClient.paymentChannels;

@@ -5,14 +5,14 @@ import { find, map } from 'lodash';
 import paymentChannelStateServices from './payment_channel_state_service_grpc_pb';
 
 export default class ServiceClient {
-  constructor(sdk, metadata, group, ServiceStub, channelManagementStrategy) {
+  constructor(sdk, metadata, group, ServiceStub, paymentChannelManagementStrategy) {
     this._sdk = sdk;
     this._web3 = this._sdk.web3;
     this._account = this._sdk.account;
     this._mpeContract = this._sdk.mpeContract;
     this._metadata = metadata;
     this._group = group;
-    this._grpcStub = this._generateGrpcStub(ServiceStub, channelManagementStrategy);
+    this._grpcStub = this._generateGrpcStub(ServiceStub, paymentChannelManagementStrategy);
     this._paymentChannelStateServiceClient = this._generatePaymentChannelStateServiceClient();
     this._paymentChannels = [];
   }
@@ -57,9 +57,9 @@ export default class ServiceClient {
     return Buffer.from(this.group.group_id, 'base64');
   }
 
-  _generateGrpcStub(ServiceStub, channelManagementStrategy) {
+  _generateGrpcStub(ServiceStub, paymentChannelManagementStrategy) {
     const grpcOptions = {
-      interceptors: [this._generateInterceptor(channelManagementStrategy)],
+      interceptors: [this._generateInterceptor(paymentChannelManagementStrategy)],
     };
 
     const serviceEndpoint = this._getServiceEndpoint();
@@ -79,11 +79,11 @@ export default class ServiceClient {
     return this._metadata.payment_expiration_threshold;
   }
 
-  _generateInterceptor(channelManagementStrategy) {
+  _generateInterceptor(paymentChannelManagementStrategy) {
     return (options, nextCall) => {
       const requester = {
         start: async (metadata, listener, next) => {
-          const channel = await this._getFundedChannel(channelManagementStrategy);
+          const channel = await this._getFundedChannel(paymentChannelManagementStrategy);
 
           const { channelId, nonce, lastSignedAmount } = channel;
           const signingAmount = lastSignedAmount.plus(this._pricePerServiceCall);
@@ -110,14 +110,14 @@ export default class ServiceClient {
     };
   }
 
-  async _getFundedChannel(channelManagementStrategy) {
+  async _getFundedChannel(paymentChannelManagementStrategy) {
     const currentBlockNumber = await this._web3.eth.getBlockNumber();
     const newPaymentChannels = await this._mpeContract.getPastOpenChannels(this._account, this._paymentAddress, this._groupIdInBytes, this._lastReadBlock);
     this._paymentChannels = [...this._paymentChannels, ...newPaymentChannels];
     this._lastReadBlock = currentBlockNumber;
 
     await this._updateChannelStates();
-    return channelManagementStrategy.selectChannel(this, this._sdk);
+    return paymentChannelManagementStrategy.selectChannel(this, this._sdk);
   }
 
   async _updateChannelStates() {

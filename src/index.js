@@ -1,6 +1,6 @@
 import SnetSdk from './sdk';
-import DefaultChannelManagementStrategy from './ChannelManagementStrategy';
+import DefaultPaymentChannelManagementStrategy from './PaymentChannelManagementStrategy';
 
-export { DefaultChannelManagementStrategy };
+export { DefaultPaymentChannelManagementStrategy };
 
 export default SnetSdk;

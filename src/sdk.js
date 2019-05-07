@@ -46,14 +46,14 @@ export default class SnetSDK {
     return this._config.blockOffset;
   }
 
-  async createServiceClient(orgId, serviceId, groupName, channelManagementStrategy, ServiceStub) {
+  async createServiceClient(orgId, serviceId, groupName, paymentChannelManagementStrategy, ServiceStub) {
     const serviceMetadata = await this.serviceMetadata(orgId, serviceId);
     this._serviceClient.metadata = serviceMetadata;
     const group = find(serviceMetadata.groups, ({ group_name }) => group_name === groupName);
     if(!group) {
       throw new Error(`Group not found: ${groupName} for orgId: ${orgId} and serviceId: ${serviceId}`);
     }
-    return new ServiceClient(this, serviceMetadata, group, ServiceStub, channelManagementStrategy);
+    return new ServiceClient(this, serviceMetadata, group, ServiceStub, paymentChannelManagementStrategy);
   }
 
   async serviceMetadata(orgId, serviceId) {
