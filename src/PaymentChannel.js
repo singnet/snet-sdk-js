@@ -10,7 +10,10 @@ export default class PaymentChannel {
     this._mpeContract = mpeContract;
     this._paymentChannelStateServiceClient = paymentChannelStateServiceClient;
     this._channelId = this._channelOpenEvent.returnValues.channelId;
-    this._state = {};
+    this._state = {
+      nonce: new BigNumber(0),
+      lastSignedAmount: new BigNumber(0),
+    };
   }
 
   get channelId() {
@@ -46,7 +49,7 @@ export default class PaymentChannel {
   }
 
   async extendAndAddFunds(expiration, amount) {
-    await this._mpeContract.channelExtendAndAddFunds(this._account, this.channelId, expiration, amount);
+    return this._mpeContract.channelExtendAndAddFunds(this._account, this.channelId, expiration, amount);
   }
 
   async syncState() {

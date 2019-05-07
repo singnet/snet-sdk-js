@@ -15,7 +15,7 @@ export default class PaymentChannelManagementStrategy {
     const defaultExpiration = await serviceClient.defaultChannelExpiration();
 
     if(paymentChannels.length === 0) {
-      if(mpeBalance > serviceCallPrice) {
+      if(mpeBalance >= serviceCallPrice) {
         return serviceClient.openChannel(serviceCallPrice, defaultExpiration);
       }
 

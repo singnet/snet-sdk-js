@@ -1,0 +1,3 @@
+import DefaultPaymentChannelManagementStrategy from './PaymentChannelManagementStrategy';
+
+export default DefaultPaymentChannelManagementStrategy;
