@@ -98,7 +98,7 @@ export default class MPEContract {
       toBlock: 'latest'
     };
     const channelsOpened = await this.contract.getPastEvents('ChannelOpen', options);
-    return map(channelsOpened, channel => new PaymentChannel(channel, this._web3, account, this));
+    return map(channelsOpened, channel => new PaymentChannel(channel, this._web3, account, service.paymentChannelStateServiceClient, this));
   }
 
   async _deploymentBlockNumber() {

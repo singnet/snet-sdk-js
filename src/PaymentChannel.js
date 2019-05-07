@@ -3,11 +3,12 @@ import BigNumber from 'bignumber.js';
 import paymentChannelStateMessages from './payment_channel_state_service_pb';
 
 export default class PaymentChannel {
-  constructor(channelOpenEvent, web3, account, mpeContract) {
+  constructor(channelOpenEvent, web3, account, paymentChannelStateServiceClient, mpeContract) {
     this._channelOpenEvent = channelOpenEvent;
     this._web3 = web3;
     this._account = account;
     this._mpeContract = mpeContract;
+    this._paymentChannelStateServiceClient = paymentChannelStateServiceClient;
     this._channelId = this._channelOpenEvent.returnValues.channelId;
     this._state = {};
   }
@@ -48,9 +49,9 @@ export default class PaymentChannel {
     await this._mpeContract.channelExtendAndAddFunds(this._account, this.channelId, expiration, amount);
   }
 
-  async syncState(paymentChannelStateService) {
+  async syncState() {
     const latestChannelInfoOnBlockchain = await this._mpeContract.channels(this.channelId);
-    const currentState = await this._currentChannelState(paymentChannelStateService);
+    const currentState = await this._currentChannelState();
     const { lastSignedAmount, nonce: currentNonce } = currentState;
     const { nonce, expiration, value: totalAmount } = latestChannelInfoOnBlockchain;
     const availableAmount = totalAmount - lastSignedAmount;
@@ -65,7 +66,7 @@ export default class PaymentChannel {
     return this;
   }
 
-  async _currentChannelState(paymentChannelStateService) {
+  async _currentChannelState() {
     const sha3Message = this._web3.utils.soliditySha3({ t: 'uint256', v: this.channelId });
     const { signature } = this._account.sign(sha3Message);
     const stripped = signature.substring(2, signature.length);
@@ -80,7 +81,7 @@ export default class PaymentChannel {
     channelStateRequest.setSignature(signatureBytes);
 
     return new Promise((resolve, reject) => {
-      paymentChannelStateService.getChannelState(channelStateRequest, (err, response) => {
+      this._paymentChannelStateServiceClient.getChannelState(channelStateRequest, (err, response) => {
         if(err) {
           reject(err);
         } else {

@@ -41,6 +41,26 @@ export default class ServiceClient {
     return this.group.payment_address;
   }
 
+  get paymentChannelStateServiceClient() {
+    return this._paymentChannelStateServiceClient;
+  }
+
+  async loadOpenChannels() {
+    const currentBlockNumber = await this._web3.eth.getBlockNumber();
+    const newPaymentChannels = await this._mpeContract.getPastOpenChannels(this._account, this, this._lastReadBlock);
+    this._paymentChannels = [...this._paymentChannels, ...newPaymentChannels];
+    this._lastReadBlock = currentBlockNumber;
+    return this._paymentChannels;
+  }
+
+  async updateChannelStates() {
+    const currentChannelStatesPromise = map(this._paymentChannels, (paymentChannel) => {
+      return paymentChannel.syncState();
+    });
+    await Promise.all(currentChannelStatesPromise);
+    return this._paymentChannels;
+  }
+
   async defaultChannelExpiration() {
     const currentBlockNumber = await this._web3.eth.getBlockNumber();
     return currentBlockNumber + this._expiryThreshold + this._sdk.blockOffset;
@@ -111,20 +131,10 @@ export default class ServiceClient {
   }
 
   async _getFundedChannel(paymentChannelManagementStrategy) {
-    const currentBlockNumber = await this._web3.eth.getBlockNumber();
-    const newPaymentChannels = await this._mpeContract.getPastOpenChannels(this._account, this, this._lastReadBlock);
-    this._paymentChannels = [...this._paymentChannels, ...newPaymentChannels];
-    this._lastReadBlock = currentBlockNumber;
+    await this.loadOpenChannels();
+    await this.updateChannelStates();
 
-    await this._updateChannelStates();
     return paymentChannelManagementStrategy.selectChannel(this);
-  }
-
-  async _updateChannelStates() {
-    const currentChannelStatesPromise = map(this._paymentChannels, (paymentChannel) => {
-      return paymentChannel.syncState(this._paymentChannelStateServiceClient);
-    });
-    await Promise.all(currentChannelStatesPromise);
   }
 
   _generatePaymentChannelStateServiceClient() {
