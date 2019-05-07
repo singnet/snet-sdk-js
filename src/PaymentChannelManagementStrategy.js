@@ -7,6 +7,8 @@ export default class PaymentChannelManagementStrategy {
 
   async selectChannel(serviceClient) {
     const account = this._sdkContext.account;
+    await serviceClient.loadOpenChannels();
+    await serviceClient.updateChannelStates();
     const paymentChannels = serviceClient.paymentChannels;
     const serviceCallPrice = serviceClient.metadata.pricing.price_in_cogs;
     const mpeBalance = await account.escrowBalance();

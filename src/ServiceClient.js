@@ -103,7 +103,7 @@ export default class ServiceClient {
     return (options, nextCall) => {
       const requester = {
         start: async (metadata, listener, next) => {
-          const channel = await this._getFundedChannel(paymentChannelManagementStrategy);
+          const channel = await paymentChannelManagementStrategy.selectChannel(this);
 
           const { channelId, nonce, lastSignedAmount } = channel;
           const signingAmount = lastSignedAmount.plus(this._pricePerServiceCall);
@@ -128,13 +128,6 @@ export default class ServiceClient {
       };
       return new InterceptingCall(nextCall(options), requester);
     };
-  }
-
-  async _getFundedChannel(paymentChannelManagementStrategy) {
-    await this.loadOpenChannels();
-    await this.updateChannelStates();
-
-    return paymentChannelManagementStrategy.selectChannel(this);
   }
 
   _generatePaymentChannelStateServiceClient() {
