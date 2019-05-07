@@ -117,7 +117,7 @@ export default class ServiceClient {
     this._lastReadBlock = currentBlockNumber;
 
     await this._updateChannelStates();
-    return paymentChannelManagementStrategy.selectChannel(this, this._sdk);
+    return paymentChannelManagementStrategy.selectChannel(this);
   }
 
   async _updateChannelStates() {

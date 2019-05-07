@@ -1,8 +1,12 @@
 import { find } from 'lodash';
 
 export default class PaymentChannelManagementStrategy {
-  async selectChannel(serviceClient, sdk) {
-    const account = sdk.account;
+  constructor(sdkContext) {
+    this._sdkContext = sdkContext;
+  }
+
+  async selectChannel(serviceClient) {
+    const account = this._sdkContext.account;
     const paymentChannels = serviceClient.paymentChannels;
     const serviceCallPrice = serviceClient.metadata.pricing.price_in_cogs;
     const mpeBalance = await account.escrowBalance();
