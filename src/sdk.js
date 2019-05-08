@@ -27,7 +27,6 @@ export default class SnetSDK {
     this._account = new Account(this._web3, this._config, this._mpeContract);
     const registryAddress = RegistryNetworks[this._networkId].address;
     this._registryContract = new this._web3.eth.Contract(RegistryAbi, registryAddress, { from: this._account.address });
-    this._serviceClient = {};
   }
 
   get account() {
@@ -48,7 +47,6 @@ export default class SnetSDK {
 
   async createServiceClient(orgId, serviceId, groupName, paymentChannelManagementStrategy, ServiceStub) {
     const serviceMetadata = await this.serviceMetadata(orgId, serviceId);
-    this._serviceClient.metadata = serviceMetadata;
     const group = find(serviceMetadata.groups, ({ group_name }) => group_name === groupName);
     if(!group) {
       throw new Error(`Group[name: ${groupName}] not found for orgId: ${orgId} and serviceId: ${serviceId}`);
