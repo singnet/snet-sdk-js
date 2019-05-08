@@ -5,10 +5,10 @@ import { map } from 'lodash';
 import PaymentChannel from './PaymentChannel';
 
 export default class MPEContract {
-  constructor(web3, config) {
+  constructor(web3, networkId) {
     this._web3 = web3;
-    this._config = config;
-    this._contract = this._web3.eth.Contract(MPEAbi, MPENetworks[this._config.networkId].address);
+    this._networkId = networkId;
+    this._contract = this._web3.eth.Contract(MPEAbi, MPENetworks[networkId].address);
   }
 
   get contract() {
@@ -106,7 +106,7 @@ export default class MPEContract {
   }
 
   async _deploymentBlockNumber() {
-    const { transactionHash } = MPENetworks[this._config.networkId];
+    const { transactionHash } = MPENetworks[this._networkId];
     const { blockNumber } = await this._web3.eth.getTransactionReceipt(transactionHash);
     return blockNumber;
   }

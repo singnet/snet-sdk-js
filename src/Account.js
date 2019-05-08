@@ -3,10 +3,10 @@ import AGITokenNetworks from 'singularitynet-token-contracts/networks/Singularit
 import Tx from 'ethereumjs-tx';
 
 export default class Account {
-  constructor(web3, config, mpeContract) {
+  constructor(web3, networkId, config, mpeContract) {
     this._web3 = web3;
     this._config = config;
-    this._network = this._config.networkId;
+    this._networkId = networkId;
     this._tokenContract = this._generateTokenContract();
     this._mpeContract = mpeContract;
   }
@@ -80,7 +80,7 @@ export default class Account {
   }
 
   _generateTokenContract() {
-    return new this._web3.eth.Contract(AGITokenAbi, AGITokenNetworks[this._network].address);
+    return new this._web3.eth.Contract(AGITokenAbi, AGITokenNetworks[this._networkId].address);
   }
 
   async _baseTransactionObject(operation, to) {
