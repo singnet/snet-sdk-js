@@ -4,6 +4,9 @@ import Tx from 'ethereumjs-tx';
 
 export default class Account {
   constructor(web3, networkId, config, mpeContract) {
+    const account = web3.eth.accounts.privateKeyToAccount(config.privateKey);
+    web3.eth.accounts.wallet.add(account);
+    this._web3Account = account;
     this._web3 = web3;
     this._config = config;
     this._networkId = networkId;
@@ -38,7 +41,7 @@ export default class Account {
   }
 
   get address() {
-    return this._web3.eth.defaultAccount;
+    return this._web3Account.address;
   }
 
   get signerAddress() {

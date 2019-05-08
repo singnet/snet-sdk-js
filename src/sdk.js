@@ -19,15 +19,11 @@ export default class SnetSDK {
       defaultGas: this._config.defaultGasLimit || DEFAULT_GAS_LIMIT,
       defaultGasPrice: this._config.defaultGasPrice || DEFAULT_GAS_PRICE,
     };
-    const web3 = new Web3(config.web3Provider, null, options);
-    const account = web3.eth.accounts.privateKeyToAccount(config.privateKey);
-    web3.eth.accounts.wallet.add(account);
-    web3.eth.defaultAccount = account.address;
-
-    this._web3 = web3;
     this._networkId = config.networkId;
+    this._web3 = new Web3(config.web3Provider, null, options);
     this._mpeContract = new MPEContract(this._web3, this._networkId);
     this._account = new Account(this._web3, this._networkId, this._config, this._mpeContract);
+    this._web3.eth.defaultAccount = this._account.address;
     const registryAddress = RegistryNetworks[this._networkId].address;
     this._registryContract = new this._web3.eth.Contract(RegistryAbi, registryAddress, { from: this._account.address });
   }
