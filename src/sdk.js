@@ -9,12 +9,15 @@ import MPEContract from './MPEContract';
 import ServiceClient from './ServiceClient';
 import { find } from 'lodash';
 
+const DEFAULT_GAS_LIMIT = 210000;
+const DEFAULT_GAS_PRICE = 4700000;
+
 export default class SnetSDK {
   constructor(config) {
     this._config = config;
     const options = {
-      defaultGas: this._config.defaultGasLimit,
-      defaultGasPrice: this._config.defaultGasPrice,
+      defaultGas: this._config.defaultGasLimit || DEFAULT_GAS_LIMIT,
+      defaultGasPrice: this._config.defaultGasPrice || DEFAULT_GAS_PRICE,
     };
     const web3 = new Web3(config.web3Provider, null, options);
     const account = web3.eth.accounts.privateKeyToAccount(config.privateKey);
