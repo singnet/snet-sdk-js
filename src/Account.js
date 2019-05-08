@@ -104,14 +104,14 @@ export default class Account {
   async _getGasPrice() {
     return this._web3.eth.getGasPrice()
       .then(gasPrice => gasPrice)
-      .catch(() => this._web3.eth.defaultGasPrice);
+      .catch((error) => this._web3.eth.defaultGasPrice);
   }
 
   async _estimateGas(operation) {
     return operation
       .estimateGas()
       .then(estimatedGas => estimatedGas)
-      .catch(() => this._web3.eth.defaultGas);
+      .catch((error) => this._web3.eth.defaultGas);
   }
 
   async _transactionCount() {

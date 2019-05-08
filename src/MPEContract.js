@@ -58,10 +58,7 @@ export default class MPEContract {
   }
 
   async channelAddFunds(account, channelId, amount) {
-    const currentEscrowBalance = await this.balance(account.address);
-    if(amount > currentEscrowBalance) {
-      await account.depositToEscrowAccount(amount - currentEscrowBalance);
-    }
+    await this._fundEscrowAccount(account, amount);
 
     const channelAddFundsOperation = this.contract.methods.channelAddFunds(channelId, amount);
     return account.sendSignedTransaction(channelAddFundsOperation, this.address);
@@ -73,10 +70,7 @@ export default class MPEContract {
   }
 
   async channelExtendAndAddFunds(account, channelId, expiration, amount) {
-    const currentEscrowBalance = await this.balance(account.address);
-    if(amount > currentEscrowBalance) {
-      await account.depositToEscrowAccount(amount - currentEscrowBalance);
-    }
+    await this._fundEscrowAccount(account, amount);
 
     const channelExtendAndAddFundsOperation = this.contract.methods.channelExtendAndAddFunds(channelId, expiration, amount);
     return account.sendSignedTransaction(channelExtendAndAddFundsOperation, this.address);
@@ -99,6 +93,13 @@ export default class MPEContract {
     };
     const channelsOpened = await this.contract.getPastEvents('ChannelOpen', options);
     return map(channelsOpened, channel => new PaymentChannel(channel, this._web3, account, service.paymentChannelStateServiceClient, this));
+  }
+
+  async _fundEscrowAccount(account, amount) {
+    const currentEscrowBalance = await this.balance(account.address);
+    if(amount > currentEscrowBalance) {
+      await account.depositToEscrowAccount(amount - currentEscrowBalance);
+    }
   }
 
   async _deploymentBlockNumber() {
