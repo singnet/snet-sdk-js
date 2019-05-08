@@ -92,7 +92,10 @@ export default class MPEContract {
       toBlock: 'latest'
     };
     const channelsOpened = await this.contract.getPastEvents('ChannelOpen', options);
-    return map(channelsOpened, channel => new PaymentChannel(channel, this._web3, account, service.paymentChannelStateServiceClient, this));
+    return map(channelsOpened, channelOpenEvent => {
+      const channelId = channelOpenEvent.returnValues.channelId;
+      return new PaymentChannel(channelId, this._web3, account, service.paymentChannelStateServiceClient, this);
+    });
   }
 
   async _fundEscrowAccount(account, amount) {

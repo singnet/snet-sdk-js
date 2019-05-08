@@ -3,13 +3,12 @@ import BigNumber from 'bignumber.js';
 import paymentChannelStateMessages from './payment_channel_state_service_pb';
 
 export default class PaymentChannel {
-  constructor(channelOpenEvent, web3, account, paymentChannelStateServiceClient, mpeContract) {
-    this._channelOpenEvent = channelOpenEvent;
+  constructor(channelId, web3, account, paymentChannelStateServiceClient, mpeContract) {
+    this._channelId = channelId;
     this._web3 = web3;
     this._account = account;
     this._mpeContract = mpeContract;
     this._paymentChannelStateServiceClient = paymentChannelStateServiceClient;
-    this._channelId = this._channelOpenEvent.returnValues.channelId;
     this._state = {
       nonce: new BigNumber(0),
       lastSignedAmount: new BigNumber(0),
