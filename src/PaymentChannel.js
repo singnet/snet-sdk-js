@@ -31,6 +31,13 @@ export default class PaymentChannel {
     return this._state;
   }
 
+  updateState(gstate) {
+    this._state = {
+      ...this._state,
+      ...state,
+    }
+  }
+
   hasSufficientFunds(amount) {
     return this.state.availableAmount >= amount;
   }
