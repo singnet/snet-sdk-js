@@ -105,7 +105,7 @@ export default class ServiceClient {
     }
 
     return {
-      interceptors: [this._generateInterceptor(this._paymentChannelManagementStrategy)],
+      interceptors: [this._generateInterceptor()],
     };
   }
 
@@ -117,11 +117,11 @@ export default class ServiceClient {
     return this._metadata.payment_expiration_threshold;
   }
 
-  _generateInterceptor(paymentChannelManagementStrategy) {
+  _generateInterceptor() {
     return (options, nextCall) => {
       const requester = {
         start: async (metadata, listener, next) => {
-          const channel = await paymentChannelManagementStrategy.selectChannel(this);
+          const channel = await this._paymentChannelManagementStrategy.selectChannel(this);
 
           const { channelId, nonce, lastSignedAmount } = channel;
           const signingAmount = lastSignedAmount.plus(this._pricePerServiceCall);
