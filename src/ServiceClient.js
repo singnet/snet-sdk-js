@@ -121,6 +121,11 @@ export default class ServiceClient {
     return (options, nextCall) => {
       const requester = {
         start: async (metadata, listener, next) => {
+          if (!this._paymentChannelManagementStrategy) {
+            next(metadata, listener);
+            return;
+          }
+
           const channel = await this._paymentChannelManagementStrategy.selectChannel(this);
 
           const { channelId, nonce, lastSignedAmount } = channel;
