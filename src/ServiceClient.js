@@ -5,14 +5,13 @@ import { find, map } from 'lodash';
 import paymentChannelStateServices from './payment_channel_state_service_grpc_pb';
 
 export default class ServiceClient {
-  constructor(sdk, metadata, group, ServiceStub, paymentChannelManagementStrategy) {
+  constructor(sdk, metadata, group, ServiceStub, paymentChannelManagementStrategy, options = {}) {
     this._sdk = sdk;
-    this._web3 = this._sdk.web3;
-    this._account = this._sdk.account;
-    this._mpeContract = this._sdk.mpeContract;
+    this._options = options;
     this._metadata = metadata;
     this._group = group;
-    this._grpcStub = this._generateGrpcStub(ServiceStub, paymentChannelManagementStrategy);
+    this._paymentChannelManagementStrategy = paymentChannelManagementStrategy;
+    this._grpcStub = this._generateGrpcStub(ServiceStub);
     this._paymentChannelStateServiceClient = this._generatePaymentChannelStateServiceClient();
     this._paymentChannels = [];
   }
@@ -81,14 +80,33 @@ export default class ServiceClient {
     return openChannels[0];
   }
 
-  _generateGrpcStub(ServiceStub, paymentChannelManagementStrategy) {
-    const grpcOptions = {
-      interceptors: [this._generateInterceptor(paymentChannelManagementStrategy)],
-    };
+  get _web3() {
+    return this._sdk.web3;
+  }
 
+  get _account() {
+    return this._sdk.account;
+  }
+
+  get _mpeContract() {
+    return this._sdk.mpeContract;
+  }
+
+  _generateGrpcStub(ServiceStub) {
     const serviceEndpoint = this._getServiceEndpoint();
     const grpcChannelCredentials = this._getGrpcChannelCredentials(serviceEndpoint);
+    const grpcOptions = this._generateGrpcOptions();
     return new ServiceStub(serviceEndpoint.host, grpcChannelCredentials, grpcOptions);
+  }
+
+  _generateGrpcOptions() {
+    if (this._options.disableBlockchainOperations) {
+      return {};
+    }
+
+    return {
+      interceptors: [this._generateInterceptor(this._paymentChannelManagementStrategy)],
+    };
   }
 
   get _pricePerServiceCall() {
@@ -137,6 +155,10 @@ export default class ServiceClient {
   }
 
   _getServiceEndpoint() {
+    if (this._options.endpoint) {
+      return (url.parse(this._options.endpoint));
+    }
+
     const { group_name: defaultGroupName } = this.group;
     const { endpoints } = this._metadata;
     const { endpoint } = find(endpoints, ({ group_name: groupName }) => groupName === defaultGroupName);
