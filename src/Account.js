@@ -23,7 +23,11 @@ export default class Account {
   }
 
   async depositToEscrowAccount(amountInCogs) {
-    await this.approveTransfer(amountInCogs);
+    const alreadyApprovedAmount = await this.allowance();
+    if(amountInCogs > alreadyApprovedAmount) {
+      await this.approveTransfer(amountInCogs);
+    }
+
     return this._mpeContract.deposit(this, amountInCogs);
   }
 
