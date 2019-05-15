@@ -31,7 +31,7 @@ export default class PaymentChannel {
     return this._state;
   }
 
-  updateState(gstate) {
+  updateState(state) {
     this._state = {
       ...this._state,
       ...state,
