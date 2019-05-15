@@ -22,18 +22,18 @@ export default class PaymentChannelManagementStrategy {
       return serviceClient.depositAndOpenChannel(serviceCallPrice, defaultExpiration);
     }
 
-    const firstFundedValidChannel = find(paymentChannels, (paymentChanel) => paymentChanel.hasSufficientFunds(serviceCallPrice) && paymentChanel.isValid(defaultExpiration));
+    const firstFundedValidChannel = find(paymentChannels, (paymentChanel) => this._hasSufficientFunds(paymentChanel, serviceCallPrice) && this._isValid(paymentChanel, defaultExpiration));
     if(firstFundedValidChannel) {
       return firstFundedValidChannel;
     }
 
-    const firstFundedChannel = find(paymentChannels, (paymentChanel) => paymentChanel.hasSufficientFunds(serviceCallPrice));
+    const firstFundedChannel = find(paymentChannels, (paymentChanel) => this._hasSufficientFunds(paymentChanel, serviceCallPrice));
     if(firstFundedChannel) {
       await firstFundedChannel.extendExpiration(defaultExpiration);
       return firstFundedChannel;
     }
 
-    const firstValidChannel = find(paymentChannels, (paymentChanel) => paymentChanel.isValid(defaultExpiration));
+    const firstValidChannel = find(paymentChannels, (paymentChanel) => this._isValid(paymentChanel, defaultExpiration));
     if(firstValidChannel) {
       await firstValidChannel.addFunds(serviceCallPrice);
       return firstValidChannel;
@@ -42,5 +42,13 @@ export default class PaymentChannelManagementStrategy {
     const firstExpiredAndUnfundedChannel = paymentChannels[0];
     await firstExpiredAndUnfundedChannel.extendAndAddFunds(defaultExpiration, serviceCallPrice);
     return firstExpiredAndUnfundedChannel;
+  }
+
+  _hasSufficientFunds(paymentChannel, amount) {
+    return paymentChannel.state.availableAmount >= amount;
+  }
+
+  _isValid(paymentChannel, expiry) {
+    return paymentChannel.state.expiration > expiry
   }
 }

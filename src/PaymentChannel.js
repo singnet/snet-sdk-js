@@ -31,21 +31,6 @@ export default class PaymentChannel {
     return this._state;
   }
 
-  updateState(state) {
-    this._state = {
-      ...this._state,
-      ...state,
-    }
-  }
-
-  hasSufficientFunds(amount) {
-    return this.state.availableAmount >= amount;
-  }
-
-  isValid(expiry) {
-    return this.state.expiration > expiry;
-  }
-
   async addFunds(amount) {
     return this._mpeContract.channelAddFunds(this._account, this.channelId, amount);
   }
