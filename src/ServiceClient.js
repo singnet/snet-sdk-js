@@ -130,17 +130,13 @@ export default class ServiceClient {
 
           const { channelId, nonce, lastSignedAmount } = channel;
           const signingAmount = lastSignedAmount.plus(this._pricePerServiceCall);
-          const sha3Message = this._web3.utils.soliditySha3(
+
+          const signatureBytes = this._account.signedData(
             { t: 'address', v: this._mpeContract.address },
             { t: 'uint256', v: channelId },
             { t: 'uint256', v: nonce },
             { t: 'uint256', v: signingAmount },
           );
-          const { signature } = this._account.sign(sha3Message);
-          const stripped = signature.substring(2, signature.length);
-          const byteSig = Buffer.from(stripped, 'hex');
-          const signatureBytes = Buffer.from(byteSig);
-
           metadata.add('snet-payment-type', 'escrow');
           metadata.add('snet-payment-channel-id', `${channelId}`);
           metadata.add('snet-payment-channel-nonce', `${nonce}`);

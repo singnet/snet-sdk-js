@@ -61,11 +61,7 @@ export default class PaymentChannel {
   }
 
   async _currentChannelState() {
-    const sha3Message = this._web3.utils.soliditySha3({ t: 'uint256', v: this.channelId });
-    const { signature } = this._account.sign(sha3Message);
-    const stripped = signature.substring(2, signature.length);
-    const byteSig = Buffer.from(stripped, 'hex');
-    const signatureBytes = Buffer.from(byteSig);
+    const signatureBytes = this._account.signedData({ t: 'uint256', v: this.channelId });
 
     const channelIdBytes = Buffer.alloc(4);
     channelIdBytes.writeUInt32BE(this.channelId, 0);

@@ -52,8 +52,12 @@ export default class Account {
     return this.address;
   }
 
-  sign(message) {
-    return this._web3.eth.accounts.sign(message, this._config.privateKey);
+  signedData(...data) {
+    const sha3Message = this._web3.utils.soliditySha3(...data);
+    const { signature } = this._web3.eth.accounts.sign(sha3Message, this._config.privateKey);
+    const stripped = signature.substring(2, signature.length);
+    const byteSig = Buffer.from(stripped, 'hex');
+    return Buffer.from(byteSig);
   }
 
   async sendSignedTransaction(operation, to) {
