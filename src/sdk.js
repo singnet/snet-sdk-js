@@ -9,15 +9,21 @@ import MPEContract from './MPEContract';
 import ServiceClient from './ServiceClient';
 import { find } from 'lodash';
 
-const DEFAULT_GAS_LIMIT = 210000;
-const DEFAULT_GAS_PRICE = 4700000;
+const DEFAULT_CONFIG = {
+  defaultGasLimit: 210000,
+  defaultGasPrice: 4700000,
+  ipfsEndpoint: 'http://ipfs.singularitynet.io:80',
+};
 
 export default class SnetSDK {
   constructor(config) {
-    this._config = config;
+    this._config = {
+      ...DEFAULT_CONFIG,
+      ...config,
+    };
     const options = {
-      defaultGas: this._config.defaultGasLimit || DEFAULT_GAS_LIMIT,
-      defaultGasPrice: this._config.defaultGasPrice || DEFAULT_GAS_PRICE,
+      defaultGas: this._config.defaultGasLimit,
+      defaultGasPrice: this._config.defaultGasPrice,
     };
     this._networkId = config.networkId;
     this._web3 = new Web3(config.web3Provider, null, options);
