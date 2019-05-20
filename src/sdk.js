@@ -40,10 +40,6 @@ export default class SnetSDK {
     return this._web3;
   }
 
-  get blockOffset() {
-    return this._config.blockOffset;
-  }
-
   async createServiceClient(orgId, serviceId, groupName, paymentChannelManagementStrategy, ServiceStub, options = {}) {
     const serviceMetadata = await this.serviceMetadata(orgId, serviceId);
     const group = find(serviceMetadata.groups, ({ group_name }) => group_name === groupName);

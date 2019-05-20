@@ -62,7 +62,7 @@ export default class ServiceClient {
 
   async defaultChannelExpiration() {
     const currentBlockNumber = await this._web3.eth.getBlockNumber();
-    return currentBlockNumber + this._expiryThreshold + this._sdk.blockOffset;
+    return currentBlockNumber + this._expiryThreshold;
   }
 
   async openChannel(amount, expiration) {
