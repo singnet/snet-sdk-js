@@ -12,7 +12,7 @@ export default class PaymentChannelManagementStrategy {
     const paymentChannels = serviceClient.paymentChannels;
     const serviceCallPrice = serviceClient.metadata.pricing.price_in_cogs;
     const mpeBalance = await account.escrowBalance();
-    const defaultExpiration = await serviceClient.defaultChannelExpiration();
+    const defaultExpiration = await this._defaultChannelExpiration(serviceClient);
 
     if(paymentChannels.length === 0) {
       if(mpeBalance >= serviceCallPrice) {
@@ -50,5 +50,10 @@ export default class PaymentChannelManagementStrategy {
 
   _isValid(paymentChannel, expiry) {
     return paymentChannel.state.expiration > expiry
+  }
+
+  async _defaultChannelExpiration(serviceClient) {
+    const currentBlockNumber = await this._sdkContext.web3.eth.getBlockNumber();
+    return currentBlockNumber + serviceClient.metadata.payment_expiration_threshold;
   }
 }

@@ -56,11 +56,6 @@ export default class ServiceClient {
     return this._paymentChannels;
   }
 
-  async defaultChannelExpiration() {
-    const currentBlockNumber = await this._web3.eth.getBlockNumber();
-    return currentBlockNumber + this._expiryThreshold;
-  }
-
   async openChannel(amount, expiration) {
     const newChannelReceipt = await this._mpeContract.openChannel(this._account, this, amount, expiration);
     return this._getNewlyOpenedChannel(newChannelReceipt);
@@ -103,10 +98,6 @@ export default class ServiceClient {
 
   get _pricePerServiceCall() {
     return new BigNumber(this._metadata.pricing.price_in_cogs);
-  }
-
-  get _expiryThreshold() {
-    return this._metadata.payment_expiration_threshold;
   }
 
   _generateInterceptor() {
