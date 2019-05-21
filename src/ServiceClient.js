@@ -5,11 +5,15 @@ import { find, map } from 'lodash';
 import paymentChannelStateServices from './payment_channel_state_service_grpc_pb';
 
 export default class ServiceClient {
-  constructor(sdk, metadata, group, ServiceStub, paymentChannelManagementStrategy, options = {}) {
+  constructor(sdk, mpeContract, metadata, group, ServiceStub, paymentChannelManagementStrategy, options = {}) {
     this._sdk = sdk;
+    this._mpeContract = mpeContract;
     this._options = options;
     this._metadata = metadata;
-    this._group = group;
+    this._group = {
+      group_id_in_bytes: Buffer.from(group.group_id, 'base64'),
+      ...group
+    };
     this._paymentChannelManagementStrategy = paymentChannelManagementStrategy;
     this._grpcStub = this._generateGrpcStub(ServiceStub);
     this._paymentChannelStateServiceClient = this._generatePaymentChannelStateServiceClient();
@@ -24,20 +28,12 @@ export default class ServiceClient {
     return this._group;
   }
 
-  get groupIdInBytes() {
-    return Buffer.from(this.group.group_id, 'base64');
-  }
-
   get paymentChannels() {
     return this._paymentChannels;
   }
 
   get metadata() {
     return this._metadata;
-  }
-
-  get paymentAddress() {
-    return this.group.payment_address;
   }
 
   get paymentChannelStateServiceClient() {
@@ -88,10 +84,6 @@ export default class ServiceClient {
     return this._sdk.account;
   }
 
-  get _mpeContract() {
-    return this._sdk.mpeContract;
-  }
-
   _generateGrpcStub(ServiceStub) {
     const serviceEndpoint = this._getServiceEndpoint();
     const grpcChannelCredentials = this._getGrpcChannelCredentials(serviceEndpoint);
@@ -128,7 +120,7 @@ export default class ServiceClient {
 
           const channel = await this._paymentChannelManagementStrategy.selectChannel(this);
 
-          const { channelId, nonce, lastSignedAmount } = channel;
+          const { channelId, state: { nonce, lastSignedAmount }} = channel;
           const signingAmount = lastSignedAmount.plus(this._pricePerServiceCall);
 
           const signatureBytes = this._account.signedData(

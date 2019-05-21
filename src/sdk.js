@@ -38,10 +38,6 @@ export default class SnetSDK {
     return this._account;
   }
 
-  get mpeContract() {
-    return this._mpeContract;
-  }
-
   get web3() {
     return this._web3;
   }
@@ -52,7 +48,7 @@ export default class SnetSDK {
     if(!group) {
       throw new Error(`Group[name: ${groupName}] not found for orgId: ${orgId} and serviceId: ${serviceId}`);
     }
-    return new ServiceClient(this, serviceMetadata, group, ServiceStub, paymentChannelManagementStrategy, options);
+    return new ServiceClient(this, this._mpeContract, serviceMetadata, group, ServiceStub, paymentChannelManagementStrategy, options);
   }
 
   async serviceMetadata(orgId, serviceId) {

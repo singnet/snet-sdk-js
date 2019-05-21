@@ -19,14 +19,6 @@ export default class PaymentChannel {
     return this._channelId;
   }
 
-  get nonce() {
-    return this.state.nonce;
-  }
-
-  get lastSignedAmount() {
-    return this.state.lastSignedAmount;
-  }
-
   get state() {
     return this._state;
   }
