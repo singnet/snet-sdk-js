@@ -82,6 +82,7 @@ typings/
 
 ### build
 dist
+out
 docs
 
 tmp

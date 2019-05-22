@@ -1,6 +1,14 @@
 import { find } from 'lodash';
 
-export default class DefaultPaymentChannelManagementStrategy {
+/**
+ * @implements PaymentChannelManagementStrategy
+ */
+class DefaultPaymentChannelManagementStrategy {
+  /**
+   * @param {SnetSDK} sdkContext
+   * @param {number} blockOffset
+   * @param {number} callAllowance
+   */
   constructor(sdkContext, blockOffset = 0, callAllowance = 1) {
     this._sdkContext = sdkContext;
     this._blockOffset = blockOffset;
@@ -59,3 +67,5 @@ export default class DefaultPaymentChannelManagementStrategy {
     return currentBlockNumber + serviceClient.metadata.payment_expiration_threshold + this._blockOffset;
   }
 }
+
+export default DefaultPaymentChannelManagementStrategy;

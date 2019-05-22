@@ -4,7 +4,17 @@ import { BigNumber } from 'bignumber.js';
 import { find, map } from 'lodash';
 import paymentChannelStateServices from './payment_channel_state_service_grpc_pb';
 
-export default class ServiceClient {
+class ServiceClient {
+  /**
+   *
+   * @param {SnetSDK} sdk
+   * @param {MPEContract} mpeContract
+   * @param {ServiceMetadata} metadata
+   * @param {Group} group
+   * @param {GRPCClient} ServiceStub - GRPC service client constructor
+   * @param {DefaultPaymentChannelManagementStrategy} paymentChannelManagementStrategy
+   * @param {ServiceClientOptions} [options={}]
+   */
   constructor(sdk, mpeContract, metadata, group, ServiceStub, paymentChannelManagementStrategy, options = {}) {
     this._sdk = sdk;
     this._mpeContract = mpeContract;
@@ -20,26 +30,44 @@ export default class ServiceClient {
     this._paymentChannels = [];
   }
 
+  /**
+   * @type {GRPCClient}
+   */
   get service() {
     return this._grpcService;
   }
 
+  /**
+   * @type {Group}
+   */
   get group() {
     return this._group;
   }
 
+  /**
+   * @type {Array.<PaymentChannel>}
+   */
   get paymentChannels() {
     return this._paymentChannels;
   }
 
+  /**
+   * @type {ServiceMetadata}
+   */
   get metadata() {
     return this._metadata;
   }
 
+  /**
+   * @type {GRPCClient}
+   */
   get paymentChannelStateServiceClient() {
     return this._paymentChannelStateServiceClient;
   }
 
+  /**
+   * @returns {Promise.<PaymentChannel[]>}
+   */
   async loadOpenChannels() {
     const currentBlockNumber = await this._web3.eth.getBlockNumber();
     const newPaymentChannels = await this._mpeContract.getPastOpenChannels(this._account, this, this._lastReadBlock);
@@ -48,6 +76,9 @@ export default class ServiceClient {
     return this._paymentChannels;
   }
 
+  /**
+   * @returns {Promise.<PaymentChannel[]>}
+   */
   async updateChannelStates() {
     const currentChannelStatesPromise = map(this._paymentChannels, (paymentChannel) => {
       return paymentChannel.syncState();
@@ -56,11 +87,22 @@ export default class ServiceClient {
     return this._paymentChannels;
   }
 
+  /**
+   *
+   * @param {BigNumber} amount
+   * @param {BigNumber} expiration
+   * @returns {Promise.<PaymentChannel>}
+   */
   async openChannel(amount, expiration) {
     const newChannelReceipt = await this._mpeContract.openChannel(this._account, this, amount, expiration);
     return this._getNewlyOpenedChannel(newChannelReceipt);
   }
 
+  /**
+   * @param {BigNumber} amount
+   * @param {BigNumber} expiration
+   * @returns {Promise.<PaymentChannel>}
+   */
   async depositAndOpenChannel(amount, expiration) {
     const newFundedChannelReceipt = await this._mpeContract.depositAndOpenChannel(this._account, this, amount, expiration);
     return this._getNewlyOpenedChannel(newFundedChannelReceipt);
@@ -161,3 +203,5 @@ export default class ServiceClient {
     throw new Error(`Protocol: ${serviceEndpoint.protocol} not supported`);
   }
 }
+
+export default ServiceClient;
