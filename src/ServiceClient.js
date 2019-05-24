@@ -15,13 +15,13 @@ export default class ServiceClient {
       ...group
     };
     this._paymentChannelManagementStrategy = paymentChannelManagementStrategy;
-    this._grpcStub = this._generateGrpcStub(ServiceStub);
+    this._grpcService = this._constructGrpcService(ServiceStub);
     this._paymentChannelStateServiceClient = this._generatePaymentChannelStateServiceClient();
     this._paymentChannels = [];
   }
 
-  get stub() {
-    return this._grpcStub;
+  get service() {
+    return this._grpcService;
   }
 
   get group() {
@@ -79,7 +79,7 @@ export default class ServiceClient {
     return this._sdk.account;
   }
 
-  _generateGrpcStub(ServiceStub) {
+  _constructGrpcService(ServiceStub) {
     const serviceEndpoint = this._getServiceEndpoint();
     const grpcChannelCredentials = this._getGrpcChannelCredentials(serviceEndpoint);
     const grpcOptions = this._generateGrpcOptions();
