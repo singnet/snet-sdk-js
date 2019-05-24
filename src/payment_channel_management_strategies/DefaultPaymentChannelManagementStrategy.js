@@ -1,8 +1,10 @@
 import { find } from 'lodash';
 
 export default class DefaultPaymentChannelManagementStrategy {
-  constructor(sdkContext) {
+  constructor(sdkContext, blockOffset = 0, callAllowance = 1) {
     this._sdkContext = sdkContext;
+    this._blockOffset = blockOffset;
+    this._callAllowance = callAllowance;
   }
 
   async selectChannel(serviceClient) {
@@ -10,7 +12,7 @@ export default class DefaultPaymentChannelManagementStrategy {
     await serviceClient.loadOpenChannels();
     await serviceClient.updateChannelStates();
     const paymentChannels = serviceClient.paymentChannels;
-    const serviceCallPrice = serviceClient.metadata.pricing.price_in_cogs;
+    const serviceCallPrice = serviceClient.metadata.pricing.price_in_cogs * this._callAllowance;
     const mpeBalance = await account.escrowBalance();
     const defaultExpiration = await this._defaultChannelExpiration(serviceClient);
 
@@ -54,6 +56,6 @@ export default class DefaultPaymentChannelManagementStrategy {
 
   async _defaultChannelExpiration(serviceClient) {
     const currentBlockNumber = await this._sdkContext.web3.eth.getBlockNumber();
-    return currentBlockNumber + serviceClient.metadata.payment_expiration_threshold;
+    return currentBlockNumber + serviceClient.metadata.payment_expiration_threshold + this._blockOffset;
   }
 }
