@@ -1,6 +1,6 @@
 import { find } from 'lodash';
 
-export default class PaymentChannelManagementStrategy {
+export default class DefaultPaymentChannelManagementStrategy {
   constructor(sdkContext) {
     this._sdkContext = sdkContext;
   }
