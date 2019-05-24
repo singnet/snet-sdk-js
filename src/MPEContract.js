@@ -24,13 +24,13 @@ export default class MPEContract {
   }
 
   async deposit(account, amountInCogs) {
-    const depositOperation = this.contract.methods.deposit(amountInCogs);
-    return account.sendSignedTransaction(depositOperation, this.address);
+    const depositOperation = this.contract.methods.deposit;
+    return account.sendTransaction(this.address, depositOperation, amountInCogs);
   }
 
   async withdraw(account, amountInCogs) {
-    const withdrawOperation = this.contract.methods.withdraw(amountInCogs);
-    return account.sendSignedTransaction(withdrawOperation, this.address);
+    const withdrawOperation = this.contract.methods.withdraw;
+    return account.sendTransaction(this.address, withdrawOperation, amountInCogs);
   }
 
   async openChannel(account, service, amount, expiration) {
@@ -39,8 +39,9 @@ export default class MPEContract {
       group_id_in_bytes: groupId
     } = service.group;
 
-    const openChannelOperation = this.contract.methods.openChannel(account.signerAddress, recipientAddress, groupId, amount, expiration);
-    return account.sendSignedTransaction(openChannelOperation, this.address);
+    const openChannelOperation = this.contract.methods.openChannel;
+    const openChannelFnArgs = [account.signerAddress, recipientAddress, groupId, amount, expiration];
+    return account.sendTransaction(this.address, openChannelOperation, ...openChannelFnArgs);
   }
 
   async depositAndOpenChannel(account, service, amount, expiration) {
@@ -53,27 +54,28 @@ export default class MPEContract {
       await account.approveTransfer(amount);
     }
 
-    const depositAndOpenChannelOperation = this.contract.methods.depositAndOpenChannel(account.signerAddress, recipientAddress, groupId, amount, expiration);
-    return account.sendSignedTransaction(depositAndOpenChannelOperation, this.address);
+    const depositAndOpenChannelOperation = this.contract.methods.depositAndOpenChannel;
+    const operationArgs = [account.signerAddress, recipientAddress, groupId, amount, expiration];
+    return account.sendTransaction(this.address, depositAndOpenChannelOperation, ...operationArgs);
   }
 
   async channelAddFunds(account, channelId, amount) {
     await this._fundEscrowAccount(account, amount);
 
-    const channelAddFundsOperation = this.contract.methods.channelAddFunds(channelId, amount);
-    return account.sendSignedTransaction(channelAddFundsOperation, this.address);
+    const channelAddFundsOperation = this.contract.methods.channelAddFunds;
+    return account.sendTransaction(this.address, channelAddFundsOperation, channelId, amount);
   }
 
   async channelExtend(account, channelId, expiration) {
-    const channelExtendOperation = this.contract.methods.channelExtend(channelId, expiration);
-    return account.sendSignedTransaction(channelExtendOperation, this.address);
+    const channelExtendOperation = this.contract.methods.channelExtend;
+    return account.sendTransaction(this.address, channelExtendOperation, channelId, expiration);
   }
 
   async channelExtendAndAddFunds(account, channelId, expiration, amount) {
     await this._fundEscrowAccount(account, amount);
 
-    const channelExtendAndAddFundsOperation = this.contract.methods.channelExtendAndAddFunds(channelId, expiration, amount);
-    return account.sendSignedTransaction(channelExtendAndAddFundsOperation, this.address);
+    const channelExtendAndAddFundsOperation = this.contract.methods.channelExtendAndAddFunds;
+    return account.sendTransaction(this.address, channelExtendAndAddFundsOperation, channelId, expiration, amount);
   }
 
   async channels(channelId) {

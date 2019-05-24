@@ -32,8 +32,8 @@ export default class Account {
   }
 
   async approveTransfer(amountInCogs) {
-    const approveOperation = this._getTokenContract().methods.approve(this._mpeContract.address, amountInCogs);
-    return this.sendSignedTransaction(approveOperation, this._getTokenContract().address);
+    const approveOperation = this._getTokenContract().methods.approve;
+    return this.sendTransaction(this._getTokenContract().address, approveOperation, this._mpeContract.address, amountInCogs);
   }
 
   async allowance() {
@@ -60,7 +60,12 @@ export default class Account {
     return Buffer.from(byteSig);
   }
 
-  async sendSignedTransaction(operation, to) {
+  async sendTransaction(to, contractFn, ...contractFnArgs) {
+    return this._sendSignedTransaction(to, contractFn, ...contractFnArgs);
+  }
+
+  async _sendSignedTransaction(to, contractFn, ...contractFnArgs) {
+    const operation = contractFn(...contractFnArgs);
     const txObject = await this._baseTransactionObject(operation, to);
     const signedTransaction = this._signTransaction(txObject);
     return new Promise((resolve, reject) => {
