@@ -1,6 +1,7 @@
 import AGITokenAbi from 'singularitynet-token-contracts/abi/SingularityNetToken';
 import AGITokenNetworks from 'singularitynet-token-contracts/networks/SingularityNetToken';
 import Tx from 'ethereumjs-tx';
+import logger from './utils/logger';
 
 class Account {
   /**
@@ -25,6 +26,7 @@ class Account {
    * @returns {Promise.<BigNumber>}
    */
   async balance() {
+    logger.info('Fetching account balance', { tags: ['Account'] });
     return this._getTokenContract().methods.balanceOf(this.address).call();
   }
 
@@ -56,6 +58,7 @@ class Account {
    * @returns {Promise.<TransactionReceipt>}
    */
   async approveTransfer(amountInCogs) {
+    logger.info(`Approving ${amountInCogs}cogs transfer to MPE address`, { tags: ['Account'] });
     const approveOperation = this._getTokenContract().methods.approve;
     return this.sendTransaction(this._getTokenContract().address, approveOperation, this._mpeContract.address, amountInCogs);
   }
@@ -65,6 +68,7 @@ class Account {
    * @returns {Promise.<BigNumber>}
    */
   async allowance() {
+    logger.info(`Fetching already approved allowance`, { tags: ['Account'] });
     return this._getTokenContract().methods.allowance(this.address, this._mpeContract.address).call();
   }
 
@@ -137,6 +141,7 @@ class Account {
 
     return new Promise((resolve, reject) => {
       if(!receipt.status) {
+        logger.error('Transaction failed');
         reject(receipt);
       }
 

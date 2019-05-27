@@ -9,6 +9,7 @@ import MPEContract from './MPEContract';
 import ServiceClient from './ServiceClient';
 import { find } from 'lodash';
 import DefaultPaymentChannelManagementStrategy from './payment_channel_management_strategies';
+import logger from './utils/logger';
 
 const DEFAULT_CONFIG = {
   defaultGasLimit: 210000,
@@ -65,7 +66,9 @@ class SnetSDK {
     const serviceMetadata = await this.serviceMetadata(orgId, serviceId);
     const group = find(serviceMetadata.groups, ({ group_name }) => group_name === groupName);
     if(!group) {
-      throw new Error(`Group[name: ${groupName}] not found for orgId: ${orgId} and serviceId: ${serviceId}`);
+      const errorMessage = `Group[name: ${groupName}] not found for orgId: ${orgId} and serviceId: ${serviceId}`;
+      logger.error(errorMessage);
+      throw new Error(errorMessage);
     }
     return new ServiceClient(this, this._mpeContract, serviceMetadata, group, ServiceStub, this._constructStrategy(paymentChannelManagementStrategy), options);
   }
@@ -76,18 +79,21 @@ class SnetSDK {
    * @returns {Promise.<ServiceMetadata>}
    */
   async serviceMetadata(orgId, serviceId) {
+    logger.info(`Fetching service metadata [org: ${orgId} | service: ${serviceId}]`);
     const { protocol = 'http', hostname: host, port = 5001 } = url.parse(this._config.ipfsEndpoint);
     const ipfsHostOrMultiaddr = { protocol: protocol.replace(':', ''), host, port };
     const ipfsClient = IPFSClient(ipfsHostOrMultiaddr);
     const orgIdBytes = this._web3.utils.fromAscii(orgId);
     const serviceIdBytes = this._web3.utils.fromAscii(serviceId);
 
+    logger.info(`Fetching metadata URI from registry contract`);
     const { metadataURI } = await this._registryContract
       .methods
       .getServiceRegistrationById(orgIdBytes, serviceIdBytes)
       .call();
 
     const ipfsCID = `${this._web3.utils.hexToUtf8(metadataURI).substring(7)}`;
+    logger.info(`Fetching metadata from IPFS[CID: ${ipfsCID}]`);
     const data = await ipfsClient.cat(ipfsCID);
     return JSON.parse(data.toString());
   }
@@ -97,6 +103,7 @@ class SnetSDK {
       return paymentChannelManagementStrategy;
     }
 
+    logger.info('PaymentChannelManagementStrategy not provided, using DefaultPaymentChannelManagementStrategy');
     return new DefaultPaymentChannelManagementStrategy(this);
   }
 }

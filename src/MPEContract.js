@@ -3,6 +3,7 @@ import MPENetworks from 'singularitynet-platform-contracts/networks/MultiPartyEs
 import { map } from 'lodash';
 
 import PaymentChannel from './PaymentChannel';
+import logger from './utils/logger';
 
 class MPEContract {
   /**
@@ -38,6 +39,7 @@ class MPEContract {
    * @returns {Promise<BigNumber>}
    */
   async balance(address) {
+    logger.info('Fetching MPE account balance', { tags: ['MPE'] });
     return this.contract.methods.balances(address).call()
   }
 
@@ -48,6 +50,7 @@ class MPEContract {
    * @returns {Promise.<TransactionReceipt>}
    */
   async deposit(account, amountInCogs) {
+    logger.info(`Depositing ${amountInCogs}cogs to MPE account`, { tags: ['MPE'] });
     const depositOperation = this.contract.methods.deposit;
     return account.sendTransaction(this.address, depositOperation, amountInCogs);
   }
@@ -59,6 +62,7 @@ class MPEContract {
    * @returns {Promise.<TransactionReceipt>}
    */
   async withdraw(account, amountInCogs) {
+    logger.info(`Withdrawing ${amountInCogs}cogs from MPE account`, { tags: ['MPE'] });
     const withdrawOperation = this.contract.methods.withdraw;
     return account.sendTransaction(this.address, withdrawOperation, amountInCogs);
   }
@@ -77,6 +81,7 @@ class MPEContract {
       group_id_in_bytes: groupId
     } = service.group;
 
+    logger.info(`Opening new payment channel [amount: ${amount}, expiration: ${expiration}]`, { tags: ['MPE'] });
     const openChannelOperation = this.contract.methods.openChannel;
     const openChannelFnArgs = [account.signerAddress, recipientAddress, groupId, amount, expiration];
     return account.sendTransaction(this.address, openChannelOperation, ...openChannelFnArgs);
@@ -103,6 +108,7 @@ class MPEContract {
 
     const depositAndOpenChannelOperation = this.contract.methods.depositAndOpenChannel;
     const operationArgs = [account.signerAddress, recipientAddress, groupId, amount, expiration];
+    logger.info(`Depositing ${amount}cogs to MPE address and Opening new payment channel [expiration: ${expiration}]`, { tags: ['MPE'] });
     return account.sendTransaction(this.address, depositAndOpenChannelOperation, ...operationArgs);
   }
 
@@ -116,6 +122,7 @@ class MPEContract {
   async channelAddFunds(account, channelId, amount) {
     await this._fundEscrowAccount(account, amount);
 
+    logger.info(`Funding PaymentChannel[id: ${channelId}] with ${amount}cogs`, { tags: ['MPE'] });
     const channelAddFundsOperation = this.contract.methods.channelAddFunds;
     return account.sendTransaction(this.address, channelAddFundsOperation, channelId, amount);
   }
@@ -128,6 +135,7 @@ class MPEContract {
    * @returns {Promise.<TransactionReceipt>}
    */
   async channelExtend(account, channelId, expiration) {
+    logger.info(`Extending PaymentChannel[id: ${channelId}]. New expiry is block# ${expiration}`, { tags: ['MPE'] });
     const channelExtendOperation = this.contract.methods.channelExtend;
     return account.sendTransaction(this.address, channelExtendOperation, channelId, expiration);
   }
@@ -143,6 +151,7 @@ class MPEContract {
   async channelExtendAndAddFunds(account, channelId, expiration, amount) {
     await this._fundEscrowAccount(account, amount);
 
+    logger.info(`Extending and Funding PaymentChannel[id: ${channelId}] with amount: ${amount} and expiry: ${expiration}`, { tags: ['MPE'] });
     const channelExtendAndAddFundsOperation = this.contract.methods.channelExtendAndAddFunds;
     return account.sendTransaction(this.address, channelExtendAndAddFundsOperation, channelId, expiration, amount);
   }
@@ -153,6 +162,7 @@ class MPEContract {
    * @returns {Promise<any>} - The return value(s) of the smart contract method. If it returns a single value, it’s returned as is. If it has multiple return values they are returned as an object with properties and indices:
    */
   async channels(channelId) {
+    logger.info(`Fetch latest PaymentChannel[id: ${channelId}] state`, { tags: ['MPE'] });
     return this.contract.methods.channels(channelId).call();
   }
 
@@ -166,6 +176,7 @@ class MPEContract {
    */
   async getPastOpenChannels(account, service, startingBlockNumber) {
     const fromBlock = startingBlockNumber ? startingBlockNumber : await this._deploymentBlockNumber();
+    logger.info(`Fetching all payment channel open events starting at block: ${fromBlock}`, { tags: ['MPE'] });
     const options = {
       filter: {
         sender: account.address,
