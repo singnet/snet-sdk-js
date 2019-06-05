@@ -26,7 +26,7 @@ class Account {
    * @returns {Promise.<BigNumber>}
    */
   async balance() {
-    logger.info('Fetching account balance', { tags: ['Account'] });
+    logger.debug('Fetching account balance', { tags: ['Account'] });
     return this._getTokenContract().methods.balanceOf(this.address).call();
   }
 
@@ -68,7 +68,7 @@ class Account {
    * @returns {Promise.<BigNumber>}
    */
   async allowance() {
-    logger.info(`Fetching already approved allowance`, { tags: ['Account'] });
+    logger.debug(`Fetching already approved allowance`, { tags: ['Account'] });
     return this._getTokenContract().methods.allowance(this.address, this._mpeContract.address).call();
   }
 

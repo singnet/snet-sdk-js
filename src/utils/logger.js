@@ -7,13 +7,14 @@ const logger = createLogger({
   ),
   transports: [
     new transports.File({ filename: './logs/error.log', level: 'error' }),
-    new transports.File({ filename: './logs/combined.log' })
+    new transports.File({ filename: './logs/combined.log', level: 'info' })
   ]
 });
 
 if (process.env.NODE_ENV !== 'production') {
   logger.add(new transports.Console({
-    format: format.simple()
+    format: format.simple(),
+    level: process.env.DEBUG ? 'silly' : 'info'
   }));
 }
 

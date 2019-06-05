@@ -39,7 +39,7 @@ class MPEContract {
    * @returns {Promise<BigNumber>}
    */
   async balance(address) {
-    logger.info('Fetching MPE account balance', { tags: ['MPE'] });
+    logger.debug('Fetching MPE account balance', { tags: ['MPE'] });
     return this.contract.methods.balances(address).call()
   }
 
@@ -162,7 +162,7 @@ class MPEContract {
    * @returns {Promise<any>} - The return value(s) of the smart contract method. If it returns a single value, it’s returned as is. If it has multiple return values they are returned as an object with properties and indices:
    */
   async channels(channelId) {
-    logger.info(`Fetch latest PaymentChannel[id: ${channelId}] state`, { tags: ['MPE'] });
+    logger.debug(`Fetch latest PaymentChannel[id: ${channelId}] state`, { tags: ['MPE'] });
     return this.contract.methods.channels(channelId).call();
   }
 
@@ -176,7 +176,7 @@ class MPEContract {
    */
   async getPastOpenChannels(account, service, startingBlockNumber) {
     const fromBlock = startingBlockNumber ? startingBlockNumber : await this._deploymentBlockNumber();
-    logger.info(`Fetching all payment channel open events starting at block: ${fromBlock}`, { tags: ['MPE'] });
+    logger.debug(`Fetching all payment channel open events starting at block: ${fromBlock}`, { tags: ['MPE'] });
     const options = {
       filter: {
         sender: account.address,

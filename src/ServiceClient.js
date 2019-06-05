@@ -71,7 +71,7 @@ class ServiceClient {
   async loadOpenChannels() {
     const currentBlockNumber = await this._web3.eth.getBlockNumber();
     const newPaymentChannels = await this._mpeContract.getPastOpenChannels(this._account, this, this._lastReadBlock);
-    logger.info(`Found ${newPaymentChannels.length} payment channel open events`, { tags: ['PaymentChannel'] });
+    logger.debug(`Found ${newPaymentChannels.length} payment channel open events`, { tags: ['PaymentChannel'] });
     this._paymentChannels = [...this._paymentChannels, ...newPaymentChannels];
     this._lastReadBlock = currentBlockNumber;
     return this._paymentChannels;
@@ -126,11 +126,11 @@ class ServiceClient {
   }
 
   _constructGrpcService(ServiceStub) {
-    logger.info(`Creating service client`, { tags: ['gRPC']});
+    logger.debug(`Creating service client`, { tags: ['gRPC']});
     const serviceEndpoint = this._getServiceEndpoint();
     const grpcChannelCredentials = this._getGrpcChannelCredentials(serviceEndpoint);
     const grpcOptions = this._generateGrpcOptions();
-    logger.info(`Service pointing to ${serviceEndpoint.host}, `, { tags: ['gRPC']});
+    logger.debug(`Service pointing to ${serviceEndpoint.host}, `, { tags: ['gRPC']});
     return new ServiceStub(serviceEndpoint.host, grpcChannelCredentials, grpcOptions);
   }
 
@@ -157,7 +157,7 @@ class ServiceClient {
             return;
           }
 
-          logger.info('Selecting PaymentChannel using the given strategy', { tags: ['PaymentChannelManagementStrategy, gRPC'] });
+          logger.debug('Selecting PaymentChannel using the given strategy', { tags: ['PaymentChannelManagementStrategy, gRPC'] });
           const channel = await this._paymentChannelManagementStrategy.selectChannel(this);
 
           const { channelId, state: { nonce, lastSignedAmount }} = channel;
@@ -183,10 +183,10 @@ class ServiceClient {
   }
 
   _generatePaymentChannelStateServiceClient() {
-    logger.info(`Creating PaymentChannelStateService client`, { tags: ['gRPC']});
+    logger.debug(`Creating PaymentChannelStateService client`, { tags: ['gRPC']});
     const serviceEndpoint = this._getServiceEndpoint();
     const grpcChannelCredentials = this._getGrpcChannelCredentials(serviceEndpoint);
-    logger.info(`PaymentChannelStateService pointing to ${serviceEndpoint.host}, `, { tags: ['gRPC']});
+    logger.debug(`PaymentChannelStateService pointing to ${serviceEndpoint.host}, `, { tags: ['gRPC']});
     return new paymentChannelStateServices.PaymentChannelStateServiceClient(serviceEndpoint.host, grpcChannelCredentials);
   }
 
@@ -198,18 +198,18 @@ class ServiceClient {
     const { group_name: defaultGroupName } = this.group;
     const { endpoints } = this._metadata;
     const { endpoint } = find(endpoints, ({ group_name: groupName }) => groupName === defaultGroupName);
-    logger.info(`Service endpoint: ${endpoint}`, { tags: ['gRPC']});
+    logger.debug(`Service endpoint: ${endpoint}`, { tags: ['gRPC']});
     return endpoint && url.parse(endpoint);
   }
 
   _getGrpcChannelCredentials(serviceEndpoint) {
     if(serviceEndpoint.protocol === 'https:') {
-      logger.info(`Channel credential created for https`, { tags: ['gRPC']});
+      logger.debug(`Channel credential created for https`, { tags: ['gRPC']});
       return grpc.credentials.createSsl();
     }
 
     if(serviceEndpoint.protocol === 'http:') {
-      logger.info(`Channel credential created for http`, { tags: ['gRPC']});
+      logger.debug(`Channel credential created for http`, { tags: ['gRPC']});
       return grpc.credentials.createInsecure();
     }
 

@@ -70,7 +70,7 @@ class PaymentChannel {
    * @returns {Promise<PaymentChannel>}
    */
   async syncState() {
-    logger.info(`Syncing PaymentChannel[id: ${this._channelId}] state`, { tags: ['PaymentChannel']})
+    logger.debug(`Syncing PaymentChannel[id: ${this._channelId}] state`, { tags: ['PaymentChannel']})
     const latestChannelInfoOnBlockchain = await this._mpeContract.channels(this.channelId);
     const currentState = await this._currentChannelState();
     const { lastSignedAmount, nonce: currentNonce } = currentState;
@@ -97,7 +97,7 @@ class PaymentChannel {
     channelStateRequest.setChannelId(channelIdBytes);
     channelStateRequest.setSignature(signatureBytes);
 
-    logger.info(`Fetching latest PaymentChannel[id: ${this.channelId}] state from service daemon`, { tags: ['PaymentChannel'] });
+    logger.debug(`Fetching latest PaymentChannel[id: ${this.channelId}] state from service daemon`, { tags: ['PaymentChannel'] });
     return new Promise((resolve, reject) => {
       this._paymentChannelStateServiceClient.getChannelState(channelStateRequest, (err, response) => {
         if(err) {
@@ -110,7 +110,7 @@ class PaymentChannel {
             lastSignedAmount: currentSignedAmount,
             nonce,
           };
-          logger.info(`Latest PaymentChannel[id: ${this.channelId}] state: {lastSignedAmount: ${currentSignedAmount}, nonce: ${nonce}}`, { tags: ['PaymentChannel'] });
+          logger.debug(`Latest PaymentChannel[id: ${this.channelId}] state: {lastSignedAmount: ${currentSignedAmount}, nonce: ${nonce}}`, { tags: ['PaymentChannel'] });
           resolve(channelState);
         }
       });

@@ -79,21 +79,21 @@ class SnetSDK {
    * @returns {Promise.<ServiceMetadata>}
    */
   async serviceMetadata(orgId, serviceId) {
-    logger.info(`Fetching service metadata [org: ${orgId} | service: ${serviceId}]`);
+    logger.debug(`Fetching service metadata [org: ${orgId} | service: ${serviceId}]`);
     const { protocol = 'http', hostname: host, port = 5001 } = url.parse(this._config.ipfsEndpoint);
     const ipfsHostOrMultiaddr = { protocol: protocol.replace(':', ''), host, port };
     const ipfsClient = IPFSClient(ipfsHostOrMultiaddr);
     const orgIdBytes = this._web3.utils.fromAscii(orgId);
     const serviceIdBytes = this._web3.utils.fromAscii(serviceId);
 
-    logger.info(`Fetching metadata URI from registry contract`);
+    logger.debug(`Fetching metadata URI from registry contract`);
     const { metadataURI } = await this._registryContract
       .methods
       .getServiceRegistrationById(orgIdBytes, serviceIdBytes)
       .call();
 
     const ipfsCID = `${this._web3.utils.hexToUtf8(metadataURI).substring(7)}`;
-    logger.info(`Fetching metadata from IPFS[CID: ${ipfsCID}]`);
+    logger.debug(`Fetching metadata from IPFS[CID: ${ipfsCID}]`);
     const data = await ipfsClient.cat(ipfsCID);
     return JSON.parse(data.toString());
   }
@@ -103,7 +103,7 @@ class SnetSDK {
       return paymentChannelManagementStrategy;
     }
 
-    logger.info('PaymentChannelManagementStrategy not provided, using DefaultPaymentChannelManagementStrategy');
+    logger.debug('PaymentChannelManagementStrategy not provided, using DefaultPaymentChannelManagementStrategy');
     return new DefaultPaymentChannelManagementStrategy(this);
   }
 }
