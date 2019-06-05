@@ -1,0 +1,69 @@
+/**
+ * @typedef {Object} Config
+ * @property {string|object} web3Provider - A URL or one of the Web3 provider classes.
+ * @property {string} privateKey - The accounts private key for performing token operations.
+ * @property {string} signerPrivateKey - The accounts private key for signing grpc calls to service.
+ * @property {number} networkId - Ethereum network ID.
+ * @property {string} [ipfsEndpoint=http://ipfs.singularitynet.io:80] - A URL for fetching service related metadata.
+ * @property {number} [defaultGasPrice=4700000] - The gas price to be used in case of fetching the gas price form the blockchain fails.
+ * @property {number} [defaultGasLimit=210000] - The gas limit to be used in case of fetching the gas estimate from the blockchain fails.
+ */
+
+/**
+ * @typedef {Object} ServiceClientOptions
+ * @property {boolean} [disableBlockchainOperations]
+ * @property {string} [endpoint]
+ */
+
+/**
+ * Interface for implementing payment channel management strategies.
+ *
+ * @interface PaymentChannelManagementStrategy
+ */
+
+/**
+ * Select a payment channel for the given service
+ *
+ * @function
+ * @name PaymentChannelManagementStrategy#selectChannel
+ * @param {ServiceClient} serviceClient
+ * @returns {Promise.<PaymentChannel>} The payment channel used for making a grpc call to the ai service
+ */
+
+/**
+ * @typedef {Object} Group
+ * @property {string} group_id
+ * @property {Buffer} group_id_in_bytes
+ * @property {string} group_name
+ * @property {string} payment_address
+ */
+
+/**
+ * @typedef {Object} Endpoint
+ * @property {string} endpoint
+ * @property {string} group_name
+ */
+
+/**
+ * @typedef {Object} Pricing
+ * @property {BigInt} pricing_in_cogs
+ * @property {string} pricing_model
+ */
+
+/**
+ * @typedef {Object} ServiceMetadata
+ * @property {Group[]} groups
+ * @property {Pricing} pricing
+ * @property {BigInt} payment_expiration_threshold
+ * @property {Endpoint} endpoints
+ */
+
+/**
+ * @typedef {Object} PaymentChannelState
+ * @property {BigNumber} [nonce=0]
+ * @property {BigNumber} [currentNonce]
+ * @property {BigNumber} [expiration]
+ * @property {BigNumber} [totalAmount]
+ * @property {BigNumber} [lastSignedAmount=0]
+ * @property {BigNumber} [availableAmount]
+ */

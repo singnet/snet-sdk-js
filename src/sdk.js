@@ -16,7 +16,10 @@ const DEFAULT_CONFIG = {
   ipfsEndpoint: 'http://ipfs.singularitynet.io:80',
 };
 
-export default class SnetSDK {
+class SnetSDK {
+  /**
+   * @param {Config} config
+   */
   constructor(config) {
     this._config = {
       ...DEFAULT_CONFIG,
@@ -35,14 +38,29 @@ export default class SnetSDK {
     this._registryContract = new this._web3.eth.Contract(RegistryAbi, registryAddress, { from: this._account.address });
   }
 
+  /**
+   * @type {Account}
+   */
   get account() {
     return this._account;
   }
 
+  /**
+   * @type {Web3}
+   */
   get web3() {
     return this._web3;
   }
 
+  /**
+   * @param {string} orgId
+   * @param {string} serviceId
+   * @param {GRPCClient} ServiceStub GRPC service client constructor
+   * @param {string} [groupName='default_group']
+   * @param {DefaultPaymentChannelManagementStrategy} [paymentChannelManagementStrategy=DefaultPaymentChannelManagementStrategy]
+   * @param {ServiceClientOptions} options
+   * @returns {Promise<ServiceClient>}
+   */
   async createServiceClient(orgId, serviceId, ServiceStub, groupName = 'default_group', paymentChannelManagementStrategy = null, options = {}) {
     const serviceMetadata = await this.serviceMetadata(orgId, serviceId);
     const group = find(serviceMetadata.groups, ({ group_name }) => group_name === groupName);
@@ -52,6 +70,11 @@ export default class SnetSDK {
     return new ServiceClient(this, this._mpeContract, serviceMetadata, group, ServiceStub, this._constructStrategy(paymentChannelManagementStrategy), options);
   }
 
+  /**
+   * @param {string} orgId
+   * @param {string} serviceId
+   * @returns {Promise.<ServiceMetadata>}
+   */
   async serviceMetadata(orgId, serviceId) {
     const { protocol = 'http', hostname: host, port = 5001 } = url.parse(this._config.ipfsEndpoint);
     const ipfsHostOrMultiaddr = { protocol: protocol.replace(':', ''), host, port };
@@ -77,3 +100,5 @@ export default class SnetSDK {
     return new DefaultPaymentChannelManagementStrategy(this);
   }
 }
+
+export default SnetSDK;

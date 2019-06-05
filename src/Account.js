@@ -2,7 +2,13 @@ import AGITokenAbi from 'singularitynet-token-contracts/abi/SingularityNetToken'
 import AGITokenNetworks from 'singularitynet-token-contracts/networks/SingularityNetToken';
 import Tx from 'ethereumjs-tx';
 
-export default class Account {
+class Account {
+  /**
+   * @param {Web3} web3
+   * @param {number} networkId
+   * @param {Config} config
+   * @param {MPEContract} mpeContract
+   */
   constructor(web3, networkId, config, mpeContract) {
     const account = web3.eth.accounts.privateKeyToAccount(config.privateKey);
     web3.eth.accounts.wallet.add(account);
@@ -14,14 +20,27 @@ export default class Account {
     this._mpeContract = mpeContract;
   }
 
+  /**
+   * Returns the token balance available.
+   * @returns {Promise.<BigNumber>}
+   */
   async balance() {
     return this._getTokenContract().methods.balanceOf(this.address).call();
   }
 
+  /**
+   * Returns the balance for the current account in MPE Account.
+   * @returns {Promise.<BigNumber>}
+   */
   async escrowBalance() {
     return this._mpeContract.balance(this.address);
   }
 
+  /**
+   * Approves the specified number of tokens for transfer if not already approved and deposits the tokens to the MPE Account.
+   * @param {BigNumber} amountInCogs - Tokens to transfer to MPE Account
+   * @returns {Promise.<TransactionReceipt>}
+   */
   async depositToEscrowAccount(amountInCogs) {
     const alreadyApprovedAmount = await this.allowance();
     if(amountInCogs > alreadyApprovedAmount) {
@@ -31,27 +50,54 @@ export default class Account {
     return this._mpeContract.deposit(this, amountInCogs);
   }
 
+  /**
+   * Approves the specified tokens for transfer to MPE Account
+   * @param {BigNumber} amountInCogs - Tokens for approval.
+   * @returns {Promise.<TransactionReceipt>}
+   */
   async approveTransfer(amountInCogs) {
     const approveOperation = this._getTokenContract().methods.approve;
     return this.sendTransaction(this._getTokenContract().address, approveOperation, this._mpeContract.address, amountInCogs);
   }
 
+  /**
+   * Returns the already approved tokens for transfer to MPE Account.
+   * @returns {Promise.<BigNumber>}
+   */
   async allowance() {
     return this._getTokenContract().methods.allowance(this.address, this._mpeContract.address).call();
   }
 
+  /**
+   * Withdraws the specified tokens from the MPE account.
+   * @param {BigNumber} amountInCogs - Tokens to be withdrawn from the escrow account.
+   * @returns {Promise.<TransactionReceipt>}
+   */
   async withdrawFromEscrowAccount(amountInCogs) {
     return this._mpeContract.withdraw(this, amountInCogs);
   }
 
+  /**
+   * @type {string}
+   */
   get address() {
     return this._web3Account.address;
   }
 
+  /**
+   * @type {string}
+   */
   get signerAddress() {
     return this.address;
   }
 
+  /**
+   * @param {...(*|Object)} data
+   * @param {string} data.(t|type) - Type of data. One of the following (string|uint256|int256|bool|bytes)
+   * @param {string} data.(v|value) - Value
+   * @returns {Buffer} - Signed binary data
+   * @see {@link https://web3js.readthedocs.io/en/1.0/web3-utils.html#soliditysha3|data}
+   */
   signedData(...data) {
     const sha3Message = this._web3.utils.soliditySha3(...data);
     const { signature } = this._web3.eth.accounts.sign(sha3Message, this._config.privateKey);
@@ -60,6 +106,13 @@ export default class Account {
     return Buffer.from(byteSig);
   }
 
+  /**
+   * Sends a transaction for the transaction object to the contract address
+   * @param {string} to - The contract address to send the signed transaction to
+   * @param {function} contractFn - The contract function for which the transaction needs to be sent
+   * @param {...any} contractFnArgs - The args which will be sent to the contract function
+   * @returns {Promise<TransactionReceipt>}
+   */
   async sendTransaction(to, contractFn, ...contractFnArgs) {
     return this._sendSignedTransaction(to, contractFn, ...contractFnArgs);
   }
@@ -142,3 +195,5 @@ export default class Account {
     return `0x${serializedTransaction.toString('hex')}`;
   }
 }
+
+export default Account;
