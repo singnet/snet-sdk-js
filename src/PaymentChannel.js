@@ -101,7 +101,7 @@ class PaymentChannel {
     return new Promise((resolve, reject) => {
       this._paymentChannelStateServiceClient.getChannelState(channelStateRequest, (err, response) => {
         if(err) {
-          logger.error(`Failed to fetch latest PaymentChannel[id: ${this.channelId}] state from service daemon`, { tags: ['PaymentChannel'] });
+          logger.error(`Failed to fetch latest PaymentChannel[id: ${this.channelId}] state from service daemon. ${err.message}`, { tags: ['PaymentChannel'] });
           reject(err);
         } else {
           const nonce = PaymentChannel._uint8ArrayToBN(response.getCurrentNonce());

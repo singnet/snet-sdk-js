@@ -141,7 +141,7 @@ class Account {
 
     return new Promise((resolve, reject) => {
       if(!receipt.status) {
-        logger.error('Transaction failed');
+        logger.error(`Transaction failed. [Status: ${receipt.status}, hash: ${receipt.transactionHash}]`);
         reject(receipt);
       }
 
