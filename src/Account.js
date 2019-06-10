@@ -136,12 +136,16 @@ class Account {
     let receipt;
     while(!receipt) {
       // eslint-disable-next-line no-await-in-loop
-      receipt = await this._web3.eth.getTransactionReceipt(hash);
+      try {
+        receipt = await this._web3.eth.getTransactionReceipt(hash);
+      } catch(error) {
+        logger.error(`Couldn't complete transaction for: ${hash}. ${error}`);
+      }
     }
 
     return new Promise((resolve, reject) => {
       if(!receipt.status) {
-        logger.error(`Transaction failed. [Status: ${receipt.status}, hash: ${receipt.transactionHash}]`);
+        logger.error(`Transaction failed. ${receipt}`);
         reject(receipt);
       }
 
