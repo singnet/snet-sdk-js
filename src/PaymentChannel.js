@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import paymentChannelStateMessages from './payment_channel_state_service_pb';
+import logger from './utils/logger';
 
 class PaymentChannel {
   /**
@@ -69,6 +70,7 @@ class PaymentChannel {
    * @returns {Promise<PaymentChannel>}
    */
   async syncState() {
+    logger.debug(`Syncing PaymentChannel[id: ${this._channelId}] state`, { tags: ['PaymentChannel']})
     const latestChannelInfoOnBlockchain = await this._mpeContract.channels(this.channelId);
     const currentState = await this._currentChannelState();
     const { lastSignedAmount, nonce: currentNonce } = currentState;
@@ -95,24 +97,27 @@ class PaymentChannel {
     channelStateRequest.setChannelId(channelIdBytes);
     channelStateRequest.setSignature(signatureBytes);
 
+    logger.debug(`Fetching latest PaymentChannel[id: ${this.channelId}] state from service daemon`, { tags: ['PaymentChannel'] });
     return new Promise((resolve, reject) => {
       this._paymentChannelStateServiceClient.getChannelState(channelStateRequest, (err, response) => {
         if(err) {
+          logger.error(`Failed to fetch latest PaymentChannel[id: ${this.channelId}] state from service daemon. ${err.message}`, { tags: ['PaymentChannel'] });
           reject(err);
         } else {
-          const nonce = this._uint8ArrayToBN(response.getCurrentNonce());
-          const currentSignedAmount = this._uint8ArrayToBN(response.getCurrentSignedAmount());
+          const nonce = PaymentChannel._uint8ArrayToBN(response.getCurrentNonce());
+          const currentSignedAmount = PaymentChannel._uint8ArrayToBN(response.getCurrentSignedAmount());
           const channelState = {
             lastSignedAmount: currentSignedAmount,
             nonce,
           };
+          logger.debug(`Latest PaymentChannel[id: ${this.channelId}] state: {lastSignedAmount: ${currentSignedAmount}, nonce: ${nonce}}`, { tags: ['PaymentChannel'] });
           resolve(channelState);
         }
       });
     });
   }
 
-  _uint8ArrayToBN(uint8Array) {
+  static _uint8ArrayToBN(uint8Array) {
     const buffer = Buffer.from(uint8Array);
     const hex = `0x${buffer.toString('hex')}`;
     return new BigNumber(hex);
