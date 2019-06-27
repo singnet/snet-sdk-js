@@ -5,3 +5,4 @@ export { default as DefaultPaymentChannelManagementStrategy } from './payment_ch
 export { default as logger } from './utils/logger';
 export { default as BaseServiceClient} from './BaseServiceClient';
 export { default as PaymentChannel } from './PaymentChannel';
+export { PrivateKeyIdentity } from './identities';

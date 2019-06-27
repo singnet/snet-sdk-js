@@ -60,7 +60,7 @@ class BaseServiceClient {
    * @returns {Promise<ChannelStateReply>}
    */
   async getChannelState(channelId) {
-    const signatureBytes = this._account.signedData({ t: 'uint256', v: channelId });
+    const signatureBytes = await this._account.signData({ t: 'uint256', v: channelId });
 
     const channelIdBytes = Buffer.alloc(4);
     channelIdBytes.writeUInt32BE(channelId, 0);
@@ -134,7 +134,7 @@ class BaseServiceClient {
     const signingAmount = lastSignedAmount.plus(this._pricePerServiceCall);
     logger.info(`Using PaymentChannel[id: ${channelId}] with nonce: ${nonce} and amount: ${signingAmount} and `, { tags: ['PaymentChannelManagementStrategy', 'gRPC'] });
 
-    const signatureBytes = this._account.signedData(
+    const signatureBytes = await this._account.signData(
       { t: 'address', v: this._mpeContract.address },
       { t: 'uint256', v: channelId },
       { t: 'uint256', v: nonce },
