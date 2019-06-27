@@ -71,10 +71,7 @@ typings/
 .LSOverride
 
 ### JetBrains
-/.idea/
-
-### node
-/node_modules
+.idea/
 
 ### istanbul
 /.nyc_output/
