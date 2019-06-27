@@ -3,7 +3,7 @@ import MPENetworks from 'singularitynet-platform-contracts/networks/MultiPartyEs
 import { map } from 'lodash';
 
 import PaymentChannel from './PaymentChannel';
-import logger from './utils/logger';
+import logger from '../utils/logger';
 
 class MPEContract {
   /**

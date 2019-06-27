@@ -6,10 +6,9 @@ import RegistryAbi from 'singularitynet-platform-contracts/abi/Registry.json';
 
 import Account from './Account';
 import MPEContract from './MPEContract';
-import ServiceClient from './ServiceClient';
 import { find } from 'lodash';
 import DefaultPaymentChannelManagementStrategy from './payment_channel_management_strategies';
-import logger from './utils/logger';
+import logger from '../utils/logger';
 
 const DEFAULT_CONFIG = {
   defaultGasLimit: 210000,
@@ -56,26 +55,6 @@ class SnetSDK {
   /**
    * @param {string} orgId
    * @param {string} serviceId
-   * @param {GRPCClient} ServiceStub GRPC service client constructor
-   * @param {string} [groupName='default_group']
-   * @param {DefaultPaymentChannelManagementStrategy} [paymentChannelManagementStrategy=DefaultPaymentChannelManagementStrategy]
-   * @param {ServiceClientOptions} options
-   * @returns {Promise<ServiceClient>}
-   */
-  async createServiceClient(orgId, serviceId, ServiceStub, groupName = 'default_group', paymentChannelManagementStrategy = null, options = {}) {
-    const serviceMetadata = await this.serviceMetadata(orgId, serviceId);
-    const group = find(serviceMetadata.groups, ({ group_name }) => group_name === groupName);
-    if(!group) {
-      const errorMessage = `Group[name: ${groupName}] not found for orgId: ${orgId} and serviceId: ${serviceId}`;
-      logger.error(errorMessage);
-      throw new Error(errorMessage);
-    }
-    return new ServiceClient(this, this._mpeContract, serviceMetadata, group, ServiceStub, this._constructStrategy(paymentChannelManagementStrategy), options);
-  }
-
-  /**
-   * @param {string} orgId
-   * @param {string} serviceId
    * @returns {Promise.<ServiceMetadata>}
    */
   async serviceMetadata(orgId, serviceId) {
@@ -96,6 +75,16 @@ class SnetSDK {
     logger.debug(`Fetching metadata from IPFS[CID: ${ipfsCID}]`);
     const data = await ipfsClient.cat(ipfsCID);
     return JSON.parse(data.toString());
+  }
+
+  async _serviceGroup(serviceMetadata, orgId, serviceId, groupName = 'default_group') {
+    const group = find(serviceMetadata.groups, ({ group_name }) => group_name === groupName);
+    if(!group) {
+      const errorMessage = `Group[name: ${groupName}] not found for orgId: ${orgId} and serviceId: ${serviceId}`;
+      logger.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+    return group;
   }
 
   _constructStrategy(paymentChannelManagementStrategy) {
