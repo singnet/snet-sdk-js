@@ -1,8 +1,7 @@
 import grpc, { InterceptingCall } from "grpc";
 import { PaymentChannelStateServiceClient } from './proto/payment_channel_state_service_grpc_pb';
 import { ChannelStateRequest } from './proto/payment_channel_state_service_pb';
-import logger from '../core/utils/logger';
-import BaseServiceClient from '../core/BaseServiceClient';
+import { BaseServiceClient, logger } from '../../core/src';
 
 class ServiceClient extends BaseServiceClient {
   /**

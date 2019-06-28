@@ -1,6 +1,5 @@
-import SnetSDK from '../core/sdk';
+import SnetSDK from '../../core/src';
 import ServiceClient from './ServiceClient';
-import PrivateKeyIdentity from './identities/PrivateKeyIdentity';
 
 class NodeSdk extends SnetSDK {
   /**

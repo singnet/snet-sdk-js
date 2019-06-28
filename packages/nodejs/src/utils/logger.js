@@ -1,5 +1,5 @@
 import { format, transports } from 'winston';
-import logger from '../../core/utils/logger';
+import { logger } from '../../../core/src';
 
 const combinedFormat = format.combine(
   format.timestamp(),
