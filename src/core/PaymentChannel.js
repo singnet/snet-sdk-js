@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import logger from '../utils/logger';
+import logger from './utils/logger';
 
 class PaymentChannel {
   /**

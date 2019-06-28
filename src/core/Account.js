@@ -1,7 +1,7 @@
 import AGITokenAbi from 'singularitynet-token-contracts/abi/SingularityNetToken';
 import AGITokenNetworks from 'singularitynet-token-contracts/networks/SingularityNetToken';
 import Tx from 'ethereumjs-tx';
-import logger from '../utils/logger';
+import logger from './utils/logger';
 
 class Account {
   /**

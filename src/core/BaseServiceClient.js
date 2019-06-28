@@ -1,7 +1,7 @@
 import url from "url";
 import { BigNumber } from 'bignumber.js';
 import { find, map } from 'lodash';
-import logger from '../utils/logger';
+import logger from './utils/logger';
 
 class BaseServiceClient {
   /**
