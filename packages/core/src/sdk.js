@@ -31,9 +31,9 @@ class SnetSDK {
     };
     this._networkId = config.networkId;
     this._web3 = new Web3(config.web3Provider, null, options);
+    const identity = this._createIdentity();
     this._mpeContract = new MPEContract(this._web3, this._networkId);
-    this._account = new Account(this._web3, this._networkId, this._config, this._mpeContract);
-    this._web3.eth.defaultAccount = this._account.address;
+    this._account = new Account(this._web3, this._networkId, this._mpeContract, identity);
     const registryAddress = RegistryNetworks[this._networkId].address;
     this._registryContract = new this._web3.eth.Contract(RegistryAbi, registryAddress, { from: this._account.address });
   }
@@ -94,6 +94,10 @@ class SnetSDK {
 
     logger.debug('PaymentChannelManagementStrategy not provided, using DefaultPaymentChannelManagementStrategy');
     return new DefaultPaymentChannelManagementStrategy(this);
+  }
+
+  _createIdentity() {
+    logger.error('_createIdentity must be implemented in the sub classes');
   }
 }
 

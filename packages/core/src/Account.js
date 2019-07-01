@@ -1,21 +1,17 @@
 import AGITokenAbi from 'singularitynet-token-contracts/abi/SingularityNetToken';
 import AGITokenNetworks from 'singularitynet-token-contracts/networks/SingularityNetToken';
-import Tx from 'ethereumjs-tx';
 import logger from './utils/logger';
 
 class Account {
   /**
    * @param {Web3} web3
    * @param {number} networkId
-   * @param {Config} config
    * @param {MPEContract} mpeContract
+   * @param {IdentityProvider} identity
    */
-  constructor(web3, networkId, config, mpeContract) {
-    const account = web3.eth.accounts.privateKeyToAccount(config.privateKey);
-    web3.eth.accounts.wallet.add(account);
-    this._web3Account = account;
+  constructor(web3, networkId, mpeContract, identity) {
+    this._identity = identity;
     this._web3 = web3;
-    this._config = config;
     this._networkId = networkId;
     this._tokenContract = this._generateTokenContract();
     this._mpeContract = mpeContract;
@@ -85,7 +81,7 @@ class Account {
    * @type {string}
    */
   get address() {
-    return this._web3Account.address;
+    return this._identity.address;
   }
 
   /**
@@ -102,9 +98,11 @@ class Account {
    * @returns {Buffer} - Signed binary data
    * @see {@link https://web3js.readthedocs.io/en/1.0/web3-utils.html#soliditysha3|data}
    */
-  signedData(...data) {
+  async signData(...data) {
     const sha3Message = this._web3.utils.soliditySha3(...data);
-    const { signature } = this._web3.eth.accounts.sign(sha3Message, this._config.privateKey);
+
+    const signature = await this._identity.signData(sha3Message);
+
     const stripped = signature.substring(2, signature.length);
     const byteSig = Buffer.from(stripped, 'hex');
     return Buffer.from(byteSig);
@@ -118,17 +116,16 @@ class Account {
    * @returns {Promise<TransactionReceipt>}
    */
   async sendTransaction(to, contractFn, ...contractFnArgs) {
-    return this._sendSignedTransaction(to, contractFn, ...contractFnArgs);
-  }
-
-  async _sendSignedTransaction(to, contractFn, ...contractFnArgs) {
     const operation = contractFn(...contractFnArgs);
     const txObject = await this._baseTransactionObject(operation, to);
-    const signedTransaction = this._signTransaction(txObject);
-    return new Promise((resolve, reject) => {
-      this._web3.eth.sendSignedTransaction(signedTransaction, (error, txHash) => {
+
+    return new Promise(async (resolve, reject) => {
+      try {
+        const txHash = await this._identity.sendTransaction(txObject);
         this._waitForTransaction(txHash).then(resolve).catch(reject);
-      });
+      } catch(e) {
+        reject(e);
+      }
     });
   }
 
@@ -194,14 +191,6 @@ class Account {
 
   async _transactionCount() {
     return this._web3.eth.getTransactionCount(this.address);
-  }
-
-  _signTransaction(txObject) {
-    const transaction = new Tx(txObject);
-    const privateKey = Buffer.from(this._config.privateKey.slice(2), 'hex');
-    transaction.sign(privateKey);
-    const serializedTransaction = transaction.serialize();
-    return `0x${serializedTransaction.toString('hex')}`;
   }
 }
 

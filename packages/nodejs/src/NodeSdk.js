@@ -1,5 +1,6 @@
 import SnetSDK from '../../core/src';
 import ServiceClient from './ServiceClient';
+import { PrivateKeyIdentity } from '../../core/src';
 
 class NodeSdk extends SnetSDK {
   /**
@@ -15,6 +16,10 @@ class NodeSdk extends SnetSDK {
     const serviceMetadata = await this.serviceMetadata(orgId, serviceId);
     const group = await this._serviceGroup(serviceMetadata, orgId, serviceId, groupName);
     return new ServiceClient(this, this._mpeContract, serviceMetadata, group, ServiceStub, this._constructStrategy(paymentChannelManagementStrategy), options);
+  }
+
+  _createIdentity() {
+    return new PrivateKeyIdentity(this._config, this._web3);
   }
 }
 
