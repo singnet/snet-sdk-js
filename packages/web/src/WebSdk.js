@@ -1,4 +1,4 @@
-import SnetSDK, { MetaMaskIdentity } from './core';
+import SnetSDK, { MetaMaskIdentity } from './sdk-core';
 import WebServiceClient from './WebServiceClient';
 
 class WebSdk extends SnetSDK {

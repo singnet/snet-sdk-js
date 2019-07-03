@@ -2,4 +2,4 @@ import './utils/logger';
 import NodeSdk from './NodeSdk';
 export default NodeSdk;
 
-export { DefaultPaymentChannelManagementStrategy } from './core';
+export * from './sdk-core';

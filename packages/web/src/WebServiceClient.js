@@ -1,7 +1,7 @@
 import { grpc } from '@improbable-eng/grpc-web';
 import { PaymentChannelStateServiceClient } from './proto/state_service_pb_service';
 import { ChannelStateRequest } from './proto/state_service_pb';
-import { BaseServiceClient, logger } from './core';
+import { BaseServiceClient, logger } from './sdk-core';
 
 class WebServiceClient extends BaseServiceClient {
   /**

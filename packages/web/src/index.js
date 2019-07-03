@@ -1,4 +1,4 @@
 import WebSdk from './WebSdk';
 export default WebSdk;
 
-export { DefaultPaymentChannelManagementStrategy } from './core';
+export * from './sdk-core';
