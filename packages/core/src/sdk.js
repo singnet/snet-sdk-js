@@ -7,7 +7,7 @@ import RegistryAbi from 'singularitynet-platform-contracts/abi/Registry.json';
 import Account from './Account';
 import MPEContract from './MPEContract';
 import { find } from 'lodash';
-import DefaultPaymentChannelManagementStrategy from './payment_channel_management_strategies';
+import { DefaultPaymentChannelManagementStrategy } from './payment_channel_management_strategies';
 import logger from './utils/logger';
 
 const DEFAULT_CONFIG = {

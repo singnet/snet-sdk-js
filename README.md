@@ -1,54 +1,43 @@
 # snet-sdk-js
-![npm](https://img.shields.io/npm/v/snet-sdk.svg)
-
 SingularityNET SDK for JavaScript
   
-## Getting Started  
-  
-These instructions are for the development and use of the SingularityNET SDK for JavaScript.
-### Installation
-Node
-```bash
-npm install snet-sdk
-```
-### Usage
+## Getting Started
+This repo hosts multiple SDKs for JavaScript. Currently supported platforms
+1. Node.js using [grpc-node](https://github.com/grpc/grpc-node)
+2. Browser (Web) using [grpc-web](https://github.com/improbable-eng/grpc-web)
 
-The SingularityNET SDK allows you to import compiled client libraries for your service or services of choice and make calls to those services programmatically from your application by setting up state channels with the providers of those services and making gRPC calls to the SingularityNET daemons for those services by selecting a channel with sufficient funding and supplying the appropriate metadata for authentication.
-  
-```javascript
-import SnetSDK from 'snet-sdk';
-import config from './config';
-const sdk = new SnetSDK(config);
+You can find more details about each sdk within the respective package folders.
+1. Node.js under `packages/nodejs` directory
+2. Web under `packages/web` directory
+
+**These SDKs are under active development and not ready for production use yet. If you find any bug or something doesn't work as expected, please create an issue.**
+
+## Usage
+All the SDKs assume that there is enough `eth` balance to cover the `gas` cost and `AGI` tokens in the wallet to cover the service execution cost.
+
+The SDKs chose a default `PaymentManagementStrategy` which is the simplest form of picking an existing `Payment Channel` if any or creates a new `Payment Channel` if no channel is found. This can be easily overridden by providing your own strategy to the SDK at the time of construction. Documentation on creating custom strategies will be available soon.
+
+## Development
+This is a monorepo which is setup a little differently. It does not use any external tools like [lerna](https://github.com/lerna/lerna) or any other popular tool.
+
+There are 3 packages out of which only 2 of them are published to npm
+1. core
+2. nodejs (published)
+3. web (published)
+
+The way the `core` package is shared across `nodejs` and `web` is by creating a symlink to core under each package. This setup has been tested on `macOS` and should work on any standard `Linux` distribution but it has not been tested on `Windows` OS. 
+
+### Build
+Navigate to the specific package which needs to be build and then run the following command
+```shell
+npm run build
 ```
 
-Now, the instance of the sdk can be used to instantiate clients for SingularityNET services. To interact with those services, the sdk needs to be supplied the compiled gRPC client libraries.
-  
-To generate the gRPC client libraries, you need the SingularityNET Command Line Interface, or CLI, which you can download from PyPi, see [https://github.com/singnet/snet-cli#installing-with-pip](https://github.com/singnet/snet-cli#installing-with-pip)
-  
-Once you have the CLI installed, run the following command:
+### Publish
+Navigate to the specific package which needs to be published and then run the following command
 ```bash
-$ snet sdk generate-client-library nodejs <org_id> <service_id>
+npm run publish
 ```
-Optionally, you can specify an output path; otherwise it's going to be `./client_libraries/nodejs/<hash>/<org_id>/<service_id>`
-Once you have the generated gRPC client libraries, you can create an instance of a SingularityNET service client:
-```javascript
-import services from '<path_to_grpc_service_file>'
-import messages from '<path_to_grpc_message_file>'
-const client = sdk.createServiceClient("<org_id>", "<service_id>", "<services.<ClientStub>>")
-```
-This generates a service client which can be used to make gRPC calls to the desired service.
-You can then invoke service specific calls as follows
-```javascript
-client.service.<methodName>(<gRPC.message>, callback);
-```
----
- 
-### Versioning  
-  
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the
-[tags on this repository](https://github.com/singnet/snet-sdk-js/tags).   
-  
-## License  
-  
-This project is licensed under the MIT License - see the
+
+
 [LICENSE](https://github.com/singnet/snet-sdk-js/blob/master/LICENSE) file for details.
