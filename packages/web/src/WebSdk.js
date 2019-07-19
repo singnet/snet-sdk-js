@@ -13,7 +13,7 @@ class WebSdk extends SnetSDK {
   async createServiceClient(orgId, serviceId, groupName = 'default_group', paymentChannelManagementStrategy = null, options = {}) {
     const serviceMetadata = await this.serviceMetadata(orgId, serviceId);
     const group = await this._serviceGroup(serviceMetadata, orgId, serviceId, groupName);
-    return new WebServiceClient(this, this._mpeContract, serviceMetadata, group, this._constructStrategy(paymentChannelManagementStrategy), options);
+    return new WebServiceClient(this, orgId, serviceId, this._mpeContract, serviceMetadata, group, this._constructStrategy(paymentChannelManagementStrategy), options);
   }
 
   _createIdentity() {

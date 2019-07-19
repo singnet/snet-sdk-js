@@ -14,7 +14,7 @@ class NodeSdk extends SnetSDK {
   async createServiceClient(orgId, serviceId, ServiceStub, groupName = 'default_group', paymentChannelManagementStrategy = null, options = {}) {
     const serviceMetadata = await this.serviceMetadata(orgId, serviceId);
     const group = await this._serviceGroup(serviceMetadata, orgId, serviceId, groupName);
-    return new ServiceClient(this, this._mpeContract, serviceMetadata, group, ServiceStub, this._constructStrategy(paymentChannelManagementStrategy), options);
+    return new ServiceClient(this, orgId, serviceId, this._mpeContract, serviceMetadata, group, ServiceStub, this._constructStrategy(paymentChannelManagementStrategy), options);
   }
 
   _createIdentity() {
