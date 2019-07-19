@@ -22,7 +22,7 @@ class WebServiceClient extends BaseServiceClient {
   }
 
   async _enhanceMetadata(metadata = new grpc.Metadata()) {
-    if (!this._paymentChannelManagementStrategy) {
+    if (this._options.disableBlockchainOperations) {
       return metadata;
     }
 
