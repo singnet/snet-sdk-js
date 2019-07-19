@@ -12,7 +12,7 @@ class WebServiceClient extends BaseServiceClient {
   async invoke(methodDescriptor, props) {
     const serviceEndpoint = this._getServiceEndpoint();
     const host = serviceEndpoint.protocol + '//' + serviceEndpoint.host;
-    const metadata = await this._enhanceMetadata(props.metadata);
+    const metadata = await this._enhanceMetadata(props.metadata, methodDescriptor);
     const requestProps = {
       ...props,
       host,
@@ -21,12 +21,14 @@ class WebServiceClient extends BaseServiceClient {
     return grpc.invoke(methodDescriptor, requestProps);
   }
 
-  async _enhanceMetadata(metadata = new grpc.Metadata()) {
+  async _enhanceMetadata(metadata = new grpc.Metadata(), methodDescriptor) {
     if (this._options.disableBlockchainOperations) {
       return metadata;
     }
 
-    const { channelId, nonce, signingAmount, signatureBytes } = await this._fetchPaymentMetadata();
+    const serviceName = methodDescriptor.service.serviceName;
+    const methodName = methodDescriptor.methodName;
+    const { channelId, nonce, signingAmount, signatureBytes } = await this._fetchPaymentMetadata(serviceName, methodName);
 
     metadata.append('snet-payment-type', 'escrow');
     metadata.append('snet-payment-channel-id', `${channelId}`);
