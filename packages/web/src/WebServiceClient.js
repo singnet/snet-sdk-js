@@ -5,20 +5,34 @@ import { BaseServiceClient, logger } from './sdk-core';
 
 class WebServiceClient extends BaseServiceClient {
   /**
-   * @param {MethodDefinition} methodDescriptor
+   * @param {MethodDescriptor} methodDescriptor
    * @param {InvokeRpcOptions} props
    * @returns {Request}
    */
   async invoke(methodDescriptor, props) {
+    const requestProps = await this._generateRequestProps(methodDescriptor, props);
+    return grpc.invoke(methodDescriptor, requestProps);
+  }
+
+  /**
+   * @param {MethodDescriptor} methodDescriptor
+   * @param {UnaryRpcOptions} props
+   * @returns {Request}
+   */
+  async unary(methodDescriptor, props) {
+    const requestProps = await this._generateRequestProps(methodDescriptor, props);
+    return grpc.unary(methodDescriptor, requestProps);
+  }
+
+  async _generateRequestProps(methodDescriptor, props) {
     const serviceEndpoint = this._getServiceEndpoint();
     const host = serviceEndpoint.protocol + '//' + serviceEndpoint.host;
     const metadata = await this._enhanceMetadata(props.metadata, methodDescriptor);
-    const requestProps = {
+    return {
       ...props,
       host,
       metadata
     };
-    return grpc.invoke(methodDescriptor, requestProps);
   }
 
   async _enhanceMetadata(metadata = new grpc.Metadata(), methodDescriptor) {
