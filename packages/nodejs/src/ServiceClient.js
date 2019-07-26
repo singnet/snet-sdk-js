@@ -6,6 +6,8 @@ import { BaseServiceClient, logger } from './sdk-core';
 class ServiceClient extends BaseServiceClient {
   /**
    * @param {SnetSDK} sdk
+   * @param {String} orgId
+   * @param {String} serviceId
    * @param {MPEContract} mpeContract
    * @param {ServiceMetadata} metadata
    * @param {Group} group
@@ -13,8 +15,8 @@ class ServiceClient extends BaseServiceClient {
    * @param {DefaultPaymentChannelManagementStrategy} paymentChannelManagementStrategy
    * @param {ServiceClientOptions} [options={}]
    */
-  constructor(sdk, mpeContract, metadata, group, ServiceStub, paymentChannelManagementStrategy, options) {
-    super(sdk, mpeContract, metadata, group, paymentChannelManagementStrategy, options);
+  constructor(sdk, orgId, serviceId, mpeContract, metadata, group, ServiceStub, paymentChannelManagementStrategy, options) {
+    super(sdk, orgId, serviceId, mpeContract, metadata, group, paymentChannelManagementStrategy, options);
     this._grpcService = this._constructGrpcService(ServiceStub);
   }
 

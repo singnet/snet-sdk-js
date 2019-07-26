@@ -6,17 +6,19 @@ import logger from './utils/logger';
 class BaseServiceClient {
   /**
    * @param {SnetSDK} sdk
+   * @param {String} orgId
+   * @param {String} serviceId
    * @param {MPEContract} mpeContract
    * @param {ServiceMetadata} metadata
    * @param {Group} group
    * @param {DefaultPaymentChannelManagementStrategy} paymentChannelManagementStrategy
    * @param {ServiceClientOptions} [options={}]
    */
-  constructor(sdk, mpeContract, metadata, group, paymentChannelManagementStrategy, options = {}) {
+  constructor(sdk, orgId, serviceId, mpeContract, metadata, group, paymentChannelManagementStrategy, options = {}) {
     this._sdk = sdk;
     this._mpeContract = mpeContract;
     this._options = options;
-    this._metadata = metadata;
+    this._metadata = { orgId, serviceId, ...metadata };
     this._group = {
       group_id_in_bytes: Buffer.from(group.group_id, 'base64'),
       ...group
@@ -126,7 +128,11 @@ class BaseServiceClient {
     return this._getNewlyOpenedChannel(newFundedChannelReceipt);
   }
 
-  async _fetchPaymentMetadata() {
+  async _fetchPaymentMetadata(serviceName = '', methodName = '') {
+    if (this._options.metadataGenerator) {
+      return this._options.metadataGenerator(this, serviceName, methodName);
+    }
+
     logger.debug('Selecting PaymentChannel using the given strategy', { tags: ['PaymentChannelManagementStrategy, gRPC'] });
     const channel = await this._paymentChannelManagementStrategy.selectChannel(this);
 
