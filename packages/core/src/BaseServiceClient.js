@@ -1,6 +1,6 @@
 import url from "url";
 import { BigNumber } from 'bignumber.js';
-import { find, map } from 'lodash';
+import { find, map, isEmpty } from 'lodash';
 import logger from './utils/logger';
 
 class BaseServiceClient {
@@ -19,10 +19,7 @@ class BaseServiceClient {
     this._mpeContract = mpeContract;
     this._options = options;
     this._metadata = { orgId, serviceId, ...metadata };
-    this._group = {
-      group_id_in_bytes: Buffer.from(group.group_id, 'base64'),
-      ...group
-    };
+    this._group = this._enhanceGroupInfo(group);
     this._paymentChannelManagementStrategy = paymentChannelManagementStrategy;
     this._paymentChannelStateServiceClient = this._generatePaymentChannelStateServiceClient();
     this._paymentChannels = [];
@@ -126,6 +123,17 @@ class BaseServiceClient {
   async depositAndOpenChannel(amount, expiration) {
     const newFundedChannelReceipt = await this._mpeContract.depositAndOpenChannel(this._account, this, amount, expiration);
     return this._getNewlyOpenedChannel(newFundedChannelReceipt);
+  }
+
+  _enhanceGroupInfo(group) {
+    if(isEmpty(group)) {
+      return group;
+    }
+
+    return {
+      group_id_in_bytes: Buffer.from(group.group_id, 'base64'),
+      ...group
+    };
   }
 
   async _fetchPaymentMetadata(serviceName = '', methodName = '') {
