@@ -136,11 +136,7 @@ class BaseServiceClient {
     };
   }
 
-  async _fetchPaymentMetadata(serviceName = '', methodName = '') {
-    if (this._options.metadataGenerator) {
-      return this._options.metadataGenerator(this, serviceName, methodName);
-    }
-
+  async _fetchPaymentMetadata() {
     logger.debug('Selecting PaymentChannel using the given strategy', { tags: ['PaymentChannelManagementStrategy, gRPC'] });
     const channel = await this._paymentChannelManagementStrategy.selectChannel(this);
 
