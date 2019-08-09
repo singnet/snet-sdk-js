@@ -48,6 +48,7 @@ class WebServiceClient extends BaseServiceClient {
       forOwn(customMetadata, (value, key) => {
         metadata.append(key, value);
       });
+      return metadata;
     }
 
     const { channelId, nonce, signingAmount, signatureBytes } = await this._fetchPaymentMetadata();
