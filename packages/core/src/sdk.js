@@ -52,6 +52,10 @@ class SnetSDK {
     return this._web3;
   }
 
+  set paymentChannelManagementStrategy(paymentChannelManagementStrategy) {
+    this._paymentChannelManagementStrategy = paymentChannelManagementStrategy;
+  }
+
   /**
    * @param {string} orgId
    * @param {string} serviceId
@@ -90,6 +94,10 @@ class SnetSDK {
   _constructStrategy(paymentChannelManagementStrategy) {
     if (paymentChannelManagementStrategy) {
       return paymentChannelManagementStrategy;
+    }
+
+    if (this._paymentChannelManagementStrategy) {
+      return this._paymentChannelManagementStrategy;
     }
 
     logger.debug('PaymentChannelManagementStrategy not provided, using DefaultPaymentChannelManagementStrategy');
