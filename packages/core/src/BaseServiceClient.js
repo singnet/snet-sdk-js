@@ -130,9 +130,13 @@ class BaseServiceClient {
       return group;
     }
 
+    const { payment_address, payment_expiration_threshold } = group.payment;
+
     return {
       group_id_in_bytes: Buffer.from(group.group_id, 'base64'),
-      ...group
+      ...group,
+      payment_address,
+      payment_expiration_threshold,
     };
   }
 
@@ -170,7 +174,10 @@ class BaseServiceClient {
   }
 
   get _pricePerServiceCall() {
-    return new BigNumber(this._metadata.pricing.price_in_cogs);
+    const { pricing } = this.group;
+    const fixedPricing = find(pricing, ({ price_model }) => 'fixed_price' === price_model);
+
+    return new BigNumber(fixedPricing.price_in_cogs);
   }
 
   _getServiceEndpoint() {
@@ -178,11 +185,11 @@ class BaseServiceClient {
       return (url.parse(this._options.endpoint));
     }
 
-    const { group_name: defaultGroupName } = this.group;
-    const { endpoints } = this._metadata;
-    const { endpoint } = find(endpoints, ({ group_name: groupName }) => groupName === defaultGroupName);
-    logger.debug(`Service endpoint: ${endpoint}`, { tags: ['gRPC']});
-    return endpoint && url.parse(endpoint);
+    const { endpoints } = this.group;
+    const endpoint = first(endpoints);
+    logger.debug(`Service endpoint: ${endpoint.endpoint}`, { tags: ['gRPC']});
+
+    return endpoint && endpoint.endpoint && url.parse(endpoint.endpoint);
   }
 
   _generatePaymentChannelStateServiceClient() {

@@ -3,10 +3,10 @@ import IPFSClient from 'ipfs-http-client';
 import url from 'url';
 import RegistryNetworks from 'singularitynet-platform-contracts/networks/Registry.json';
 import RegistryAbi from 'singularitynet-platform-contracts/abi/Registry.json';
+import { find, first } from 'lodash';
 
 import Account from './Account';
 import MPEContract from './MPEContract';
-import { find } from 'lodash';
 import { DefaultPaymentChannelManagementStrategy } from './payment_channel_management_strategies';
 import logger from './utils/logger';
 
@@ -81,14 +81,22 @@ class SnetSDK {
     return JSON.parse(data.toString());
   }
 
-  async _serviceGroup(serviceMetadata, orgId, serviceId, groupName = 'default_group') {
-    const group = find(serviceMetadata.groups, ({ group_name }) => group_name === groupName);
+  async _serviceGroup(serviceMetadata, orgId, serviceId, groupName = undefined) {
+    const group = this._findGroup(serviceMetadata.groups, groupName);
     if(!group) {
       const errorMessage = `Group[name: ${groupName}] not found for orgId: ${orgId} and serviceId: ${serviceId}`;
       logger.error(errorMessage);
       throw new Error(errorMessage);
     }
     return group;
+  }
+
+  _findGroup(groups, groupName) {
+    if(!groupName) {
+      return first(groups);
+    }
+
+    return find(groups, ({ group_name }) => group_name === groupName);
   }
 
   _constructStrategy(paymentChannelManagementStrategy) {
