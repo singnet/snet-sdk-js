@@ -149,6 +149,7 @@ class BaseServiceClient {
     logger.info(`Using PaymentChannel[id: ${channelId}] with nonce: ${nonce} and amount: ${signingAmount} and `, { tags: ['PaymentChannelManagementStrategy', 'gRPC'] });
 
     const signatureBytes = await this._account.signData(
+      { t: 'string', v: '__MPE_claim_message' },
       { t: 'address', v: this._mpeContract.address },
       { t: 'uint256', v: channelId },
       { t: 'uint256', v: nonce },
