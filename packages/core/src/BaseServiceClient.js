@@ -153,7 +153,7 @@ class BaseServiceClient {
       { t: 'address', v: this._mpeContract.address },
       { t: 'uint256', v: channelId },
       { t: 'uint256', v: nonce },
-      { t: 'uint256', v: signingAmount },
+      { t: 'uint256', v: signingAmount.toString() },
     );
 
     return { channelId, nonce, signingAmount, signatureBytes };

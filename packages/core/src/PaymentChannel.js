@@ -77,7 +77,7 @@ class PaymentChannel {
     const { nonce, expiration, value: totalAmount } = latestChannelInfoOnBlockchain;
     const availableAmount = totalAmount - lastSignedAmount;
     this._state = {
-      nonce,
+      nonce: nonce.toString(),
       currentNonce,
       expiration,
       totalAmount,
@@ -91,7 +91,7 @@ class PaymentChannel {
     logger.debug(`Fetching latest PaymentChannel[id: ${this.channelId}] state from service daemon`, { tags: ['PaymentChannel'] });
     try {
       const response = await this._serviceClient.getChannelState(this.channelId);
-      const nonce = PaymentChannel._uint8ArrayToBN(response.getCurrentNonce());
+      const nonce = PaymentChannel._uint8ArrayToBN(response.getCurrentNonce()).toString();
       const currentSignedAmount = PaymentChannel._uint8ArrayToBN(response.getCurrentSignedAmount());
       const channelState = {
         lastSignedAmount: currentSignedAmount,
