@@ -189,7 +189,7 @@ class MPEContract {
     const channelsOpened = await this.contract.getPastEvents('ChannelOpen', options);
     return map(channelsOpened, channelOpenEvent => {
       const channelId = channelOpenEvent.returnValues.channelId;
-      return new PaymentChannel(channelId, this._web3, account, service, this);
+      return new PaymentChannel(channelId.toString(), this._web3, account, service, this);
     });
   }
 
