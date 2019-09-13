@@ -50,6 +50,7 @@
     "@babel/register": "^7.0.0",
     "google-protobuf": "^3.8.0",
     "grpc": "^1.21.1",
-    "rimraf": "^2.6.3"
+    "rimraf": "^2.6.3",
+    "verdaccio": "^4.2.2"
   }
 }
