@@ -190,7 +190,7 @@ class BaseServiceClient {
     const endpoint = first(endpoints);
     logger.debug(`Service endpoint: ${endpoint.endpoint}`, { tags: ['gRPC']});
 
-    return endpoint && endpoint.endpoint && url.parse(endpoint.endpoint);
+    return endpoint && url.parse(endpoint);
   }
 
   _generatePaymentChannelStateServiceClient() {
