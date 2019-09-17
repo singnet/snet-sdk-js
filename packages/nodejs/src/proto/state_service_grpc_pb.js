@@ -1,5 +1,12 @@
 // GENERATED CODE -- DO NOT EDIT!
 
+// Original file comments:
+//
+// FIXME: All changes all this file should manually be copied to the `snet-cli`
+// repo until https://github.com/singnet/snet-daemon/issues/99 and
+// https://github.com/singnet/snet-cli/issues/88 are fixed.
+//
+//
 'use strict';
 var grpc = require('grpc');
 var state_service_pb = require('./state_service_pb.js');
@@ -30,8 +37,10 @@ function deserialize_escrow_ChannelStateRequest(buffer_arg) {
 // PaymentChannelStateService contains methods to get the MultiPartyEscrow
 // payment channel state.
 // channel_id, channel_nonce, value and amount fields below in fact are
-// Solidity uint256 values. Which are big-endian integers padded by zeros, see
+// Solidity uint256 values. Which are big-endian integers, see
 // https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI#formal-specification-of-the-encoding
+// These values may be or may be not padded by zeros, service supports both
+// options.
 var PaymentChannelStateServiceService = exports.PaymentChannelStateServiceService = {
   // GetChannelState method returns a channel state by channel id.
   getChannelState: {

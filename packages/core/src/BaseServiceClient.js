@@ -59,15 +59,21 @@ class BaseServiceClient {
    * @returns {Promise<ChannelStateReply>}
    */
   async getChannelState(channelId) {
-    const signatureBytes = await this._account.signData({ t: 'uint256', v: channelId });
+    const currentBlockNumber = await this._web3.eth.getBlockNumber();
+    const signatureBytes = await this._account.signData(
+      { t: 'string', v: '__get_channel_state' },
+      { t: 'address', v: this._mpeContract.address },
+      { t: 'uint256', v: channelId },
+      { t: 'uint256', v: currentBlockNumber },
+    );
 
     const channelIdBytes = Buffer.alloc(4);
     channelIdBytes.writeUInt32BE(channelId, 0);
 
-    const ChannelStateRequest = this._getChannelStateRequestMethodDescriptor();
-    const channelStateRequest = new ChannelStateRequest();
+    const channelStateRequest = new this.paymentChannelStateServiceClient.getChannelState.requestType();
     channelStateRequest.setChannelId(channelIdBytes);
     channelStateRequest.setSignature(signatureBytes);
+    channelStateRequest.setCurrentBlock(currentBlockNumber);
 
     return new Promise((resolve, reject) => {
       this.paymentChannelStateServiceClient.getChannelState(channelStateRequest, (err, response) => {
@@ -195,10 +201,6 @@ class BaseServiceClient {
 
   _generatePaymentChannelStateServiceClient() {
     logger.error('_generatePaymentChannelStateServiceClient must be implemented in the sub classes');
-  }
-
-  _getChannelStateRequestMethodDescriptor() {
-    logger.error('_getChannelStateRequestMethodDescriptor must be implemented in the sub classes');
   }
 }
 

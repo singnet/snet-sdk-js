@@ -14,6 +14,9 @@ export class ChannelStateRequest extends jspb.Message {
   getSignature_asB64(): string;
   setSignature(value: Uint8Array | string): void;
 
+  getCurrentBlock(): number;
+  setCurrentBlock(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ChannelStateRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ChannelStateRequest): ChannelStateRequest.AsObject;
@@ -28,6 +31,7 @@ export namespace ChannelStateRequest {
   export type AsObject = {
     channelId: Uint8Array | string,
     signature: Uint8Array | string,
+    currentBlock: number,
   }
 }
 
@@ -47,6 +51,16 @@ export class ChannelStateReply extends jspb.Message {
   getCurrentSignature_asB64(): string;
   setCurrentSignature(value: Uint8Array | string): void;
 
+  getOldNonceSignedAmount(): Uint8Array | string;
+  getOldNonceSignedAmount_asU8(): Uint8Array;
+  getOldNonceSignedAmount_asB64(): string;
+  setOldNonceSignedAmount(value: Uint8Array | string): void;
+
+  getOldNonceSignature(): Uint8Array | string;
+  getOldNonceSignature_asU8(): Uint8Array;
+  getOldNonceSignature_asB64(): string;
+  setOldNonceSignature(value: Uint8Array | string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ChannelStateReply.AsObject;
   static toObject(includeInstance: boolean, msg: ChannelStateReply): ChannelStateReply.AsObject;
@@ -62,6 +76,8 @@ export namespace ChannelStateReply {
     currentNonce: Uint8Array | string,
     currentSignedAmount: Uint8Array | string,
     currentSignature: Uint8Array | string,
+    oldNonceSignedAmount: Uint8Array | string,
+    oldNonceSignature: Uint8Array | string,
   }
 }
 
