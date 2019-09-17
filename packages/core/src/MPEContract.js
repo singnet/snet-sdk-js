@@ -13,7 +13,7 @@ class MPEContract {
   constructor(web3, networkId) {
     this._web3 = web3;
     this._networkId = networkId;
-    this._contract = this._web3.eth.Contract(MPEAbi, MPENetworks[networkId].address);
+    this._contract = new this._web3.eth.Contract(MPEAbi, MPENetworks[networkId].address);
   }
 
   /**
