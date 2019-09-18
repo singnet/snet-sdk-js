@@ -2,7 +2,7 @@
 
 'use strict';
 var grpc = require('grpc');
-var state_service_pb = require('./payment_channel_state_service_pb.js');
+var state_service_pb = require('./state_service_pb.js');
 
 function serialize_escrow_ChannelStateReply(arg) {
   if (!(arg instanceof state_service_pb.ChannelStateReply)) {
