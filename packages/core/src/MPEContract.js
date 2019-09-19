@@ -1,5 +1,6 @@
 import MPEAbi from 'singularitynet-platform-contracts/abi/MultiPartyEscrow';
 import MPENetworks from 'singularitynet-platform-contracts/networks/MultiPartyEscrow';
+import { BigNumber } from 'bignumber.js';
 import { map } from 'lodash';
 
 import PaymentChannel from './PaymentChannel';
@@ -50,9 +51,10 @@ class MPEContract {
    * @returns {Promise.<TransactionReceipt>}
    */
   async deposit(account, amountInCogs) {
-    logger.info(`Depositing ${amountInCogs}cogs to MPE account`, { tags: ['MPE'] });
+    const amount = new BigNumber(amountInCogs).toFixed();
+    logger.info(`Depositing ${amount}cogs to MPE account`, { tags: ['MPE'] });
     const depositOperation = this.contract.methods.deposit;
-    return account.sendTransaction(this.address, depositOperation, amountInCogs);
+    return account.sendTransaction(this.address, depositOperation, amount);
   }
 
   /**
@@ -62,28 +64,31 @@ class MPEContract {
    * @returns {Promise.<TransactionReceipt>}
    */
   async withdraw(account, amountInCogs) {
-    logger.info(`Withdrawing ${amountInCogs}cogs from MPE account`, { tags: ['MPE'] });
+    const amount = new BigNumber(amountInCogs).toFixed();
+    logger.info(`Withdrawing ${amount}cogs from MPE account`, { tags: ['MPE'] });
     const withdrawOperation = this.contract.methods.withdraw;
-    return account.sendTransaction(this.address, withdrawOperation, amountInCogs);
+    return account.sendTransaction(this.address, withdrawOperation, amount);
   }
 
   /**
    * Opens a payment channel between an account and the given service with the specified tokens and expiry period
    * @param {Account} account - The account to create payment channel for
    * @param {ServiceClient} service - The AI service between which the payment channel needs to be opened
-   * @param {BigNumber} amount - The initial tokens with the which payment channel needs to be opened
+   * @param {BigNumber} amountInCogs - The initial tokens with the which payment channel needs to be opened
    * @param {BigNumber} expiry - The expiry of the payment channel in terms of block number
    * @returns {Promise.<TransactionReceipt>}
    */
-  async openChannel(account, service, amount, expiry) {
+  async openChannel(account, service, amountInCogs, expiry) {
+    const amount = new BigNumber(amountInCogs).toFixed();
+    const expiryStr = new BigNumber(expiry).toFixed();
     const {
       payment_address: recipientAddress,
       group_id_in_bytes: groupId
     } = service.group;
 
-    logger.info(`Opening new payment channel [amount: ${amount}, expiry: ${expiry}]`, { tags: ['MPE'] });
+    logger.info(`Opening new payment channel [amount: ${amount}, expiry: ${expiryStr}]`, { tags: ['MPE'] });
     const openChannelOperation = this.contract.methods.openChannel;
-    const openChannelFnArgs = [account.signerAddress, recipientAddress, groupId, amount, expiry];
+    const openChannelFnArgs = [account.signerAddress, recipientAddress, groupId, amount, expiryStr];
     return account.sendTransaction(this.address, openChannelOperation, ...openChannelFnArgs);
   }
 
@@ -92,23 +97,25 @@ class MPEContract {
    * with the specified tokens and expiry period
    * @param {Account} account - The account against which the operations needs to be performed
    * @param {ServiceClient} service - The AI service between which the payment channel needs to be opened
-   * @param {BigNumber} amount - The initial tokens with the which payment channel needs to be opened
+   * @param {BigNumber} amountInCogs - The initial tokens with the which payment channel needs to be opened
    * @param {BigNumber} expiry - The expiry of the payment channel in terms of block number
    * @returns {Promise.<TransactionReceipt>}
    */
-  async depositAndOpenChannel(account, service, amount, expiry) {
+  async depositAndOpenChannel(account, service, amountInCogs, expiry) {
+    const amount = new BigNumber(amountInCogs).toFixed();
+    const expiryStr = new BigNumber(expiry).toFixed();
     const {
       payment_address: recipientAddress,
       group_id_in_bytes: groupId
     } = service.group;
     const alreadyApprovedAmount = await account.allowance();
-    if(amount > alreadyApprovedAmount) {
-      await account.approveTransfer(amount);
+    if(amountInCogs > alreadyApprovedAmount) {
+      await account.approveTransfer(amountInCogs);
     }
 
     const depositAndOpenChannelOperation = this.contract.methods.depositAndOpenChannel;
-    const operationArgs = [account.signerAddress, recipientAddress, groupId, amount, expiry];
-    logger.info(`Depositing ${amount}cogs to MPE address and Opening new payment channel [expiry: ${expiry}]`, { tags: ['MPE'] });
+    const operationArgs = [account.signerAddress, recipientAddress, groupId, amount, expiryStr];
+    logger.info(`Depositing ${amount}cogs to MPE address and Opening new payment channel [expiry: ${expiryStr}]`, { tags: ['MPE'] });
     return account.sendTransaction(this.address, depositAndOpenChannelOperation, ...operationArgs);
   }
 
@@ -116,15 +123,17 @@ class MPEContract {
    * Funds an existing payment channel
    * @param {Account} account - The account against which the operations needs to be performed
    * @param {BigNumber} channelId - The payment channel id
-   * @param {BigNumber} amount - The number of tokens to fund the channel
+   * @param {BigNumber} amountInCogs - The number of tokens to fund the channel
    * @returns {Promise.<TransactionReceipt>}
    */
-  async channelAddFunds(account, channelId, amount) {
-    await this._fundEscrowAccount(account, amount);
+  async channelAddFunds(account, channelId, amountInCogs) {
+    const channelIdStr = new BigNumber(channelId).toFixed();
+    const amount = new BigNumber(amountInCogs).toFixed();
+    await this._fundEscrowAccount(account, amountInCogs);
 
-    logger.info(`Funding PaymentChannel[id: ${channelId}] with ${amount}cogs`, { tags: ['MPE'] });
+    logger.info(`Funding PaymentChannel[id: ${channelIdStr}] with ${amount}cogs`, { tags: ['MPE'] });
     const channelAddFundsOperation = this.contract.methods.channelAddFunds;
-    return account.sendTransaction(this.address, channelAddFundsOperation, channelId, amount);
+    return account.sendTransaction(this.address, channelAddFundsOperation, channelIdStr, amount);
   }
 
   /**
@@ -135,9 +144,11 @@ class MPEContract {
    * @returns {Promise.<TransactionReceipt>}
    */
   async channelExtend(account, channelId, expiry) {
-    logger.info(`Extending PaymentChannel[id: ${channelId}]. New expiry is block# ${expiry}`, { tags: ['MPE'] });
+    const channelIdStr = new BigNumber(channelId).toFixed();
+    const expiryStr = new BigNumber(expiry).toFixed();
+    logger.info(`Extending PaymentChannel[id: ${channelIdStr}]. New expiry is block# ${expiryStr}`, { tags: ['MPE'] });
     const channelExtendOperation = this.contract.methods.channelExtend;
-    return account.sendTransaction(this.address, channelExtendOperation, channelId, expiry);
+    return account.sendTransaction(this.address, channelExtendOperation, channelIdStr, expiryStr);
   }
 
   /**
@@ -145,15 +156,18 @@ class MPEContract {
    * @param {Account} account - The account against which the operations needs to be performed
    * @param {BigNumber} channelId - The payment channel id
    * @param {BigNumber} expiry - The expiry in terms of block number to extend the channel
-   * @param {BigNumber} amount - The number of tokens to fund the channel
+   * @param {BigNumber} amountInCogs - The number of tokens to fund the channel
    * @returns {Promise.<TransactionReceipt>}
    */
-  async channelExtendAndAddFunds(account, channelId, expiry, amount) {
-    await this._fundEscrowAccount(account, amount);
+  async channelExtendAndAddFunds(account, channelId, expiry, amountInCogs) {
+    const channelIdStr = new BigNumber(channelId).toFixed();
+    const amount = new BigNumber(amountInCogs).toFixed();
+    const expiryStr = new BigNumber(expiry).toFixed();
+    await this._fundEscrowAccount(account, amountInCogs);
 
-    logger.info(`Extending and Funding PaymentChannel[id: ${channelId}] with amount: ${amount} and expiry: ${expiry}`, { tags: ['MPE'] });
+    logger.info(`Extending and Funding PaymentChannel[id: ${channelIdStr}] with amount: ${amount} and expiry: ${expiryStr}`, { tags: ['MPE'] });
     const channelExtendAndAddFundsOperation = this.contract.methods.channelExtendAndAddFunds;
-    return account.sendTransaction(this.address, channelExtendAndAddFundsOperation, channelId, expiry, amount);
+    return account.sendTransaction(this.address, channelExtendAndAddFundsOperation, channelIdStr, expiryStr, amount);
   }
   
   /**
@@ -162,8 +176,9 @@ class MPEContract {
    * @returns {Promise<any>} - The return value(s) of the smart contract method. If it returns a single value, it’s returned as is. If it has multiple return values they are returned as an object with properties and indices:
    */
   async channels(channelId) {
-    logger.debug(`Fetch latest PaymentChannel[id: ${channelId}] state`, { tags: ['MPE'] });
-    return this.contract.methods.channels(channelId).call();
+    const channelIdStr = new BigNumber(channelId).toFixed();
+    logger.debug(`Fetch latest PaymentChannel[id: ${channelIdStr}] state`, { tags: ['MPE'] });
+    return this.contract.methods.channels(channelIdStr).call();
   }
 
   /**
@@ -189,14 +204,14 @@ class MPEContract {
     const channelsOpened = await this.contract.getPastEvents('ChannelOpen', options);
     return map(channelsOpened, channelOpenEvent => {
       const channelId = channelOpenEvent.returnValues.channelId;
-      return new PaymentChannel(channelId.toString(), this._web3, account, service, this);
+      return new PaymentChannel(channelId, this._web3, account, service, this);
     });
   }
 
-  async _fundEscrowAccount(account, amount) {
+  async _fundEscrowAccount(account, amountInCogs) {
     const currentEscrowBalance = await this.balance(account.address);
-    if(amount > currentEscrowBalance) {
-      await account.depositToEscrowAccount(amount - currentEscrowBalance);
+    if(amountInCogs > currentEscrowBalance) {
+      await account.depositToEscrowAccount(amountInCogs - currentEscrowBalance);
     }
   }
 

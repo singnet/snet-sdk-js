@@ -5,10 +5,10 @@ import logger from './utils/logger';
 
 class PaymentChannel {
   /**
-   * @param {string|number} channelId
+   * @param {BigNumber} channelId
    * @param {Web3} web3
    * @param {Account} account
-   * @param {ServiceClient} service
+   * @param {BaseServiceClient} service
    * @param {MPEContract} mpeContract
    */
   constructor(channelId, web3, account, service, mpeContract) {
@@ -74,7 +74,7 @@ class PaymentChannel {
     const latestChannelInfoOnBlockchain = await this._mpeContract.channels(this.channelId);
     const currentState = await this._currentChannelState();
     const { currentSignedAmount, nonce: currentNonce } = currentState;
-    const { nonce, expiry, value: amountDeposited } = latestChannelInfoOnBlockchain;
+    const { nonce, expiration: expiry, value: amountDeposited } = latestChannelInfoOnBlockchain;
     const availableAmount = amountDeposited - currentSignedAmount;
     this._state = {
       nonce: nonce.toString(),
@@ -92,7 +92,7 @@ class PaymentChannel {
     logger.debug(`Fetching latest PaymentChannel[id: ${this.channelId}] state from service daemon`, { tags: ['PaymentChannel'] });
     try {
       const response = await this._serviceClient.getChannelState(this.channelId);
-      const nonce = PaymentChannel._uint8ArrayToBN(response.getCurrentNonce()).toString();
+      const nonce = PaymentChannel._uint8ArrayToBN(response.getCurrentNonce());
       const currentSignedAmount = PaymentChannel._uint8ArrayToBN(response.getCurrentSignedAmount());
       const channelState = {
         currentSignedAmount,

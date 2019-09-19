@@ -60,10 +60,11 @@ class BaseServiceClient {
    */
   async getChannelState(channelId) {
     const currentBlockNumber = await this._web3.eth.getBlockNumber();
+    const channelIdStr = new BigNumber(channelId).toFixed();
     const signatureBytes = await this._account.signData(
       { t: 'string', v: '__get_channel_state' },
       { t: 'address', v: this._mpeContract.address },
-      { t: 'uint256', v: channelId },
+      { t: 'uint256', v: channelIdStr },
       { t: 'uint256', v: currentBlockNumber },
     );
 
@@ -152,14 +153,17 @@ class BaseServiceClient {
 
     const { channelId, state: { nonce, currentSignedAmount }} = channel;
     const signingAmount = currentSignedAmount.plus(this._pricePerServiceCall);
-    logger.info(`Using PaymentChannel[id: ${channelId}] with nonce: ${nonce} and amount: ${signingAmount} and `, { tags: ['PaymentChannelManagementStrategy', 'gRPC'] });
+    const channelIdStr = new BigNumber(channelId).toFixed();
+    const nonceStr = new BigNumber(nonce).toFixed();
+    const signingAmountStr = new BigNumber(signingAmount).toFixed();
+    logger.info(`Using PaymentChannel[id: ${channelIdStr}] with nonce: ${nonceStr} and amount: ${signingAmountStr} and `, { tags: ['PaymentChannelManagementStrategy', 'gRPC'] });
 
     const signatureBytes = await this._account.signData(
       { t: 'string', v: '__MPE_claim_message' },
       { t: 'address', v: this._mpeContract.address },
-      { t: 'uint256', v: channelId },
-      { t: 'uint256', v: nonce },
-      { t: 'uint256', v: signingAmount.toString() },
+      { t: 'uint256', v: channelIdStr },
+      { t: 'uint256', v: nonceStr },
+      { t: 'uint256', v: signingAmountStr },
     );
 
     return { channelId, nonce, signingAmount, signatureBytes };
