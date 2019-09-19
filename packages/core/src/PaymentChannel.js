@@ -19,7 +19,7 @@ class PaymentChannel {
     this._serviceClient = service;
     this._state = {
       nonce: new BigNumber(0),
-      lastSignedAmount: new BigNumber(0),
+      currentSignedAmount: new BigNumber(0),
     };
   }
 
@@ -73,15 +73,15 @@ class PaymentChannel {
     logger.debug(`Syncing PaymentChannel[id: ${this._channelId}] state`, { tags: ['PaymentChannel']});
     const latestChannelInfoOnBlockchain = await this._mpeContract.channels(this.channelId);
     const currentState = await this._currentChannelState();
-    const { lastSignedAmount, nonce: currentNonce } = currentState;
+    const { currentSignedAmount, nonce: currentNonce } = currentState;
     const { nonce, expiry, value: totalAmount } = latestChannelInfoOnBlockchain;
-    const availableAmount = totalAmount - lastSignedAmount;
+    const availableAmount = totalAmount - currentSignedAmount;
     this._state = {
       nonce: nonce.toString(),
       currentNonce,
       expiry,
       totalAmount,
-      lastSignedAmount,
+      currentSignedAmount,
       availableAmount,
     };
     logger.debug(`Latest PaymentChannel[id: ${this.channelId}] state:`, this._state, { tags: ['PaymentChannel'] });
@@ -95,7 +95,7 @@ class PaymentChannel {
       const nonce = PaymentChannel._uint8ArrayToBN(response.getCurrentNonce()).toString();
       const currentSignedAmount = PaymentChannel._uint8ArrayToBN(response.getCurrentSignedAmount());
       const channelState = {
-        lastSignedAmount: currentSignedAmount,
+        currentSignedAmount,
         nonce,
       };
       return Promise.resolve(channelState);

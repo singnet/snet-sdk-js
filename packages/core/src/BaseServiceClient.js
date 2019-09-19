@@ -150,8 +150,8 @@ class BaseServiceClient {
     logger.debug('Selecting PaymentChannel using the given strategy', { tags: ['PaymentChannelManagementStrategy, gRPC'] });
     const channel = await this._paymentChannelManagementStrategy.selectChannel(this);
 
-    const { channelId, state: { nonce, lastSignedAmount }} = channel;
-    const signingAmount = lastSignedAmount.plus(this._pricePerServiceCall);
+    const { channelId, state: { nonce, currentSignedAmount }} = channel;
+    const signingAmount = currentSignedAmount.plus(this._pricePerServiceCall);
     logger.info(`Using PaymentChannel[id: ${channelId}] with nonce: ${nonce} and amount: ${signingAmount} and `, { tags: ['PaymentChannelManagementStrategy', 'gRPC'] });
 
     const signatureBytes = await this._account.signData(
