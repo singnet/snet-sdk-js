@@ -188,7 +188,7 @@ class BaseServiceClient {
 
     const { endpoints } = this.group;
     const endpoint = first(endpoints);
-    logger.debug(`Service endpoint: ${endpoint.endpoint}`, { tags: ['gRPC']});
+    logger.debug(`Service endpoint: ${endpoint}`, { tags: ['gRPC']});
 
     return endpoint && url.parse(endpoint);
   }
