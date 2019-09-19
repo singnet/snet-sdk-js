@@ -48,21 +48,21 @@ class PaymentChannel {
 
   /**
    * Extends the expiry of the payment channel
-   * @param {BigNumber} expiration - Expiry in terms of block number
+   * @param {BigNumber} expiry - Expiry in terms of block number
    * @returns {Promise.<TransactionReceipt>}
    */
-  async extendExpiration(expiration) {
-    return this._mpeContract.channelExtend(this._account, this.channelId, expiration);
+  async extendExpiry(expiry) {
+    return this._mpeContract.channelExtend(this._account, this.channelId, expiry);
   }
 
   /**
    * Extends the expiry of the payment channel and add funds to it
-   * @param {BigNumber} expiration
+   * @param {BigNumber} expiry
    * @param {BigNumber} amount
    * @returns {Promise.<TransactionReceipt>}
    */
-  async extendAndAddFunds(expiration, amount) {
-    return this._mpeContract.channelExtendAndAddFunds(this._account, this.channelId, expiration, amount);
+  async extendAndAddFunds(expiry, amount) {
+    return this._mpeContract.channelExtendAndAddFunds(this._account, this.channelId, expiry, amount);
   }
 
   /**
@@ -70,21 +70,22 @@ class PaymentChannel {
    * @returns {Promise<PaymentChannel>}
    */
   async syncState() {
-    logger.debug(`Syncing PaymentChannel[id: ${this._channelId}] state`, { tags: ['PaymentChannel']})
+    logger.debug(`Syncing PaymentChannel[id: ${this._channelId}] state`, { tags: ['PaymentChannel']});
     const latestChannelInfoOnBlockchain = await this._mpeContract.channels(this.channelId);
     const currentState = await this._currentChannelState();
     const { lastSignedAmount, nonce: currentNonce } = currentState;
-    const { nonce, expiration, value: totalAmount } = latestChannelInfoOnBlockchain;
+    const { nonce, expiry, value: totalAmount } = latestChannelInfoOnBlockchain;
     const availableAmount = totalAmount - lastSignedAmount;
     this._state = {
       nonce: nonce.toString(),
       currentNonce,
-      expiration,
+      expiry,
       totalAmount,
       lastSignedAmount,
       availableAmount,
     };
-    return this;
+    logger.debug(`Latest PaymentChannel[id: ${this.channelId}] state:`, this._state, { tags: ['PaymentChannel'] });
+    return Promise.resolve(this);
   }
 
   async _currentChannelState() {
@@ -97,7 +98,6 @@ class PaymentChannel {
         lastSignedAmount: currentSignedAmount,
         nonce,
       };
-      logger.debug(`Latest PaymentChannel[id: ${this.channelId}] state: {lastSignedAmount: ${currentSignedAmount}, nonce: ${nonce}}`, { tags: ['PaymentChannel'] });
       return Promise.resolve(channelState);
     } catch(err) {
       logger.error(`Failed to fetch latest PaymentChannel[id: ${this.channelId}] state from service daemon. ${err.message}`, { tags: ['PaymentChannel'] });

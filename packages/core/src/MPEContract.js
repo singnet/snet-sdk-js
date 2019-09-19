@@ -68,35 +68,35 @@ class MPEContract {
   }
 
   /**
-   * Opens a payment channel between an account and the given service with the specified tokens and expiration period
+   * Opens a payment channel between an account and the given service with the specified tokens and expiry period
    * @param {Account} account - The account to create payment channel for
    * @param {ServiceClient} service - The AI service between which the payment channel needs to be opened
    * @param {BigNumber} amount - The initial tokens with the which payment channel needs to be opened
-   * @param {BigNumber} expiration - The expiry of the payment channel in terms of block number
+   * @param {BigNumber} expiry - The expiry of the payment channel in terms of block number
    * @returns {Promise.<TransactionReceipt>}
    */
-  async openChannel(account, service, amount, expiration) {
+  async openChannel(account, service, amount, expiry) {
     const {
       payment_address: recipientAddress,
       group_id_in_bytes: groupId
     } = service.group;
 
-    logger.info(`Opening new payment channel [amount: ${amount}, expiration: ${expiration}]`, { tags: ['MPE'] });
+    logger.info(`Opening new payment channel [amount: ${amount}, expiry: ${expiry}]`, { tags: ['MPE'] });
     const openChannelOperation = this.contract.methods.openChannel;
-    const openChannelFnArgs = [account.signerAddress, recipientAddress, groupId, amount, expiration];
+    const openChannelFnArgs = [account.signerAddress, recipientAddress, groupId, amount, expiry];
     return account.sendTransaction(this.address, openChannelOperation, ...openChannelFnArgs);
   }
 
   /**
    * Deposits the specified tokens to MPE Account and opens a payment channel between an account and the given service
-   * with the specified tokens and expiration period
+   * with the specified tokens and expiry period
    * @param {Account} account - The account against which the operations needs to be performed
    * @param {ServiceClient} service - The AI service between which the payment channel needs to be opened
    * @param {BigNumber} amount - The initial tokens with the which payment channel needs to be opened
-   * @param {BigNumber} expiration - The expiry of the payment channel in terms of block number
+   * @param {BigNumber} expiry - The expiry of the payment channel in terms of block number
    * @returns {Promise.<TransactionReceipt>}
    */
-  async depositAndOpenChannel(account, service, amount, expiration) {
+  async depositAndOpenChannel(account, service, amount, expiry) {
     const {
       payment_address: recipientAddress,
       group_id_in_bytes: groupId
@@ -107,8 +107,8 @@ class MPEContract {
     }
 
     const depositAndOpenChannelOperation = this.contract.methods.depositAndOpenChannel;
-    const operationArgs = [account.signerAddress, recipientAddress, groupId, amount, expiration];
-    logger.info(`Depositing ${amount}cogs to MPE address and Opening new payment channel [expiration: ${expiration}]`, { tags: ['MPE'] });
+    const operationArgs = [account.signerAddress, recipientAddress, groupId, amount, expiry];
+    logger.info(`Depositing ${amount}cogs to MPE address and Opening new payment channel [expiry: ${expiry}]`, { tags: ['MPE'] });
     return account.sendTransaction(this.address, depositAndOpenChannelOperation, ...operationArgs);
   }
 
@@ -131,31 +131,31 @@ class MPEContract {
    * Extends an existing payment channel
    * @param {Account} account - The account against which the operations needs to be performed
    * @param {BigNumber} channelId - The payment channel id
-   * @param {BigNumber} expiration - The expiry in terms of block number to extend the channel
+   * @param {BigNumber} expiry - The expiry in terms of block number to extend the channel
    * @returns {Promise.<TransactionReceipt>}
    */
-  async channelExtend(account, channelId, expiration) {
-    logger.info(`Extending PaymentChannel[id: ${channelId}]. New expiry is block# ${expiration}`, { tags: ['MPE'] });
+  async channelExtend(account, channelId, expiry) {
+    logger.info(`Extending PaymentChannel[id: ${channelId}]. New expiry is block# ${expiry}`, { tags: ['MPE'] });
     const channelExtendOperation = this.contract.methods.channelExtend;
-    return account.sendTransaction(this.address, channelExtendOperation, channelId, expiration);
+    return account.sendTransaction(this.address, channelExtendOperation, channelId, expiry);
   }
 
   /**
    * Extends and adds funds to an existing payment channel
    * @param {Account} account - The account against which the operations needs to be performed
    * @param {BigNumber} channelId - The payment channel id
-   * @param {BigNumber} expiration - The expiry in terms of block number to extend the channel
+   * @param {BigNumber} expiry - The expiry in terms of block number to extend the channel
    * @param {BigNumber} amount - The number of tokens to fund the channel
    * @returns {Promise.<TransactionReceipt>}
    */
-  async channelExtendAndAddFunds(account, channelId, expiration, amount) {
+  async channelExtendAndAddFunds(account, channelId, expiry, amount) {
     await this._fundEscrowAccount(account, amount);
 
-    logger.info(`Extending and Funding PaymentChannel[id: ${channelId}] with amount: ${amount} and expiry: ${expiration}`, { tags: ['MPE'] });
+    logger.info(`Extending and Funding PaymentChannel[id: ${channelId}] with amount: ${amount} and expiry: ${expiry}`, { tags: ['MPE'] });
     const channelExtendAndAddFundsOperation = this.contract.methods.channelExtendAndAddFunds;
-    return account.sendTransaction(this.address, channelExtendAndAddFundsOperation, channelId, expiration, amount);
+    return account.sendTransaction(this.address, channelExtendAndAddFundsOperation, channelId, expiry, amount);
   }
-
+  
   /**
    * Fetches the latest state of the payment channel
    * @param {BigNumber} channelId - The payment channel id

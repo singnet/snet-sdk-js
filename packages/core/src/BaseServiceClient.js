@@ -113,21 +113,21 @@ class BaseServiceClient {
   /**
    *
    * @param {BigNumber} amount
-   * @param {BigNumber} expiration
+   * @param {BigNumber} expiry
    * @returns {Promise.<PaymentChannel>}
    */
-  async openChannel(amount, expiration) {
-    const newChannelReceipt = await this._mpeContract.openChannel(this._account, this, amount, expiration);
+  async openChannel(amount, expiry) {
+    const newChannelReceipt = await this._mpeContract.openChannel(this._account, this, amount, expiry);
     return this._getNewlyOpenedChannel(newChannelReceipt);
   }
 
   /**
    * @param {BigNumber} amount
-   * @param {BigNumber} expiration
+   * @param {BigNumber} expiry
    * @returns {Promise.<PaymentChannel>}
    */
-  async depositAndOpenChannel(amount, expiration) {
-    const newFundedChannelReceipt = await this._mpeContract.depositAndOpenChannel(this._account, this, amount, expiration);
+  async depositAndOpenChannel(amount, expiry) {
+    const newFundedChannelReceipt = await this._mpeContract.depositAndOpenChannel(this._account, this, amount, expiry);
     return this._getNewlyOpenedChannel(newFundedChannelReceipt);
   }
 
