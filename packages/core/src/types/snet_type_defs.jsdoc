@@ -63,7 +63,7 @@
  * @property {BigNumber} [nonce=0]
  * @property {BigNumber} [currentNonce]
  * @property {BigNumber} [expiry]
- * @property {BigNumber} [totalAmount]
+ * @property {BigNumber} [amountDeposited]
  * @property {BigNumber} [currentSignedAmount=0]
  * @property {BigNumber} [availableAmount]
  */

@@ -74,13 +74,13 @@ class PaymentChannel {
     const latestChannelInfoOnBlockchain = await this._mpeContract.channels(this.channelId);
     const currentState = await this._currentChannelState();
     const { currentSignedAmount, nonce: currentNonce } = currentState;
-    const { nonce, expiry, value: totalAmount } = latestChannelInfoOnBlockchain;
-    const availableAmount = totalAmount - currentSignedAmount;
+    const { nonce, expiry, value: amountDeposited } = latestChannelInfoOnBlockchain;
+    const availableAmount = amountDeposited - currentSignedAmount;
     this._state = {
       nonce: nonce.toString(),
       currentNonce,
       expiry,
-      totalAmount,
+      amountDeposited,
       currentSignedAmount,
       availableAmount,
     };
