@@ -138,13 +138,13 @@ class Account {
       try {
         receipt = await this._web3.eth.getTransactionReceipt(hash);
       } catch(error) {
-        logger.error(`Couldn't complete transaction for: ${hash}. ${error}`);
+        logger.error(`Couldn't complete transaction for: ${hash}`, error);
       }
     }
 
     return new Promise((resolve, reject) => {
       if(!receipt.status) {
-        logger.error(`Transaction failed. ${receipt}`);
+        logger.error('Transaction failed', receipt);
         reject(receipt);
       }
 
@@ -173,22 +173,9 @@ class Account {
   }
 
   async _getGas(operation) {
-    const gasPrice = await this._getGasPrice();
-    const estimatedGas = await this._estimateGas(operation);
+    const gasPrice = await this._web3.eth.getGasPrice();
+    const estimatedGas = await operation.estimateGas();
     return { gasLimit: estimatedGas, gasPrice };
-  }
-
-  async _getGasPrice() {
-    return this._web3.eth.getGasPrice()
-      .then(gasPrice => gasPrice)
-      .catch((error) => this._web3.eth.defaultGasPrice);
-  }
-
-  async _estimateGas(operation) {
-    return operation
-      .estimateGas()
-      .then(estimatedGas => estimatedGas)
-      .catch((error) => this._web3.eth.defaultGas);
   }
 
   async _transactionCount() {
