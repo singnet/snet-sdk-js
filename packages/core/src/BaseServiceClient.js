@@ -172,7 +172,7 @@ class BaseServiceClient {
   async _getNewlyOpenedChannel(receipt) {
     const openChannels = await this._mpeContract.getPastOpenChannels(this._account, this, receipt.blockNumber, this);
     const newPaymentChannel = openChannels[0];
-    logger.info(`New PaymentChannel[id: ${newPaymentChannel.channelId} opened`);
+    logger.info(`New PaymentChannel[id: ${newPaymentChannel.channelId}] opened`);
     return newPaymentChannel;
   }
 
