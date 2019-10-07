@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import isEmpty from 'lodash/isEmpty';
 
 import logger from './utils/logger';
 
@@ -76,7 +77,7 @@ class PaymentChannel {
     const { nonce, expiration, value: totalAmount } = latestChannelInfoOnBlockchain;
     const availableAmount = totalAmount - lastSignedAmount;
     this._state = {
-      nonce,
+      nonce: nonce.toString(),
       currentNonce,
       expiration,
       totalAmount,
@@ -90,7 +91,7 @@ class PaymentChannel {
     logger.debug(`Fetching latest PaymentChannel[id: ${this.channelId}] state from service daemon`, { tags: ['PaymentChannel'] });
     try {
       const response = await this._serviceClient.getChannelState(this.channelId);
-      const nonce = PaymentChannel._uint8ArrayToBN(response.getCurrentNonce());
+      const nonce = PaymentChannel._uint8ArrayToBN(response.getCurrentNonce()).toString();
       const currentSignedAmount = PaymentChannel._uint8ArrayToBN(response.getCurrentSignedAmount());
       const channelState = {
         lastSignedAmount: currentSignedAmount,
@@ -105,6 +106,10 @@ class PaymentChannel {
   }
 
   static _uint8ArrayToBN(uint8Array) {
+    if(isEmpty(uint8Array)) {
+      return new BigNumber(0);
+    }
+
     const buffer = Buffer.from(uint8Array);
     const hex = `0x${buffer.toString('hex')}`;
     return new BigNumber(hex);

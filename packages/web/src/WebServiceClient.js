@@ -2,6 +2,7 @@ import { grpc } from '@improbable-eng/grpc-web';
 import { PaymentChannelStateServiceClient } from './proto/state_service_pb_service';
 import { ChannelStateRequest } from './proto/state_service_pb';
 import { BaseServiceClient, logger } from './sdk-core';
+import { forOwn } from 'lodash';
 
 class WebServiceClient extends BaseServiceClient {
   /**
@@ -40,9 +41,17 @@ class WebServiceClient extends BaseServiceClient {
       return metadata;
     }
 
-    const serviceName = methodDescriptor.service.serviceName;
-    const methodName = methodDescriptor.methodName;
-    const { channelId, nonce, signingAmount, signatureBytes } = await this._fetchPaymentMetadata(serviceName, methodName);
+    if (this._options.metadataGenerator) {
+      const serviceName = methodDescriptor.service.serviceName;
+      const methodName = methodDescriptor.methodName;
+      const customMetadata = await this._options.metadataGenerator(this, serviceName, methodName);
+      forOwn(customMetadata, (value, key) => {
+        metadata.append(key, value);
+      });
+      return metadata;
+    }
+
+    const { channelId, nonce, signingAmount, signatureBytes } = await this._fetchPaymentMetadata();
 
     metadata.append('snet-payment-type', 'escrow');
     metadata.append('snet-payment-channel-id', `${channelId}`);

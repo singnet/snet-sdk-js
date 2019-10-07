@@ -13,7 +13,7 @@ class MPEContract {
   constructor(web3, networkId) {
     this._web3 = web3;
     this._networkId = networkId;
-    this._contract = this._web3.eth.Contract(MPEAbi, MPENetworks[networkId].address);
+    this._contract = new this._web3.eth.Contract(MPEAbi, MPENetworks[networkId].address);
   }
 
   /**
@@ -189,7 +189,7 @@ class MPEContract {
     const channelsOpened = await this.contract.getPastEvents('ChannelOpen', options);
     return map(channelsOpened, channelOpenEvent => {
       const channelId = channelOpenEvent.returnValues.channelId;
-      return new PaymentChannel(channelId, this._web3, account, service, this);
+      return new PaymentChannel(channelId.toString(), this._web3, account, service, this);
     });
   }
 

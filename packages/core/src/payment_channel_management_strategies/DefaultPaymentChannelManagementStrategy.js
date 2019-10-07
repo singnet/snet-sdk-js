@@ -1,4 +1,5 @@
 import { find } from 'lodash';
+import { BigNumber } from 'bignumber.js';
 
 /**
  * @implements PaymentChannelManagementStrategy
@@ -20,7 +21,7 @@ class DefaultPaymentChannelManagementStrategy {
     await serviceClient.loadOpenChannels();
     await serviceClient.updateChannelStates();
     const paymentChannels = serviceClient.paymentChannels;
-    const serviceCallPrice = serviceClient.metadata.pricing.price_in_cogs * this._callAllowance;
+    const serviceCallPrice = this._pricePerServiceCall(serviceClient) * this._callAllowance;
     const mpeBalance = await account.escrowBalance();
     const defaultExpiration = await this._defaultChannelExpiration(serviceClient);
 
@@ -54,6 +55,13 @@ class DefaultPaymentChannelManagementStrategy {
     return firstExpiredAndUnfundedChannel;
   }
 
+  _pricePerServiceCall(serviceClient) {
+    const { pricing } = serviceClient.group;
+    const fixedPricing = find(pricing, ({ price_model }) => 'fixed_price' === price_model);
+
+    return new BigNumber(fixedPricing.price_in_cogs);
+  }
+
   _hasSufficientFunds(paymentChannel, amount) {
     return paymentChannel.state.availableAmount >= amount;
   }
@@ -64,7 +72,7 @@ class DefaultPaymentChannelManagementStrategy {
 
   async _defaultChannelExpiration(serviceClient) {
     const currentBlockNumber = await this._sdkContext.web3.eth.getBlockNumber();
-    return currentBlockNumber + serviceClient.metadata.payment_expiration_threshold + this._blockOffset;
+    return currentBlockNumber + serviceClient.group.payment_expiration_threshold + this._blockOffset;
   }
 }
 

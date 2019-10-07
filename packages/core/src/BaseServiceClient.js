@@ -1,6 +1,6 @@
 import url from "url";
 import { BigNumber } from 'bignumber.js';
-import { find, map } from 'lodash';
+import { find, first, isEmpty, map } from 'lodash';
 import logger from './utils/logger';
 
 class BaseServiceClient {
@@ -19,10 +19,7 @@ class BaseServiceClient {
     this._mpeContract = mpeContract;
     this._options = options;
     this._metadata = { orgId, serviceId, ...metadata };
-    this._group = {
-      group_id_in_bytes: Buffer.from(group.group_id, 'base64'),
-      ...group
-    };
+    this._group = this._enhanceGroupInfo(group);
     this._paymentChannelManagementStrategy = paymentChannelManagementStrategy;
     this._paymentChannelStateServiceClient = this._generatePaymentChannelStateServiceClient();
     this._paymentChannels = [];
@@ -128,11 +125,22 @@ class BaseServiceClient {
     return this._getNewlyOpenedChannel(newFundedChannelReceipt);
   }
 
-  async _fetchPaymentMetadata(serviceName = '', methodName = '') {
-    if (this._options.metadataGenerator) {
-      return this._options.metadataGenerator(this, serviceName, methodName);
+  _enhanceGroupInfo(group) {
+    if(isEmpty(group)) {
+      return group;
     }
 
+    const { payment_address, payment_expiration_threshold } = group.payment;
+
+    return {
+      group_id_in_bytes: Buffer.from(group.group_id, 'base64'),
+      ...group,
+      payment_address,
+      payment_expiration_threshold,
+    };
+  }
+
+  async _fetchPaymentMetadata() {
     logger.debug('Selecting PaymentChannel using the given strategy', { tags: ['PaymentChannelManagementStrategy, gRPC'] });
     const channel = await this._paymentChannelManagementStrategy.selectChannel(this);
 
@@ -141,10 +149,11 @@ class BaseServiceClient {
     logger.info(`Using PaymentChannel[id: ${channelId}] with nonce: ${nonce} and amount: ${signingAmount} and `, { tags: ['PaymentChannelManagementStrategy', 'gRPC'] });
 
     const signatureBytes = await this._account.signData(
+      { t: 'string', v: '__MPE_claim_message' },
       { t: 'address', v: this._mpeContract.address },
       { t: 'uint256', v: channelId },
       { t: 'uint256', v: nonce },
-      { t: 'uint256', v: signingAmount },
+      { t: 'uint256', v: signingAmount.toString() },
     );
 
     return { channelId, nonce, signingAmount, signatureBytes };
@@ -166,7 +175,10 @@ class BaseServiceClient {
   }
 
   get _pricePerServiceCall() {
-    return new BigNumber(this._metadata.pricing.price_in_cogs);
+    const { pricing } = this.group;
+    const fixedPricing = find(pricing, ({ price_model }) => 'fixed_price' === price_model);
+
+    return new BigNumber(fixedPricing.price_in_cogs);
   }
 
   _getServiceEndpoint() {
@@ -174,10 +186,10 @@ class BaseServiceClient {
       return (url.parse(this._options.endpoint));
     }
 
-    const { group_name: defaultGroupName } = this.group;
-    const { endpoints } = this._metadata;
-    const { endpoint } = find(endpoints, ({ group_name: groupName }) => groupName === defaultGroupName);
+    const { endpoints } = this.group;
+    const endpoint = first(endpoints);
     logger.debug(`Service endpoint: ${endpoint}`, { tags: ['gRPC']});
+
     return endpoint && url.parse(endpoint);
   }
 

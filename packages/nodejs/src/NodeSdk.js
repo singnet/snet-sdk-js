@@ -6,13 +6,13 @@ class NodeSdk extends SnetSDK {
    * @param {string} orgId
    * @param {string} serviceId
    * @param {GRPCClient} ServiceStub GRPC service client constructor
-   * @param {string} [groupName='default_group']
-   * @param {DefaultPaymentChannelManagementStrategy} [paymentChannelManagementStrategy=DefaultPaymentChannelManagementStrategy]
-   * @param {ServiceClientOptions} options
+   * @param {string} [groupName]
+   * @param {PaymentChannelManagementStrategy} [paymentChannelManagementStrategy=DefaultPaymentChannelManagementStrategy]
+   * @param {ServiceClientOptions} [options]
    * @returns {Promise<ServiceClient>}
    */
-  async createServiceClient(orgId, serviceId, ServiceStub, groupName = 'default_group', paymentChannelManagementStrategy = null, options = {}) {
-    const serviceMetadata = await this.serviceMetadata(orgId, serviceId);
+  async createServiceClient(orgId, serviceId, ServiceStub, groupName = null, paymentChannelManagementStrategy = null, options = {}) {
+    const serviceMetadata = await this._metadataProvider.metadata(orgId, serviceId);
     const group = await this._serviceGroup(serviceMetadata, orgId, serviceId, groupName);
     return new ServiceClient(this, orgId, serviceId, this._mpeContract, serviceMetadata, group, ServiceStub, this._constructStrategy(paymentChannelManagementStrategy), options);
   }

@@ -33,7 +33,7 @@
     "ethjs": "^0.4.0",
     "ipfs-http-client": "^30.1.1",
     "lodash": "latest",
-    "singularitynet-platform-contracts": "^0.3.0",
+    "singularitynet-platform-contracts": "^0.3.1-beta",
     "singularitynet-token-contracts": "^2.0.1",
     "web3": "1.0.0-beta.52",
     "winston": "^3.2.1"
@@ -50,6 +50,7 @@
     "@babel/register": "^7.0.0",
     "google-protobuf": "^3.8.0",
     "grpc": "^1.21.1",
-    "rimraf": "^2.6.3"
+    "rimraf": "^2.6.3",
+    "verdaccio": "^4.2.2"
   }
 }
