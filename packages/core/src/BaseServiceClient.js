@@ -176,6 +176,11 @@ class BaseServiceClient {
     const signingAmountStr = toBNString(signingAmount);
     logger.info(`Using PaymentChannel[id: ${channelIdStr}] with nonce: ${nonceStr} and amount: ${signingAmountStr} and `, { tags: ['PaymentChannelManagementStrategy', 'gRPC'] });
 
+    if (this._options.paidCallMetadataGenerator) {
+      const { channelId, nonce, signingAmount, signatureBytes } = await this._options.paidCallMetadataGenerator(channelId, signingAmount, nonce);
+      return { channelId, nonce, signingAmount, signatureBytes };
+    }
+
     const signatureBytes = await this._account.signData(
       { t: 'string', v: '__MPE_claim_message' },
       { t: 'address', v: this._mpeContract.address },
