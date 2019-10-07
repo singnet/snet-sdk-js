@@ -135,7 +135,7 @@ class BaseServiceClient {
   }
 
   async _channelStateRequest(channelId) {
-    const { currentBlockNumber, signatureBytes } = this._channelStateRequestProperties(channelId);
+    const { currentBlockNumber, signatureBytes } = await this._channelStateRequestProperties(channelId);
     const channelIdBytes = Buffer.alloc(4);
     channelIdBytes.writeUInt32BE(channelId, 0);
 
