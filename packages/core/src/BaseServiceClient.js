@@ -61,23 +61,7 @@ class BaseServiceClient {
    * @returns {Promise<ChannelStateReply>}
    */
   async getChannelState(channelId) {
-    const currentBlockNumber = await this._web3.eth.getBlockNumber();
-    const channelIdStr = toBNString(channelId);
-    const signatureBytes = await this._account.signData(
-      { t: 'string', v: '__get_channel_state' },
-      { t: 'address', v: this._mpeContract.address },
-      { t: 'uint256', v: channelIdStr },
-      { t: 'uint256', v: currentBlockNumber },
-    );
-
-    const channelIdBytes = Buffer.alloc(4);
-    channelIdBytes.writeUInt32BE(channelId, 0);
-
-    const ChannelStateRequest = this._getChannelStateRequestMethodDescriptor();
-    const channelStateRequest = new ChannelStateRequest();
-    channelStateRequest.setChannelId(channelIdBytes);
-    channelStateRequest.setSignature(signatureBytes);
-    channelStateRequest.setCurrentBlock(currentBlockNumber);
+    const channelStateRequest = await this._channelStateRequest(channelId);
 
     return new Promise((resolve, reject) => {
       this.paymentChannelStateServiceClient.getChannelState(channelStateRequest, (err, response) => {
@@ -148,6 +132,37 @@ class BaseServiceClient {
       payment_address,
       payment_expiration_threshold,
     };
+  }
+
+  async _channelStateRequest(channelId) {
+    const { currentBlockNumber, signatureBytes } = this._channelStateRequestProperties(channelId);
+    const channelIdBytes = Buffer.alloc(4);
+    channelIdBytes.writeUInt32BE(channelId, 0);
+
+    const ChannelStateRequest = this._getChannelStateRequestMethodDescriptor();
+    const channelStateRequest = new ChannelStateRequest();
+    channelStateRequest.setChannelId(channelIdBytes);
+    channelStateRequest.setSignature(signatureBytes);
+    channelStateRequest.setCurrentBlock(currentBlockNumber);
+    return channelStateRequest;
+  }
+
+  async _channelStateRequestProperties(channelId) {
+    if(this._options.channelStateRequestSigner) {
+      const { currentBlockNumber, signatureBytes } = await this._options.channelStateRequestSigner(channelId);
+      return { currentBlockNumber, signatureBytes };
+    }
+
+    const currentBlockNumber = await this._web3.eth.getBlockNumber();
+    const channelIdStr = toBNString(channelId);
+    const signatureBytes = await this._account.signData(
+      { t: 'string', v: '__get_channel_state' },
+      { t: 'address', v: this._mpeContract.address },
+      { t: 'uint256', v: channelIdStr },
+      { t: 'uint256', v: currentBlockNumber },
+    );
+
+    return { currentBlockNumber, signatureBytes };
   }
 
   async _fetchPaymentMetadata() {
