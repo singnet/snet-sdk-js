@@ -3,6 +3,8 @@ import { BigNumber } from 'bignumber.js';
 import { find, first, isEmpty, map } from 'lodash';
 import logger from './utils/logger';
 
+import { toBNString } from './utils/bignumber_helper';
+
 class BaseServiceClient {
   /**
    * @param {SnetSDK} sdk
@@ -59,7 +61,14 @@ class BaseServiceClient {
    * @returns {Promise<ChannelStateReply>}
    */
   async getChannelState(channelId) {
-    const signatureBytes = await this._account.signData({ t: 'uint256', v: channelId });
+    const currentBlockNumber = await this._web3.eth.getBlockNumber();
+    const channelIdStr = toBNString(channelId);
+    const signatureBytes = await this._account.signData(
+      { t: 'string', v: '__get_channel_state' },
+      { t: 'address', v: this._mpeContract.address },
+      { t: 'uint256', v: channelIdStr },
+      { t: 'uint256', v: currentBlockNumber },
+    );
 
     const channelIdBytes = Buffer.alloc(4);
     channelIdBytes.writeUInt32BE(channelId, 0);
@@ -68,6 +77,7 @@ class BaseServiceClient {
     const channelStateRequest = new ChannelStateRequest();
     channelStateRequest.setChannelId(channelIdBytes);
     channelStateRequest.setSignature(signatureBytes);
+    channelStateRequest.setCurrentBlock(currentBlockNumber);
 
     return new Promise((resolve, reject) => {
       this.paymentChannelStateServiceClient.getChannelState(channelStateRequest, (err, response) => {
@@ -107,21 +117,21 @@ class BaseServiceClient {
   /**
    *
    * @param {BigNumber} amount
-   * @param {BigNumber} expiration
+   * @param {BigNumber} expiry
    * @returns {Promise.<PaymentChannel>}
    */
-  async openChannel(amount, expiration) {
-    const newChannelReceipt = await this._mpeContract.openChannel(this._account, this, amount, expiration);
+  async openChannel(amount, expiry) {
+    const newChannelReceipt = await this._mpeContract.openChannel(this._account, this, amount, expiry);
     return this._getNewlyOpenedChannel(newChannelReceipt);
   }
 
   /**
    * @param {BigNumber} amount
-   * @param {BigNumber} expiration
+   * @param {BigNumber} expiry
    * @returns {Promise.<PaymentChannel>}
    */
-  async depositAndOpenChannel(amount, expiration) {
-    const newFundedChannelReceipt = await this._mpeContract.depositAndOpenChannel(this._account, this, amount, expiration);
+  async depositAndOpenChannel(amount, expiry) {
+    const newFundedChannelReceipt = await this._mpeContract.depositAndOpenChannel(this._account, this, amount, expiry);
     return this._getNewlyOpenedChannel(newFundedChannelReceipt);
   }
 
@@ -144,16 +154,19 @@ class BaseServiceClient {
     logger.debug('Selecting PaymentChannel using the given strategy', { tags: ['PaymentChannelManagementStrategy, gRPC'] });
     const channel = await this._paymentChannelManagementStrategy.selectChannel(this);
 
-    const { channelId, state: { nonce, lastSignedAmount }} = channel;
-    const signingAmount = lastSignedAmount.plus(this._pricePerServiceCall);
-    logger.info(`Using PaymentChannel[id: ${channelId}] with nonce: ${nonce} and amount: ${signingAmount} and `, { tags: ['PaymentChannelManagementStrategy', 'gRPC'] });
+    const { channelId, state: { nonce, currentSignedAmount }} = channel;
+    const signingAmount = currentSignedAmount.plus(this._pricePerServiceCall);
+    const channelIdStr = toBNString(channelId);
+    const nonceStr = toBNString(nonce);
+    const signingAmountStr = toBNString(signingAmount);
+    logger.info(`Using PaymentChannel[id: ${channelIdStr}] with nonce: ${nonceStr} and amount: ${signingAmountStr} and `, { tags: ['PaymentChannelManagementStrategy', 'gRPC'] });
 
     const signatureBytes = await this._account.signData(
       { t: 'string', v: '__MPE_claim_message' },
       { t: 'address', v: this._mpeContract.address },
-      { t: 'uint256', v: channelId },
-      { t: 'uint256', v: nonce },
-      { t: 'uint256', v: signingAmount.toString() },
+      { t: 'uint256', v: channelIdStr },
+      { t: 'uint256', v: nonceStr },
+      { t: 'uint256', v: signingAmountStr },
     );
 
     return { channelId, nonce, signingAmount, signatureBytes };
@@ -162,7 +175,7 @@ class BaseServiceClient {
   async _getNewlyOpenedChannel(receipt) {
     const openChannels = await this._mpeContract.getPastOpenChannels(this._account, this, receipt.blockNumber, this);
     const newPaymentChannel = openChannels[0];
-    logger.info(`New PaymentChannel[id: ${newPaymentChannel.channelId} opened`);
+    logger.info(`New PaymentChannel[id: ${newPaymentChannel.channelId}] opened`);
     return newPaymentChannel;
   }
 

@@ -62,8 +62,8 @@
  * @typedef {Object} PaymentChannelState
  * @property {BigNumber} [nonce=0]
  * @property {BigNumber} [currentNonce]
- * @property {BigNumber} [expiration]
- * @property {BigNumber} [totalAmount]
- * @property {BigNumber} [lastSignedAmount=0]
+ * @property {BigNumber} [expiry]
+ * @property {BigNumber} [amountDeposited]
+ * @property {BigNumber} [currentSignedAmount=0]
  * @property {BigNumber} [availableAmount]
  */

@@ -5,10 +5,10 @@ import logger from './utils/logger';
 
 class PaymentChannel {
   /**
-   * @param {string|number} channelId
+   * @param {BigNumber} channelId
    * @param {Web3} web3
    * @param {Account} account
-   * @param {ServiceClient} service
+   * @param {BaseServiceClient} service
    * @param {MPEContract} mpeContract
    */
   constructor(channelId, web3, account, service, mpeContract) {
@@ -19,7 +19,7 @@ class PaymentChannel {
     this._serviceClient = service;
     this._state = {
       nonce: new BigNumber(0),
-      lastSignedAmount: new BigNumber(0),
+      currentSignedAmount: new BigNumber(0),
     };
   }
 
@@ -48,21 +48,21 @@ class PaymentChannel {
 
   /**
    * Extends the expiry of the payment channel
-   * @param {BigNumber} expiration - Expiry in terms of block number
+   * @param {BigNumber} expiry - Expiry in terms of block number
    * @returns {Promise.<TransactionReceipt>}
    */
-  async extendExpiration(expiration) {
-    return this._mpeContract.channelExtend(this._account, this.channelId, expiration);
+  async extendExpiry(expiry) {
+    return this._mpeContract.channelExtend(this._account, this.channelId, expiry);
   }
 
   /**
    * Extends the expiry of the payment channel and add funds to it
-   * @param {BigNumber} expiration
+   * @param {BigNumber} expiry
    * @param {BigNumber} amount
    * @returns {Promise.<TransactionReceipt>}
    */
-  async extendAndAddFunds(expiration, amount) {
-    return this._mpeContract.channelExtendAndAddFunds(this._account, this.channelId, expiration, amount);
+  async extendAndAddFunds(expiry, amount) {
+    return this._mpeContract.channelExtendAndAddFunds(this._account, this.channelId, expiry, amount);
   }
 
   /**
@@ -70,34 +70,34 @@ class PaymentChannel {
    * @returns {Promise<PaymentChannel>}
    */
   async syncState() {
-    logger.debug(`Syncing PaymentChannel[id: ${this._channelId}] state`, { tags: ['PaymentChannel']})
+    logger.debug(`Syncing PaymentChannel[id: ${this._channelId}] state`, { tags: ['PaymentChannel']});
     const latestChannelInfoOnBlockchain = await this._mpeContract.channels(this.channelId);
     const currentState = await this._currentChannelState();
-    const { lastSignedAmount, nonce: currentNonce } = currentState;
-    const { nonce, expiration, value: totalAmount } = latestChannelInfoOnBlockchain;
-    const availableAmount = totalAmount - lastSignedAmount;
+    const { currentSignedAmount, nonce: currentNonce } = currentState;
+    const { nonce, expiration: expiry, value: amountDeposited } = latestChannelInfoOnBlockchain;
+    const availableAmount = amountDeposited - currentSignedAmount;
     this._state = {
       nonce: nonce.toString(),
       currentNonce,
-      expiration,
-      totalAmount,
-      lastSignedAmount,
+      expiry,
+      amountDeposited,
+      currentSignedAmount,
       availableAmount,
     };
-    return this;
+    logger.debug(`Latest PaymentChannel[id: ${this.channelId}] state:`, this._state, { tags: ['PaymentChannel'] });
+    return Promise.resolve(this);
   }
 
   async _currentChannelState() {
     logger.debug(`Fetching latest PaymentChannel[id: ${this.channelId}] state from service daemon`, { tags: ['PaymentChannel'] });
     try {
       const response = await this._serviceClient.getChannelState(this.channelId);
-      const nonce = PaymentChannel._uint8ArrayToBN(response.getCurrentNonce()).toString();
+      const nonce = PaymentChannel._uint8ArrayToBN(response.getCurrentNonce());
       const currentSignedAmount = PaymentChannel._uint8ArrayToBN(response.getCurrentSignedAmount());
       const channelState = {
-        lastSignedAmount: currentSignedAmount,
+        currentSignedAmount,
         nonce,
       };
-      logger.debug(`Latest PaymentChannel[id: ${this.channelId}] state: {lastSignedAmount: ${currentSignedAmount}, nonce: ${nonce}}`, { tags: ['PaymentChannel'] });
       return Promise.resolve(channelState);
     } catch(err) {
       logger.error(`Failed to fetch latest PaymentChannel[id: ${this.channelId}] state from service daemon. ${err.message}`, { tags: ['PaymentChannel'] });

@@ -1,6 +1,5 @@
 import grpc, { InterceptingCall } from "grpc";
 import { PaymentChannelStateServiceClient } from './proto/state_service_grpc_pb';
-import { ChannelStateRequest } from './proto/state_service_pb';
 import { BaseServiceClient, logger } from './sdk-core';
 
 class ServiceClient extends BaseServiceClient {
@@ -28,7 +27,7 @@ class ServiceClient extends BaseServiceClient {
   }
 
   _getChannelStateRequestMethodDescriptor() {
-    return ChannelStateRequest;
+    return this.paymentChannelStateServiceClient.getChannelState.requestType;
   }
 
   _constructGrpcService(ServiceStub) {

@@ -1,6 +1,9 @@
 import AGITokenAbi from 'singularitynet-token-contracts/abi/SingularityNetToken';
 import AGITokenNetworks from 'singularitynet-token-contracts/networks/SingularityNetToken';
 import logger from './utils/logger';
+import { BigNumber } from 'bignumber.js';
+
+import { toBNString } from './utils/bignumber_helper';
 
 class Account {
   /**
@@ -54,9 +57,10 @@ class Account {
    * @returns {Promise.<TransactionReceipt>}
    */
   async approveTransfer(amountInCogs) {
-    logger.info(`Approving ${amountInCogs}cogs transfer to MPE address`, { tags: ['Account'] });
+    const amount = toBNString(amountInCogs);
+    logger.info(`Approving ${amount}cogs transfer to MPE address`, { tags: ['Account'] });
     const approveOperation = this._getTokenContract().methods.approve;
-    return this.sendTransaction(this._getTokenContract().address, approveOperation, this._mpeContract.address, amountInCogs);
+    return this.sendTransaction(this._getTokenContract().address, approveOperation, this._mpeContract.address, amount);
   }
 
   /**
@@ -136,13 +140,13 @@ class Account {
       try {
         receipt = await this._web3.eth.getTransactionReceipt(hash);
       } catch(error) {
-        logger.error(`Couldn't complete transaction for: ${hash}. ${error}`);
+        logger.error(`Couldn't complete transaction for: ${hash}`, error);
       }
     }
 
     return new Promise((resolve, reject) => {
       if(!receipt.status) {
-        logger.error(`Transaction failed. ${receipt}`);
+        logger.error('Transaction failed', receipt);
         reject(receipt);
       }
 
@@ -171,22 +175,9 @@ class Account {
   }
 
   async _getGas(operation) {
-    const gasPrice = await this._getGasPrice();
-    const estimatedGas = await this._estimateGas(operation);
+    const gasPrice = await this._web3.eth.getGasPrice();
+    const estimatedGas = await operation.estimateGas();
     return { gasLimit: estimatedGas, gasPrice };
-  }
-
-  async _getGasPrice() {
-    return this._web3.eth.getGasPrice()
-      .then(gasPrice => gasPrice)
-      .catch((error) => this._web3.eth.defaultGasPrice);
-  }
-
-  async _estimateGas(operation) {
-    return operation
-      .estimateGas()
-      .then(estimatedGas => estimatedGas)
-      .catch((error) => this._web3.eth.defaultGas);
   }
 
   async _transactionCount() {

@@ -1,5 +1,6 @@
 // package: escrow
 // file: state_service.proto
+
 var state_service_pb = require("./state_service_pb");
 var grpc = require("@improbable-eng/grpc-web").grpc;
 
