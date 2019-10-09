@@ -3,6 +3,8 @@ import AGITokenNetworks from 'singularitynet-token-contracts/networks/Singularit
 import logger from './utils/logger';
 import { BigNumber } from 'bignumber.js';
 
+import { toBNString } from './utils/bignumber_helper';
+
 class Account {
   /**
    * @param {Web3} web3
@@ -55,7 +57,7 @@ class Account {
    * @returns {Promise.<TransactionReceipt>}
    */
   async approveTransfer(amountInCogs) {
-    const amount = new BigNumber(amountInCogs).toFixed();
+    const amount = toBNString(amountInCogs);
     logger.info(`Approving ${amount}cogs transfer to MPE address`, { tags: ['Account'] });
     const approveOperation = this._getTokenContract().methods.approve;
     return this.sendTransaction(this._getTokenContract().address, approveOperation, this._mpeContract.address, amount);

@@ -3,6 +3,8 @@ import { BigNumber } from 'bignumber.js';
 import { find, first, isEmpty, map } from 'lodash';
 import logger from './utils/logger';
 
+import { toBNString } from './utils/bignumber_helper';
+
 class BaseServiceClient {
   /**
    * @param {SnetSDK} sdk
@@ -60,7 +62,7 @@ class BaseServiceClient {
    */
   async getChannelState(channelId) {
     const currentBlockNumber = await this._web3.eth.getBlockNumber();
-    const channelIdStr = new BigNumber(channelId).toFixed();
+    const channelIdStr = toBNString(channelId);
     const signatureBytes = await this._account.signData(
       { t: 'string', v: '__get_channel_state' },
       { t: 'address', v: this._mpeContract.address },
@@ -154,9 +156,9 @@ class BaseServiceClient {
 
     const { channelId, state: { nonce, currentSignedAmount }} = channel;
     const signingAmount = currentSignedAmount.plus(this._pricePerServiceCall);
-    const channelIdStr = new BigNumber(channelId).toFixed();
-    const nonceStr = new BigNumber(nonce).toFixed();
-    const signingAmountStr = new BigNumber(signingAmount).toFixed();
+    const channelIdStr = toBNString(channelId);
+    const nonceStr = toBNString(nonce);
+    const signingAmountStr = toBNString(signingAmount);
     logger.info(`Using PaymentChannel[id: ${channelIdStr}] with nonce: ${nonceStr} and amount: ${signingAmountStr} and `, { tags: ['PaymentChannelManagementStrategy', 'gRPC'] });
 
     const signatureBytes = await this._account.signData(

@@ -5,6 +5,7 @@ import { map } from 'lodash';
 
 import PaymentChannel from './PaymentChannel';
 import logger from './utils/logger';
+import { toBNString } from './utils/bignumber_helper';
 
 class MPEContract {
   /**
@@ -51,7 +52,7 @@ class MPEContract {
    * @returns {Promise.<TransactionReceipt>}
    */
   async deposit(account, amountInCogs) {
-    const amount = new BigNumber(amountInCogs).toFixed();
+    const amount = toBNString(amountInCogs);
     logger.info(`Depositing ${amount}cogs to MPE account`, { tags: ['MPE'] });
     const depositOperation = this.contract.methods.deposit;
     return account.sendTransaction(this.address, depositOperation, amount);
@@ -64,7 +65,7 @@ class MPEContract {
    * @returns {Promise.<TransactionReceipt>}
    */
   async withdraw(account, amountInCogs) {
-    const amount = new BigNumber(amountInCogs).toFixed();
+    const amount = toBNString(amountInCogs);
     logger.info(`Withdrawing ${amount}cogs from MPE account`, { tags: ['MPE'] });
     const withdrawOperation = this.contract.methods.withdraw;
     return account.sendTransaction(this.address, withdrawOperation, amount);
@@ -79,8 +80,8 @@ class MPEContract {
    * @returns {Promise.<TransactionReceipt>}
    */
   async openChannel(account, service, amountInCogs, expiry) {
-    const amount = new BigNumber(amountInCogs).toFixed();
-    const expiryStr = new BigNumber(expiry).toFixed();
+    const amount = toBNString(amountInCogs);
+    const expiryStr = toBNString(expiry);
     const {
       payment_address: recipientAddress,
       group_id_in_bytes: groupId
@@ -102,8 +103,8 @@ class MPEContract {
    * @returns {Promise.<TransactionReceipt>}
    */
   async depositAndOpenChannel(account, service, amountInCogs, expiry) {
-    const amount = new BigNumber(amountInCogs).toFixed();
-    const expiryStr = new BigNumber(expiry).toFixed();
+    const amount = toBNString(amountInCogs);
+    const expiryStr = toBNString(expiry);
     const {
       payment_address: recipientAddress,
       group_id_in_bytes: groupId
@@ -127,8 +128,8 @@ class MPEContract {
    * @returns {Promise.<TransactionReceipt>}
    */
   async channelAddFunds(account, channelId, amountInCogs) {
-    const channelIdStr = new BigNumber(channelId).toFixed();
-    const amount = new BigNumber(amountInCogs).toFixed();
+    const channelIdStr = toBNString(channelId);
+    const amount = toBNString(amountInCogs);
     await this._fundEscrowAccount(account, amountInCogs);
 
     logger.info(`Funding PaymentChannel[id: ${channelIdStr}] with ${amount}cogs`, { tags: ['MPE'] });
@@ -144,8 +145,8 @@ class MPEContract {
    * @returns {Promise.<TransactionReceipt>}
    */
   async channelExtend(account, channelId, expiry) {
-    const channelIdStr = new BigNumber(channelId).toFixed();
-    const expiryStr = new BigNumber(expiry).toFixed();
+    const channelIdStr = toBNString(channelId);
+    const expiryStr = toBNString(expiry);
     logger.info(`Extending PaymentChannel[id: ${channelIdStr}]. New expiry is block# ${expiryStr}`, { tags: ['MPE'] });
     const channelExtendOperation = this.contract.methods.channelExtend;
     return account.sendTransaction(this.address, channelExtendOperation, channelIdStr, expiryStr);
@@ -160,23 +161,23 @@ class MPEContract {
    * @returns {Promise.<TransactionReceipt>}
    */
   async channelExtendAndAddFunds(account, channelId, expiry, amountInCogs) {
-    const channelIdStr = new BigNumber(channelId).toFixed();
-    const amount = new BigNumber(amountInCogs).toFixed();
-    const expiryStr = new BigNumber(expiry).toFixed();
+    const channelIdStr = toBNString(channelId);
+    const amount = toBNString(amountInCogs);
+    const expiryStr = toBNString(expiry);
     await this._fundEscrowAccount(account, amountInCogs);
 
     logger.info(`Extending and Funding PaymentChannel[id: ${channelIdStr}] with amount: ${amount} and expiry: ${expiryStr}`, { tags: ['MPE'] });
     const channelExtendAndAddFundsOperation = this.contract.methods.channelExtendAndAddFunds;
     return account.sendTransaction(this.address, channelExtendAndAddFundsOperation, channelIdStr, expiryStr, amount);
   }
-  
+
   /**
    * Fetches the latest state of the payment channel
    * @param {BigNumber} channelId - The payment channel id
    * @returns {Promise<any>} - The return value(s) of the smart contract method. If it returns a single value, it’s returned as is. If it has multiple return values they are returned as an object with properties and indices:
    */
   async channels(channelId) {
-    const channelIdStr = new BigNumber(channelId).toFixed();
+    const channelIdStr = toBNString(channelId);
     logger.debug(`Fetch latest PaymentChannel[id: ${channelIdStr}] state`, { tags: ['MPE'] });
     return this.contract.methods.channels(channelIdStr).call();
   }
