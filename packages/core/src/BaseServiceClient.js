@@ -177,7 +177,7 @@ class BaseServiceClient {
     logger.info(`Using PaymentChannel[id: ${channelIdStr}] with nonce: ${nonceStr} and amount: ${signingAmountStr} and `, { tags: ['PaymentChannelManagementStrategy', 'gRPC'] });
 
     if (this._options.paidCallMetadataGenerator) {
-      const { channelId, nonce, signingAmount, signatureBytes } = await this._options.paidCallMetadataGenerator(channelId, signingAmount, nonce);
+      const { signatureBytes } = await this._options.paidCallMetadataGenerator(channelId, signingAmount, nonce);
       return { channelId, nonce, signingAmount, signatureBytes };
     }
 
