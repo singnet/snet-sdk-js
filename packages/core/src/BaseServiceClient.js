@@ -71,7 +71,8 @@ class BaseServiceClient {
     const channelIdBytes = Buffer.alloc(4);
     channelIdBytes.writeUInt32BE(channelId, 0);
 
-    const channelStateRequest = new this.paymentChannelStateServiceClient.getChannelState.requestType();
+    const ChannelStateRequest = this._getChannelStateRequestMethodDescriptor();
+    const channelStateRequest = new ChannelStateRequest();
     channelStateRequest.setChannelId(channelIdBytes);
     channelStateRequest.setSignature(signatureBytes);
     channelStateRequest.setCurrentBlock(currentBlockNumber);
@@ -205,6 +206,10 @@ class BaseServiceClient {
 
   _generatePaymentChannelStateServiceClient() {
     logger.error('_generatePaymentChannelStateServiceClient must be implemented in the sub classes');
+  }
+
+  _getChannelStateRequestMethodDescriptor() {
+    logger.error('_getChannelStateRequestMethodDescriptor must be implemented in the sub classes');
   }
 }
 

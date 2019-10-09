@@ -26,6 +26,10 @@ class ServiceClient extends BaseServiceClient {
     return this._grpcService;
   }
 
+  _getChannelStateRequestMethodDescriptor() {
+    return this.paymentChannelStateServiceClient.getChannelState.requestType;
+  }
+
   _constructGrpcService(ServiceStub) {
     logger.debug(`Creating service client`, { tags: ['gRPC']});
     const serviceEndpoint = this._getServiceEndpoint();

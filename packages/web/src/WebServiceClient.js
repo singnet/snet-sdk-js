@@ -1,5 +1,5 @@
 import { grpc } from '@improbable-eng/grpc-web';
-import { PaymentChannelStateServiceClient } from './proto/state_service_pb_service';
+import { PaymentChannelStateService, PaymentChannelStateServiceClient } from './proto/state_service_pb_service';
 import { BaseServiceClient, logger } from './sdk-core';
 import { forOwn } from 'lodash';
 
@@ -66,6 +66,10 @@ class WebServiceClient extends BaseServiceClient {
     logger.debug(`PaymentChannelStateService pointing to ${serviceEndpoint.host}, `, { tags: ['gRPC']});
     const host = serviceEndpoint.protocol + '//' + serviceEndpoint.host;
     return new PaymentChannelStateServiceClient(host);
+  }
+
+  _getChannelStateRequestMethodDescriptor() {
+    return PaymentChannelStateService.GetChannelState.requestType;
   }
 }
 
