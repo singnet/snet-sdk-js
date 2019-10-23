@@ -172,6 +172,19 @@ class MPEContract {
   }
 
   /**
+   * Claims unused tokens in a channel.
+   * @param {Account} account - The account against which the operations needs to be performed
+   * @param {BigNumber} channelId - Channel ID from which to claim the unused tokens
+   * @returns {Promise.<TransactionReceipt>}
+   */
+  async channelClaimTimeout(account, channelId) {
+    const channelIdStr = toBNString(channelId);
+    logger.info(`Claiming unused funds from expired channel PaymentChannel[id: ${channelIdStr}]`, { tags: ['MPE'] });
+    const channelClaimTimeoutOperation = this.contract.methods.channelClaimTimeout;
+    return account.sendTransaction(this.address, channelClaimTimeoutOperation, channelIdStr);
+  }
+
+  /**
    * Fetches the latest state of the payment channel
    * @param {BigNumber} channelId - The payment channel id
    * @returns {Promise<any>} - The return value(s) of the smart contract method. If it returns a single value, it’s returned as is. If it has multiple return values they are returned as an object with properties and indices:
