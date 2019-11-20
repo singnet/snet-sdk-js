@@ -66,6 +66,14 @@ class PaymentChannel {
   }
 
   /**
+   * Claims unused tokens in the channel from the MPE Account.
+   * @returns {Promise.<TransactionReceipt>}
+   */
+  async claimUnusedTokens() {
+    return this._mpeContract.channelClaimTimeout(this._account, this.channelId);
+  }
+
+  /**
    * Updates the state of the payment channel by fetching latest info from the mpe contract and the ai service daemon
    * @returns {Promise<PaymentChannel>}
    */
