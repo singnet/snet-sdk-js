@@ -1,0 +1,223 @@
+@startuml
+
+title SingularityNet Javascript SDK
+
+class Configuration {
+  + web3Provider: String
+  + privateKey: String
+  + networkId: Number
+  + ipfsEndpoint: String
+  + defaultGasPrice: Number
+  + defaultGasLimit: Number
+}
+
+class Pricing {
+  + pricing_in_cogs: Number
+  + pricing_model: String
+  + default: Boolean
+}
+
+class GroupPayment {
+  + payment_address: String
+  + payment_expiration_threshold: Number
+  + payment_channel_storage_type: String
+  + payment_channel_storage_client: Object
+}
+
+class Group {
+  + group_id: String
+  + group_name: String
+  + payment: GroupPayment
+  + pricing: Pricing[]
+  + endpoints: String[]
+}
+
+Group *-- GroupPayment
+Group *-- Pricing
+
+class ServiceMetadata {
+  + display_name: String
+  + encoding: String
+  + service_type: String
+  + model_ipfs_hash: String
+  + mpe_address: String
+  + assets: Object
+  + groups: Group[]
+  + service_description: Object
+}
+
+ServiceMetadata *-- Group
+
+interface MetadataProvider {
+  + metadata(orgId: String, serviceId: String): ServiceMetadata
+}
+
+class IPFSMetadataProvider {
+}
+
+IPFSMetadataProvider o-- Web3
+
+MetadataProvider <|-- IPFSMetadataProvider
+
+class MPEContract {
+  + address: string
+  + contract: Web3.Eth.Contract
+  + balance(address): double
+  + channelAddFunds(account, channelId, amount): Transaction
+  + channelClaimTimeout(account, channelId): Transaction
+  + channelExtend(account, channelId, expiration): Transaction
+  + channelExtendAndAddFunds(account, channelId, expiration, amount): Transaction
+  + channels(channelId):
+  + deposit(account, double cogs): Transaction
+  + depositAndOpenChannel(account, recipientAddress, groupId, amount, expiration)
+  + getPastOpenChannels(account, recipient, startingBlockNumber): PaymentChannel[]
+  + openChannel(account, recipientAddress, groupId, amount, expiration)
+  + withdraw(account, amount): Transaction
+}
+
+MPEContract o-- Web3
+
+class TransactionObject {
+  nonce: String
+  gas: String
+  gasPrice: String
+  to: String
+  data: String
+}
+
+class Account {
+  + address()
+  + allowance()
+  + approveTransfer(amountInCogs)
+  + balance()
+  + depositToEscrowAccount(amountInCogs)
+  + escrowBalance()
+  + sendTransaction(to, contractFn, ...contractFnArgs)
+  + signData(message)
+  + signerAddress()
+  + withdrawFromEscrowAccount(amountInCogs)
+}
+
+Account o-- Web3
+Account o-- MPEContract
+Account o-- Identity
+
+interface Identity {
+  + address()
+  + signData(message: String)
+  + sendTransaction(transactionObject)
+}
+
+class PrivateKeyIdentity {
+}
+
+PrivateKeyIdentity o-- Configuration
+PrivateKeyIdentity o-- Web3
+
+Identity <|-- PrivateKeyIdentity
+
+class MetaMaskIdentity {
+}
+
+MetaMaskIdentity o-- Configuration
+MetaMaskIdentity o-- Web3
+
+Identity <|-- MetaMaskIdentity
+
+interface PaymentChannelManagementStrategy {
+  + selectChannel(ServiceClient serviceClient): PaymentChannel
+}
+
+class EnhancedGroupInfo {
+  + group_id_in_bytes: Buffer
+  + payment_address: String
+  + payment_expiration_threshold: Number
+}
+
+Group <|-- EnhancedGroupInfo
+
+class ServiceOptions {
+  channelStateRequestSigner: Function
+  paidCallMetadataGenerator: Function
+  endpoint: String
+  disableBlockchainOperations: Boolean
+  metadataGenerator: Function
+}
+
+class BaseServiceClient {
+  + group: EnhancedGroupInfo
+  + metadata: ServiceMetadata
+  + paymentChannelStateServiceClient: GRPCClient
+  + depositAndOpenChannel(amount, expiration): PaymentChannel
+  + getChannelState(channelId): ChannelStateReply
+  + loadOpenChannels(): PaymentChannel[]
+  + openChannel(amount, expiration): PaymentChannel
+  + paymentChannels(): PaymentChannel[]
+  + updateChannelStates(): PaymentChannel[]
+}
+
+BaseServiceClient o-- SnetSDK
+BaseServiceClient o-- MPEContract
+BaseServiceClient o-- ServiceMetadata
+BaseServiceClient o-- Group
+BaseServiceClient o-- GRPCClient
+BaseServiceClient o-- PaymentChannelManagementStrategy
+BaseServiceClient o-- ServiceOptions
+
+class ServiceClient {
+  + service: GRPCClient
+}
+
+BaseServiceClient <|-- ServiceClient
+
+class WebServiceClient {
+  + invoke(GRPCMethodDescriptor, props)
+  + unary(GRPCMethodDescriptor, props)
+}
+
+BaseServiceClient <|-- WebServiceClient
+
+class PaymentChannelState {
+  + nonce: String
+  + currentNonce: Number
+  + expiry: Number
+  + amountDeposited: Number
+  + currentSignedAmount: Number
+  + availableAmount: Number
+}
+
+class PaymentChannel {
+  + addFunds(BigInt amount): Transaction
+  + channelId(): Number
+  + claimUnusedTokens(): Transaction
+  + extendAndAddFunds(Number expiration, Number amount): Transaction
+  + extendExpiry(Number expiration): Transaction
+  + state(): PaymentChannelState
+  + syncState(): PaymentChannel
+}
+
+PaymentChannel o-- Web3
+PaymentChannel o-- Account
+PaymentChannel o-- MPEContract
+PaymentChannel o-- BaseServiceClient
+
+interface SnetSDK {
+  + account(): Account
+  + web3(): Web3
+}
+
+SnetSDK o-- Configuration
+SnetSDK o-- MetadataProvider
+
+class NodeSDK {
+  + createServiceClient(): ServiceClient
+}
+
+SnetSDK <|.. NodeSDK
+
+class WebSDK {
+  + createServiceClient(): ServiceClient
+}
+
+SnetSDK <|.. WebSDK
+@enduml
