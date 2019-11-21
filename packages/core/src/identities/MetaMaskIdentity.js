@@ -2,16 +2,20 @@ import Eth from 'ethjs';
 
 import logger from '../utils/logger';
 
+/**
+ * @implements Identity
+ */
 class MetaMaskIdentity {
+  /**
+   * @param {Config} config
+   * @param {Web3} web3
+   */
   constructor(config, web3) {
     this._eth = new Eth(config.web3Provider);
     this._web3 = web3;
     this._setupAccount();
   }
 
-  /**
-   * @type {string}
-   */
   get address() {
     return this._web3.eth.defaultAccount;
   }

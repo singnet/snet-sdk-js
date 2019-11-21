@@ -15,7 +15,7 @@ You can find more details about each sdk within the respective package folders.
 ## Usage
 All the SDKs assume that there is enough `eth` balance to cover the `gas` cost and `AGI` tokens in the wallet to cover the service execution cost.
 
-The SDKs chose a default `PaymentManagementStrategy` which is the simplest form of picking an existing `Payment Channel` if any or creates a new `Payment Channel` if no channel is found. This can be easily overridden by providing your own strategy to the SDK at the time of construction. Documentation on creating custom strategies will be available soon.
+The SDKs chose a default `PaymentChannelManagementStrategy` which is the simplest form of picking an existing `Payment Channel` if any or creates a new `Payment Channel` if no channel is found. This can be easily overridden by providing your own strategy to the SDK at the time of construction. Documentation on creating custom strategies will be available soon.
 
 ## Development
 This is a monorepo which is setup a little differently. It does not use any external tools like [lerna](https://github.com/lerna/lerna) or any other popular tool.

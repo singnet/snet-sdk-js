@@ -1,16 +1,20 @@
 import Tx from 'ethereumjs-tx';
 import logger from '../utils/logger';
 
+/**
+ * @implements Identity
+ */
 class PrivateKeyIdentity {
+  /**
+   * @param {Config} config
+   * @param {Web3} web3
+   */
   constructor(config, web3) {
     this._web3 = web3;
     this._pk = config.privateKey;
     this._setupAccount();
   }
 
-  /**
-   * @type {string}
-   */
   get address() {
     return this._web3.eth.defaultAccount;
   }
