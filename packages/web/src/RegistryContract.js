@@ -16,7 +16,7 @@ class RegistryContract {
   createOrganization(orgId, orgMetadataURI, accounts) {
     return new Promise((resolve, reject) => {
       this._contract.createOrganization(orgId, orgMetadataURI, [...accounts], (error, hash) => {
-        if (error) {
+        if(error) {
           reject(error);
         }
         resolve(hash);

@@ -1,7 +1,13 @@
 import SnetSDK, { MetaMaskIdentity } from './sdk-core';
 import WebServiceClient from './WebServiceClient';
+import RegistryContract from './RegistryContract';
 
 class WebSdk extends SnetSDK {
+  constructor(...args) {
+    super(...args);
+    this._registryContract = new RegistryContract(this._web3, this._networkId);
+  }
+
   /**
    * @param {string} orgId
    * @param {string} serviceId
