@@ -4,7 +4,7 @@ import RegistryNetworks from "singularitynet-platform-contracts/networks/Registr
 class RegistryContract {
   constructor(web3, networkId) {
     this._web3 = web3;
-    this._contract = new this._web3.eth.contract(RegistryAbi).at(RegistryNetworks[networkId].address);
+    this._contract = this._web3.eth.contract(RegistryAbi).at(RegistryNetworks[networkId].address);
   }
 
   /**
