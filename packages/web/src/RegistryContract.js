@@ -11,11 +11,11 @@ class RegistryContract {
    * Creates a new organization in the blockchain
    * @param {string} orgId - The unique organization id
    * @param {string} orgMetadataURI - The IPFS URI for the organization metadata
-   * @param {Array<string>} accounts - List of accounts of the members of the organization
+   * @param {Array<string>} members - List of etherum addresses of the members of the organization
    */
-  createOrganization(orgId, orgMetadataURI, accounts) {
+  createOrganization(orgId, orgMetadataURI, members) {
     return new Promise((resolve, reject) => {
-      this._contract.createOrganization(orgId, orgMetadataURI, [...accounts], (error, hash) => {
+      this._contract.createOrganization(orgId, orgMetadataURI, [...members], (error, hash) => {
         if(error) {
           reject(error);
         }
