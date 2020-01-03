@@ -222,23 +222,6 @@ class MPEContract {
     });
   }
 
-  /**
-   * Creates a new organization in the blockchain
-   * @param {string} orgId - The unique organization id 
-   * @param {string} orgMetadataURI - The ipfs URI for the organization metadata
-   * @param {Array<string>} accounts - List of accounts of the members of the organization
-   */
-  createOrganization(orgId, orgMetadataURI, accounts ) {
-    return new Promise((resolve,reject)=>{
-        this._contract.createOrganization(orgId, orgMetadataURI, [...accounts], (error, hash)=>{
-          if(error){
-            reject(error)
-          }
-          resolve(hash)
-        })
-      })
-  }
-
   async _fundEscrowAccount(account, amountInCogs) {
     const currentEscrowBalance = await this.balance(account.address);
     if(amountInCogs > currentEscrowBalance) {
