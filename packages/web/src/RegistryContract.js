@@ -16,7 +16,7 @@ class RegistryContract {
   createOrganization(orgId, orgMetadataURI, members) {
     const enhancedOrgId = this._web3.utils.fromAscii(orgId);
     const enhancedOrgMetadataURI = this._web3.utils.fromAscii(orgMetadataURI);
-    return this._contract.methods.createOrganization(enhancedOrgId, enhancedOrgMetadataURI, [...members]);
+    return this._contract.methods.createOrganization(enhancedOrgId, enhancedOrgMetadataURI, [...members]).send();
   }
 }
 
