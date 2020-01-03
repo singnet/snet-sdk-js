@@ -4,7 +4,7 @@ import RegistryNetworks from "singularitynet-platform-contracts/networks/Registr
 class RegistryContract {
   constructor(web3, networkId) {
     this._web3 = web3;
-    this._contract = new this._web3.eth.contract(RegistryAbi).at(RegistryNetworks[networkId].address);
+    this._contract = new this._web3.eth.Contract(RegistryAbi, RegistryNetworks[networkId].address);
   }
 
   /**
@@ -14,14 +14,9 @@ class RegistryContract {
    * @param {Array<string>} members - List of etherum addresses of the members of the organization
    */
   createOrganization(orgId, orgMetadataURI, members) {
-    return new Promise((resolve, reject) => {
-      this._contract.createOrganization(orgId, orgMetadataURI, [...members], (error, hash) => {
-        if(error) {
-          reject(error);
-        }
-        resolve(hash);
-      });
-    });
+    const enhancedOrgId = this._web3.utils.fromAscii(orgId);
+    const enhancedOrgMetadataURI = this._web3.utils.fromAscii(orgMetadataURI);
+    return this._contract.methods.createOrganization(enhancedOrgId, enhancedOrgMetadataURI, [...members]).send();
   }
 }
 
