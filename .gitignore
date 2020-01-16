@@ -72,6 +72,7 @@ typings/
 
 ### JetBrains
 .idea/
+.vscode/
 
 ### istanbul
 /.nyc_output/
