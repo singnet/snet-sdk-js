@@ -18,6 +18,26 @@ class RegistryContract {
     const enhancedOrgMetadataURI = this._web3.utils.fromAscii(orgMetadataURI);
     return this._contract.methods.createOrganization(enhancedOrgId, enhancedOrgMetadataURI, [...members]).send();
   }
+
+  /**
+   * Add new members to the organization
+   * @param {string} orgId - The unique organization id
+   * @param {Array<string>} newMembers - List of ethereum addresses of the new members to be added to the organization
+   */
+  addOrganizationMembers(orgId, newMembers) {
+    const enhancedOrgId = this._web3.utils.fromAscii(orgId);
+    return this._contract.methods.addOrganizationMembers(enhancedOrgId, newMembers);
+  }
+
+  /**
+   * Remove the existing members from the organization
+   * @param {string} orgId - The unique organization id
+   * @param {Array<string>} existingMembers - List of ethereum address of the members that has to be removed from the organization
+   */
+  removeOrganizationMembers(orgId, existingMembers) {
+    const enhancedOrgId = this._web3.utils.fromAscii(orgId);
+    return this._contract.methods.removeOrganizationMembers(enhancedOrgId, existingMembers);
+  }
 }
 
 export default RegistryContract;
