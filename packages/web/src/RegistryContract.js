@@ -26,7 +26,7 @@ class RegistryContract {
    */
   addOrganizationMembers(orgId, newMembers) {
     const enhancedOrgId = this._web3.utils.fromAscii(orgId);
-    return this._contract.methods.addOrganizationMembers(enhancedOrgId, newMembers);
+    return this._contract.methods.addOrganizationMembers(enhancedOrgId, newMembers).send();
   }
 
   /**
@@ -36,7 +36,69 @@ class RegistryContract {
    */
   removeOrganizationMembers(orgId, existingMembers) {
     const enhancedOrgId = this._web3.utils.fromAscii(orgId);
-    return this._contract.methods.removeOrganizationMembers(enhancedOrgId, existingMembers);
+    return this._contract.methods.removeOrganizationMembers(enhancedOrgId, existingMembers).send();
+  }
+
+  /**
+   *
+   * @param {string} orgId - The unique organization id
+   * @param {string} serviceId - Id of the service to create, must be unique organization-wide.
+   * @param {string} serviceMetadataURI - Service metadata. metadataURI should contain information for data consistency
+   *                      validation (for example hash). We support: IPFS URI.
+   * @param {string[]} tags - Optional array of tags for discoverability.
+   */
+  createServiceRegistration(orgId, serviceId, serviceMetadataURI, tags) {
+    const enhancedOrgId = this._web3.utils.fromAscii(orgId);
+    const enhancedServiceId = this._web3.utils.fromAscii(serviceId);
+    const enhancedServiceMetadataURI = this._web3.utils.fromAscii(serviceMetadataURI);
+    const enhancedTags = tags.map(tag => this.web3.utils.fromAscii(tag));
+    return this._contract.methods
+      .createServiceRegistration(enhancedOrgId, enhancedServiceId, enhancedServiceMetadataURI, enhancedTags)
+      .send();
+  }
+
+  /**
+   *
+   * @param {string} orgId - The unique organization id
+   * @param {string} serviceId - Id of the service to update.
+   * @param {string} serviceMetadataURI - Service metadata. metadataURI should contain information for data consistency
+   *                      validation (for example hash). We support: IPFS URI.
+   */
+  updateServiceRegistration(orgId, serviceId, serviceMetadataURI) {
+    const enhancedOrgId = this._web3.utils.fromAscii(orgId);
+    const enhancedServiceId = this._web3.utils.fromAscii(serviceId);
+    const enhancedServiceMetadataURI = this._web3.utils.fromAscii(serviceMetadataURI);
+    return this._contract.methods
+      .updateServiceRegistration(enhancedOrgId, enhancedServiceId, enhancedServiceMetadataURI)
+      .send();
+  }
+
+  /**
+   *
+   * @param {string} orgId -  The unique organization id
+   * @param {string} serviceId - Id of the service to add tags to.
+   * @param {string} tags - Array of tags to add to the service registration record.
+   */
+  addTagsToServiceRegistration(orgId, serviceId, tags) {
+    const enhancedOrgId = this._web3.utils.fromAscii(orgId);
+    const enhancedServiceId = this._web3.utils.fromAscii(serviceId);
+    const enhancedTags = tags.map(tag => this.web3.utils.fromAscii(tag));
+    return this._contract.methods.addTagsToServiceRegistration(enhancedOrgId, enhancedServiceId, enhancedTags).send();
+  }
+
+  /**
+   *
+   * @param {string} orgId - The unique organization id
+   * @param {string} serviceId - Id of the service to remove tags from.
+   * @param {string[]} tags - Array of tags to remove from the service registration record.
+   */
+  removeTagsFromServiceRegistration(orgId, serviceId, tags) {
+    const enhancedOrgId = this._web3.utils.fromAscii(orgId);
+    const enhancedServiceId = this._web3.utils.fromAscii(serviceId);
+    const enhancedTags = tags.map(tag => this.web3.utils.fromAscii(tag));
+    return this._contract.methods
+      .removeTagsFromServiceRegistration(enhancedOrgId, enhancedServiceId, enhancedTags)
+      .send();
   }
 }
 
