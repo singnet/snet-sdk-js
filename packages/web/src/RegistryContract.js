@@ -20,6 +20,17 @@ class RegistryContract {
   }
 
   /**
+   *
+   * @param {string} orgId - Id of organization to update.
+   * @param {string} orgMetadataURI -- The IPFS URI for the updated organization metadata
+   */
+  changeOrganizationMetadataURI(orgId, orgMetadataURI) {
+    const enhancedOrgId = this._web3.utils.fromAscii(orgId);
+    const enhancedOrgMetadataURI = this._web3.utils.fromAscii(orgMetadataURI);
+    return this._contract.methods.changeOrganizationMetadataURI(enhancedOrgId, enhancedOrgMetadataURI).send();
+  }
+
+  /**
    * Add new members to the organization
    * @param {string} orgId - The unique organization id
    * @param {Array<string>} newMembers - List of ethereum addresses of the new members to be added to the organization
