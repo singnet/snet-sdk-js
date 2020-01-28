@@ -124,7 +124,7 @@ class RegistryContract {
    * @param {string} orgId - Id of the organization to look up.
    */
   getOrganizationById(orgId) {
-    const enhancedOrgId = orgId;
+    const enhancedOrgId = this._web3.utils.fromAscii(orgId);
     return this._contract.methods.getOrganizationById(enhancedOrgId);
   }
 }
