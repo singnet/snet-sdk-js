@@ -114,6 +114,10 @@ class RegistryContract {
     const enhancedTags = tags.map(tag => this.web3.utils.fromAscii(tag));
     return this._contract.methods.removeTagsFromServiceRegistration(enhancedOrgId, enhancedServiceId, enhancedTags);
   }
+
+  listOrganizations() {
+    return this._contract.methods.listOrganizations();
+  }
 }
 
 export default RegistryContract;
