@@ -93,7 +93,7 @@ class RegistryContract {
    *
    * @param {string} orgId -  The unique organization id
    * @param {string} serviceId - Id of the service to add tags to.
-   * @param {string} tags - Array of tags to add to the service registration record.
+   * @param {string[]} tags - Array of tags to add to the service registration record.
    */
   addTagsToServiceRegistration(orgId, serviceId, tags) {
     const enhancedOrgId = this._web3.utils.fromAscii(orgId);
@@ -117,6 +117,15 @@ class RegistryContract {
 
   listOrganizations() {
     return this._contract.methods.listOrganizations();
+  }
+
+  /**
+   *
+   * @param {string} orgId - Id of the organization to look up.
+   */
+  getOrganizationById(orgId) {
+    const enhancedOrgId = orgId;
+    return this._contract.methods.getOrganizationById(enhancedOrgId);
   }
 }
 
