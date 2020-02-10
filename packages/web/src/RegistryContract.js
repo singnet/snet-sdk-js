@@ -62,7 +62,7 @@ class RegistryContract {
     const enhancedOrgId = this._web3.utils.fromAscii(orgId);
     const enhancedServiceId = this._web3.utils.fromAscii(serviceId);
     const enhancedServiceMetadataURI = this._web3.utils.fromAscii(serviceMetadataURI);
-    const enhancedTags = tags.map(tag => this.web3.utils.fromAscii(tag));
+    const enhancedTags = tags.map(tag => this._web3.utils.fromAscii(tag));
     return this._contract.methods.createServiceRegistration(
       enhancedOrgId,
       enhancedServiceId,
@@ -98,7 +98,7 @@ class RegistryContract {
   addTagsToServiceRegistration(orgId, serviceId, tags) {
     const enhancedOrgId = this._web3.utils.fromAscii(orgId);
     const enhancedServiceId = this._web3.utils.fromAscii(serviceId);
-    const enhancedTags = tags.map(tag => this.web3.utils.fromAscii(tag));
+    const enhancedTags = tags.map(tag => this._web3.utils.fromAscii(tag));
     return this._contract.methods.addTagsToServiceRegistration(enhancedOrgId, enhancedServiceId, enhancedTags);
   }
 
@@ -111,7 +111,7 @@ class RegistryContract {
   removeTagsFromServiceRegistration(orgId, serviceId, tags) {
     const enhancedOrgId = this._web3.utils.fromAscii(orgId);
     const enhancedServiceId = this._web3.utils.fromAscii(serviceId);
-    const enhancedTags = tags.map(tag => this.web3.utils.fromAscii(tag));
+    const enhancedTags = tags.map(tag => this._web3.utils.fromAscii(tag));
     return this._contract.methods.removeTagsFromServiceRegistration(enhancedOrgId, enhancedServiceId, enhancedTags);
   }
 
