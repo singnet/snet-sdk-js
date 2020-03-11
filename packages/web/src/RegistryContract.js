@@ -1,11 +1,19 @@
-import RegistryAbi from "singularitynet-platform-contracts/abi/Registry";
-import RegistryNetworks from "singularitynet-platform-contracts/networks/Registry";
+import RegistryAbi from 'singularitynet-platform-contracts/abi/Registry';
+import RegistryNetworks from 'singularitynet-platform-contracts/networks/Registry';
 
 class RegistryContract {
   constructor(web3, networkId) {
     this._web3 = web3;
     this._contract = new this._web3.eth.Contract(RegistryAbi, RegistryNetworks[networkId].address);
   }
+
+  _toPaddedHex(string, bit = 32) {
+    const hex = this._web3.utils.fromAscii(string);
+    const hexLength = hex.length;
+    const paddedHex = this._web3.utils.padRight(hex, bit * (Math.floor(hexLength / bit) + 1));
+    return paddedHex;
+  }
+
 
   /**
    * Creates a new organization in the blockchain
@@ -15,7 +23,7 @@ class RegistryContract {
    */
   createOrganization(orgId, orgMetadataURI, members) {
     const enhancedOrgId = this._web3.utils.fromAscii(orgId);
-    const enhancedOrgMetadataURI = this._web3.utils.fromAscii(orgMetadataURI);
+    const enhancedOrgMetadataURI = this._toPaddedHex(orgMetadataURI);
     return this._contract.methods.createOrganization(enhancedOrgId, enhancedOrgMetadataURI, [...members]);
   }
 
@@ -26,7 +34,7 @@ class RegistryContract {
    */
   changeOrganizationMetadataURI(orgId, orgMetadataURI) {
     const enhancedOrgId = this._web3.utils.fromAscii(orgId);
-    const enhancedOrgMetadataURI = this._web3.utils.fromAscii(orgMetadataURI);
+    const enhancedOrgMetadataURI = this._toPaddedHex(orgMetadataURI);
     return this._contract.methods.changeOrganizationMetadataURI(enhancedOrgId, enhancedOrgMetadataURI);
   }
 
@@ -61,13 +69,13 @@ class RegistryContract {
   createServiceRegistration(orgId, serviceId, serviceMetadataURI, tags) {
     const enhancedOrgId = this._web3.utils.fromAscii(orgId);
     const enhancedServiceId = this._web3.utils.fromAscii(serviceId);
-    const enhancedServiceMetadataURI = this._web3.utils.fromAscii(serviceMetadataURI);
+    const enhancedServiceMetadataURI = this._toPaddedHex(serviceMetadataURI);
     const enhancedTags = tags.map(tag => this._web3.utils.fromAscii(tag));
     return this._contract.methods.createServiceRegistration(
       enhancedOrgId,
       enhancedServiceId,
       enhancedServiceMetadataURI,
-      enhancedTags
+      enhancedTags,
     );
   }
 
@@ -81,11 +89,11 @@ class RegistryContract {
   updateServiceRegistration(orgId, serviceId, serviceMetadataURI) {
     const enhancedOrgId = this._web3.utils.fromAscii(orgId);
     const enhancedServiceId = this._web3.utils.fromAscii(serviceId);
-    const enhancedServiceMetadataURI = this._web3.utils.fromAscii(serviceMetadataURI);
+    const enhancedServiceMetadataURI = this._toPaddedHex(serviceMetadataURI);
     return this._contract.methods.updateServiceRegistration(
       enhancedOrgId,
       enhancedServiceId,
-      enhancedServiceMetadataURI
+      enhancedServiceMetadataURI,
     );
   }
 
