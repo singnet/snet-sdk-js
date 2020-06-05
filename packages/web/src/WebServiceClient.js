@@ -57,6 +57,7 @@ class WebServiceClient extends BaseServiceClient {
     metadata.append('snet-payment-channel-nonce', `${nonce}`);
     metadata.append('snet-payment-channel-amount', `${signingAmount}`);
     metadata.append('snet-payment-channel-signature-bin', signatureBytes.toString('base64'));
+    metadata.append("snet-payment-mpe-address", this._mpeContract.address)
     return metadata;
   }
 
