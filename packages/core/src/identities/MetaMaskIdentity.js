@@ -1,4 +1,5 @@
 import Eth from 'ethjs';
+import { ethereumMethods } from '../utils/ethereumUtils';
 
 import logger from '../utils/logger';
 
@@ -16,8 +17,9 @@ class MetaMaskIdentity {
     this._setupAccount();
   }
 
-  get address() {
-    return this._web3.eth.defaultAccount;
+  async getAddress() {
+    const accounts = await web3Provider.request({method:ethereumMethods.REQUEST_ACCOUNTS})
+    return accounts[0]
   }
 
   async signData(sha3Message) {
