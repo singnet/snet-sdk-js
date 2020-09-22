@@ -37,7 +37,18 @@ class MetaMaskIdentity {
   }
 
   _setupAccount() {
-    this._web3.eth.defaultAccount = window.web3.eth.defaultAccount;
+    const ethereum = window.ethereum
+    console.log("ethereum", typeof ethereum !== 'undefined')
+    console.log("ethereum", ethereum.isMetamask)
+    if (typeof ethereum !== 'undefined') {
+        this._web3.eth.defaultAccount = ethereum.selectedAddress
+      // console.log('MetaMask is installed!');
+    }else {
+      logger.error("Metamask is not installed")
+    }
+
+    // this._web3.eth.defaultAccount = window.web3.eth.defaultAccount;
+    // this._web3.eth.defaultAccount = this.config.web3Provider.selectedAddress
   }
 }
 
