@@ -18,12 +18,14 @@ class MetaMaskIdentity {
   }
 
   async getAddress() {
-    const accounts = await web3Provider.request({method:ethereumMethods.REQUEST_ACCOUNTS})
+    const ethereum = window.ethereum
+    const accounts = await ethereum.request({method:ethereumMethods.REQUEST_ACCOUNTS})
     return accounts[0]
   }
 
   async signData(sha3Message) {
-    return this._eth.personal_sign(sha3Message, this.address);
+    const address = await this.getAddress()
+    return this._eth.personal_sign(sha3Message, address);
   }
 
   async sendTransaction(transactionObject) {
@@ -40,17 +42,16 @@ class MetaMaskIdentity {
 
   _setupAccount() {
     const ethereum = window.ethereum
-    console.log("ethereum", typeof ethereum !== 'undefined')
-    console.log("ethereum", ethereum.isMetamask)
+
     if (typeof ethereum !== 'undefined') {
-        this._web3.eth.defaultAccount = ethereum.selectedAddress
-      // console.log('MetaMask is installed!');
+      (async function(){
+        const accounts = await ethereum.request({method:ethereumMethods.REQUEST_ACCOUNTS})
+        this._web3.eth.defaultAccount = accounts[0]
+      }.bind(this))()
     }else {
       logger.error("Metamask is not installed")
     }
 
-    // this._web3.eth.defaultAccount = window.web3.eth.defaultAccount;
-    // this._web3.eth.defaultAccount = this.config.web3Provider.selectedAddress
   }
 }
 
