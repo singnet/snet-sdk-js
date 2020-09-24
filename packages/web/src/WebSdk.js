@@ -1,6 +1,7 @@
 import SnetSDK, { MetaMaskIdentity } from './sdk-core';
 import WebServiceClient from './WebServiceClient';
 import RegistryContract from './RegistryContract';
+import { times } from 'lodash';
 
 class WebSdk extends SnetSDK {
   constructor(...args) {
@@ -24,6 +25,10 @@ class WebSdk extends SnetSDK {
 
   _createIdentity() {
     return new MetaMaskIdentity(this._config, this._web3);
+  }
+
+  async setupAccount() {
+    await this._account._identity.setupAccount()
   }
 }
 

@@ -14,7 +14,7 @@ class MetaMaskIdentity {
   constructor(config, web3) {
     this._eth = new Eth(config.web3Provider);
     this._web3 = web3;
-    this._setupAccount();
+    this.setupAccount();
   }
 
   async getAddress() {
@@ -40,7 +40,7 @@ class MetaMaskIdentity {
     });
   }
 
-  async _setupAccount() {
+  async setupAccount() {
     const ethereum = window.ethereum
     if (typeof ethereum !== 'undefined') {
         const accounts = await ethereum.request({method:ethereumMethods.REQUEST_ACCOUNTS})
