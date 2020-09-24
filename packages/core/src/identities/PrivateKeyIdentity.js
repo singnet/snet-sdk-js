@@ -19,6 +19,10 @@ class PrivateKeyIdentity {
     return this._web3.eth.defaultAccount;
   }
 
+  async getAddress() {
+    return this._web3.eth.defaultAccount;
+  }
+
   async signData(sha3Message) {
     const { signature } = this._web3.eth.accounts.sign(sha3Message, this._pk);
     return signature
