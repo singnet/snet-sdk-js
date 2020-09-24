@@ -40,14 +40,11 @@ class MetaMaskIdentity {
     });
   }
 
-  _setupAccount() {
+  async _setupAccount() {
     const ethereum = window.ethereum
-
     if (typeof ethereum !== 'undefined') {
-      (async function(){
         const accounts = await ethereum.request({method:ethereumMethods.REQUEST_ACCOUNTS})
         this._web3.eth.defaultAccount = accounts[0]
-      }.bind(this))()
     }else {
       logger.error("Metamask is not installed")
     }
