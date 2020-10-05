@@ -206,9 +206,10 @@ class MPEContract {
   async getPastOpenChannels(account, service, startingBlockNumber) {
     const fromBlock = startingBlockNumber ? startingBlockNumber : await this._deploymentBlockNumber();
     logger.debug(`Fetching all payment channel open events starting at block: ${fromBlock}`, { tags: ['MPE'] });
+    const address = await account.getAddress()
     const options = {
       filter: {
-        sender: account.address,
+        sender: address,
         recipient: service.group.payment_address,
         groupId: service.group.group_id_in_bytes,
       },
@@ -223,7 +224,8 @@ class MPEContract {
   }
 
   async _fundEscrowAccount(account, amountInCogs) {
-    const currentEscrowBalance = await this.balance(account.address);
+    const address = await account.getAddress()
+    const currentEscrowBalance = await this.balance(address);
     if(amountInCogs > currentEscrowBalance) {
       await account.depositToEscrowAccount(amountInCogs - currentEscrowBalance);
     }

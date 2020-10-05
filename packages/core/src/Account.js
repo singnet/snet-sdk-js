@@ -26,7 +26,8 @@ class Account {
    */
   async balance() {
     logger.debug('Fetching account balance', { tags: ['Account'] });
-    return this._getTokenContract().methods.balanceOf(this.address).call();
+    const address = await this.getAddress()
+    return this._getTokenContract().methods.balanceOf(address).call();
   }
 
   /**
@@ -34,7 +35,8 @@ class Account {
    * @returns {Promise.<BigNumber>}
    */
   async escrowBalance() {
-    return this._mpeContract.balance(this.address);
+    const address = await this.getAddress()
+    return this._mpeContract.balance(address);
   }
 
   /**
@@ -69,7 +71,8 @@ class Account {
    */
   async allowance() {
     logger.debug(`Fetching already approved allowance`, { tags: ['Account'] });
-    return this._getTokenContract().methods.allowance(this.address, this._mpeContract.address).call();
+    const address = await this.getAddress()
+    return this._getTokenContract().methods.allowance(address, this._mpeContract.address).call();
   }
 
   /**
@@ -84,15 +87,15 @@ class Account {
   /**
    * @type {string}
    */
-  get address() {
-    return this._identity.address;
+  async getAddress() {
+    return await this._identity.getAddress();
   }
 
   /**
    * @type {string}
    */
-  get signerAddress() {
-    return this.address;
+  async getSignerAddress() {
+    return await this.getAddress()
   }
 
   /**
@@ -181,7 +184,8 @@ class Account {
   }
 
   async _transactionCount() {
-    return this._web3.eth.getTransactionCount(this.address);
+    const address = await this.getAddress()
+    return this._web3.eth.getTransactionCount(address);
   }
 }
 
