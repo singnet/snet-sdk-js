@@ -89,7 +89,9 @@ class MPEContract {
 
     logger.info(`Opening new payment channel [amount: ${amount}, expiry: ${expiryStr}]`, { tags: ['MPE'] });
     const openChannelOperation = this.contract.methods.openChannel;
-    const openChannelFnArgs = [account.signerAddress, recipientAddress, groupId, amount, expiryStr];
+    const signerAddress = await account.getSignerAddress()
+    const openChannelFnArgs = [signerAddress, recipientAddress, groupId, amount, expiryStr];
+
     return account.sendTransaction(this.address, openChannelOperation, ...openChannelFnArgs);
   }
 
@@ -115,7 +117,8 @@ class MPEContract {
     }
 
     const depositAndOpenChannelOperation = this.contract.methods.depositAndOpenChannel;
-    const operationArgs = [account.signerAddress, recipientAddress, groupId, amount, expiryStr];
+    const signerAddress = await account.getSignerAddress()
+    const operationArgs = [signerAddress, recipientAddress, groupId, amount, expiryStr];
     logger.info(`Depositing ${amount}cogs to MPE address and Opening new payment channel [expiry: ${expiryStr}]`, { tags: ['MPE'] });
     return account.sendTransaction(this.address, depositAndOpenChannelOperation, ...operationArgs);
   }
