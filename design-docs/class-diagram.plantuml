@@ -2,6 +2,8 @@
 
 title SingularityNet Javascript SDK
 
+!define ABSTRACT &#60;abstract&#62;
+
 class Configuration {
   + web3Provider: String
   + privateKey: String
@@ -53,6 +55,11 @@ interface MetadataProvider {
 }
 
 class IPFSMetadataProvider {
+  + metadata(): ServiceMetadataWithGroups
+  - _fetchOrgMetadata(Bytes orgId): OrgMetadata
+  - _fetchServiceMetadata(Bytes orgId,Bytes serviceId): ServiceMetadata
+  - _enhanceServiceGroupDetails(serviceMetadata, orgMetadata): ServiceMetadataWithGroups
+  - _constructIpfsClient(): IPFSClient
 }
 
 IPFSMetadataProvider o-- Web3
@@ -61,6 +68,7 @@ MetadataProvider <|-- IPFSMetadataProvider
 
 class MPEContract {
   + address: string
+  + networkId: Number
   + contract: Web3.Eth.Contract
   + balance(address): double
   + channelAddFunds(account, channelId, amount): Transaction
@@ -73,6 +81,8 @@ class MPEContract {
   + getPastOpenChannels(account, recipient, startingBlockNumber): PaymentChannel[]
   + openChannel(account, recipientAddress, groupId, amount, expiration)
   + withdraw(account, amount): Transaction
+  - _fundEscrowAccount(account, amountInCogs): Void
+  - _deploymentBlockNumber(): Number
 }
 
 MPEContract o-- Web3
@@ -86,16 +96,22 @@ class TransactionObject {
 }
 
 class Account {
-  + address()
-  + allowance()
-  + approveTransfer(amountInCogs)
-  + balance()
-  + depositToEscrowAccount(amountInCogs)
-  + escrowBalance()
-  + sendTransaction(to, contractFn, ...contractFnArgs)
-  + signData(message)
-  + signerAddress()
-  + withdrawFromEscrowAccount(amountInCogs)
+  + address(): String
+  + allowance(): BigNumber
+  + approveTransfer(amountInCogs): Transaction
+  + balance(): BigNumber
+  + depositToEscrowAccount(amountInCogs): Transaction
+  + escrowBalance(): BigNumber
+  + sendTransaction(to, contractFn, ...contractFnArgs): Transaction
+  + signData(message): Buffer
+  + signerAddress(): String
+  + withdrawFromEscrowAccount(amountInCogs): Transaction
+  - _waitForTransaction(String hash): Transaction
+  - _getTokenContract(): Contract
+  - _generateTokenContract(): Contract
+  - _baseTransactionObject(operation, to): Transaction
+  - _getGas(operation) : {gasLimit, gasPrice}
+  - _transactionCount(): Number
 }
 
 Account o-- Web3
@@ -109,6 +125,11 @@ interface Identity {
 }
 
 class PrivateKeyIdentity {
+  + address(): String
+  + signData(sha3Message): Bytes
+  + sendTransaction(transactionObject): String
+  - _setupAccount()
+  - sendTransaction(transactionObject)
 }
 
 PrivateKeyIdentity o-- Configuration
@@ -117,6 +138,10 @@ PrivateKeyIdentity o-- Web3
 Identity <|-- PrivateKeyIdentity
 
 class MetaMaskIdentity {
+  + address(): String
+  + signData(sha3Message): Bytes
+  + sendTransaction(transactionObject): String
+  + setupAccount()
 }
 
 MetaMaskIdentity o-- Configuration
@@ -145,15 +170,23 @@ class ServiceOptions {
 }
 
 class BaseServiceClient {
-  + group: EnhancedGroupInfo
-  + metadata: ServiceMetadata
-  + paymentChannelStateServiceClient: GRPCClient
+  + metadata(): ServiceMetadata
+  + paymentChannelStateServiceClient(): GRPCClient
+  + group(): EnhancedGroupInfo
+  + paymentChannels(): PaymentChannel[]
   + depositAndOpenChannel(amount, expiration): PaymentChannel
   + getChannelState(channelId): ChannelStateReply
   + loadOpenChannels(): PaymentChannel[]
   + openChannel(amount, expiration): PaymentChannel
-  + paymentChannels(): PaymentChannel[]
   + updateChannelStates(): PaymentChannel[]
+  - _enhanceGroupInfo(group): Group
+  - _channelStateRequest(channelId)
+  - _channelStateRequestProperties(channelId): { currentBlockNumber, signatureBytes }
+  - _fetchPaymentMetadata(): { channelId, nonce, signingAmount, signatureBytes }
+  - _getNewlyOpenedChannel(receipt): PaymentChannel
+  - _getServiceEndpoint(): String
+  - _generatePaymentChannelStateServiceClient() ABSTRACT
+  - _getChannelStateRequestMethodDescriptor() ABSTRACT
 }
 
 BaseServiceClient o-- SnetSDK
@@ -194,12 +227,33 @@ class PaymentChannel {
   + extendExpiry(Number expiration): Transaction
   + state(): PaymentChannelState
   + syncState(): PaymentChannel
+  - _currentChannelState(): PaymentChannelState
+  - _uint8ArrayToBN(UInt8Array uint8Array): BigNumber
 }
 
 PaymentChannel o-- Web3
 PaymentChannel o-- Account
 PaymentChannel o-- MPEContract
 PaymentChannel o-- BaseServiceClient
+
+class ConcurrencyManager {
+ + concurrentCalls: ConcurrentCalls[]
+ + token: String
+ + plannedAmount: Number
+ + usedAmount: Number
+ + getToken(serviceClient, channel, serviceCallPrice, newToken): String
+ + getTokenForAmount(serviceClient, channel, amount): String
+ + recordSuccessfulCall()
+}
+
+ConcurrencyManager o-- ConcurrencyStubs
+
+
+interface PrepaidPaymentChannelManagementStrategy {
+ - _priceForConcurrentCalls(): Number
+ + selectChannel(serviceClient): PaymentChannel
+}
+
 
 interface SnetSDK {
   + account(): Account
