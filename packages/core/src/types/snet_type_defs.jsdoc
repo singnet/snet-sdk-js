@@ -11,8 +11,12 @@
 
 /**
  * @typedef {Object} ServiceClientOptions
- * @property {boolean} [disableBlockchainOperations]
+ * @property {string} email
+ * @property {string} tokenToMakeFreeCall
+ * @property {number} tokenExpirationBlock
+ * @property {boolean} disableBlockchainOperations
  * @property {string} [endpoint]
+ * @property {boolean} concurrency
  */
 
 /**
@@ -161,3 +165,21 @@
  * @property {BigNumber} [currentSignedAmount=0]
  * @property {BigNumber} [availableAmount]
  */
+
+/**
+ * @typedef {Object} ServiceDetails
+ * @property {String} orgId
+ * @property {String} serviceId
+ * @property {String} groupId
+ * @property {String} daemonEndpoint
+ */
+
+ /**
+  * @typedef {Object} FreeCallConfig
+  * @property {String} email
+  * @property {String} tokenToMakeFreeCall
+  * @property {String} tokenExpirationBlock
+  */
+
+
+

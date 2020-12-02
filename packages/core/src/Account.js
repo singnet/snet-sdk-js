@@ -1,7 +1,7 @@
 import AGITokenAbi from 'singularitynet-token-contracts/abi/SingularityNetToken';
 import AGITokenNetworks from 'singularitynet-token-contracts/networks/SingularityNetToken';
-import logger from './utils/logger';
 import { BigNumber } from 'bignumber.js';
+import logger from './utils/logger';
 
 import { toBNString } from './utils/bignumber_helper';
 
@@ -26,7 +26,7 @@ class Account {
    */
   async balance() {
     logger.debug('Fetching account balance', { tags: ['Account'] });
-    const address = await this.getAddress()
+    const address = await this.getAddress();
     return this._getTokenContract().methods.balanceOf(address).call();
   }
 
@@ -35,7 +35,7 @@ class Account {
    * @returns {Promise.<BigNumber>}
    */
   async escrowBalance() {
-    const address = await this.getAddress()
+    const address = await this.getAddress();
     return this._mpeContract.balance(address);
   }
 
@@ -70,8 +70,8 @@ class Account {
    * @returns {Promise.<BigNumber>}
    */
   async allowance() {
-    logger.debug(`Fetching already approved allowance`, { tags: ['Account'] });
-    const address = await this.getAddress()
+    logger.debug('Fetching already approved allowance', { tags: ['Account'] });
+    const address = await this.getAddress();
     return this._getTokenContract().methods.allowance(address, this._mpeContract.address).call();
   }
 
@@ -88,14 +88,14 @@ class Account {
    * @type {string}
    */
   async getAddress() {
-    return await this._identity.getAddress();
+    return this._identity.getAddress();
   }
 
   /**
    * @type {string}
    */
   async getSignerAddress() {
-    return await this.getAddress()
+    return this.getAddress();
   }
 
   /**
@@ -107,9 +107,7 @@ class Account {
    */
   async signData(...data) {
     const sha3Message = this._web3.utils.soliditySha3(...data);
-
     const signature = await this._identity.signData(sha3Message);
-
     const stripped = signature.substring(2, signature.length);
     const byteSig = Buffer.from(stripped, 'hex');
     return Buffer.from(byteSig);
@@ -125,36 +123,7 @@ class Account {
   async sendTransaction(to, contractFn, ...contractFnArgs) {
     const operation = contractFn(...contractFnArgs);
     const txObject = await this._baseTransactionObject(operation, to);
-
-    return new Promise(async (resolve, reject) => {
-      try {
-        const txHash = await this._identity.sendTransaction(txObject);
-        this._waitForTransaction(txHash).then(resolve).catch(reject);
-      } catch(e) {
-        reject(e);
-      }
-    });
-  }
-
-  async _waitForTransaction(hash) {
-    let receipt;
-    while(!receipt) {
-      // eslint-disable-next-line no-await-in-loop
-      try {
-        receipt = await this._web3.eth.getTransactionReceipt(hash);
-      } catch(error) {
-        logger.error(`Couldn't complete transaction for: ${hash}`, error);
-      }
-    }
-
-    return new Promise((resolve, reject) => {
-      if(!receipt.status) {
-        logger.error('Transaction failed', receipt);
-        reject(receipt);
-      }
-
-      resolve(receipt);
-    });
+    return this._identity.sendTransaction(txObject);
   }
 
   _getTokenContract() {
@@ -184,7 +153,7 @@ class Account {
   }
 
   async _transactionCount() {
-    const address = await this.getAddress()
+    const address = await this.getAddress();
     return this._web3.eth.getTransactionCount(address);
   }
 }

@@ -1,6 +1,6 @@
-import grpc, { InterceptingCall } from "grpc";
-import { PaymentChannelStateServiceClient } from './proto/state_service_grpc_pb';
+import grpc, { InterceptingCall } from 'grpc';
 import { BaseServiceClient, logger } from './sdk-core';
+import { PaymentChannelStateServiceClient } from './proto/state_service_grpc_pb';
 
 class ServiceClient extends BaseServiceClient {
   /**
@@ -31,16 +31,16 @@ class ServiceClient extends BaseServiceClient {
   }
 
   _constructGrpcService(ServiceStub) {
-    logger.debug(`Creating service client`, { tags: ['gRPC']});
+    logger.debug('Creating service client', { tags: ['gRPC'] });
     const serviceEndpoint = this._getServiceEndpoint();
     const grpcChannelCredentials = this._getGrpcChannelCredentials(serviceEndpoint);
     const grpcOptions = this._generateGrpcOptions();
-    logger.debug(`Service pointing to ${serviceEndpoint.host}, `, { tags: ['gRPC']});
+    logger.debug(`Service pointing to ${serviceEndpoint.host}, `, { tags: ['gRPC'] });
     return new ServiceStub(serviceEndpoint.host, grpcChannelCredentials, grpcOptions);
   }
 
   _generateGrpcOptions() {
-    if (this._options.disableBlockchainOperations) {
+    if(this._options.disableBlockchainOperations) {
       return {};
     }
 
@@ -53,18 +53,16 @@ class ServiceClient extends BaseServiceClient {
     return (options, nextCall) => {
       const requester = {
         start: async (metadata, listener, next) => {
-          if (!this._paymentChannelManagementStrategy) {
+          if(!this._paymentChannelManagementStrategy) {
             next(metadata, listener);
             return;
           }
-
-          const { channelId, nonce, signingAmount, signatureBytes } = await this._fetchPaymentMetadata();
-
-          metadata.add('snet-payment-type', 'escrow');
-          metadata.add('snet-payment-channel-id', `${channelId}`);
-          metadata.add('snet-payment-channel-nonce', `${nonce}`);
-          metadata.add('snet-payment-channel-amount', `${signingAmount}`);
-          metadata.add('snet-payment-channel-signature-bin', signatureBytes);
+          const paymentMetadata = await this._fetchPaymentMetadata();
+          paymentMetadata.forEach((paymentMeta) => {
+            Object.entries(paymentMeta).forEach(([key, value]) => {
+              metadata.add(key, value);
+            });
+          });
           next(metadata, listener);
         },
       };
@@ -73,26 +71,26 @@ class ServiceClient extends BaseServiceClient {
   }
 
   _generatePaymentChannelStateServiceClient() {
-    logger.debug(`Creating PaymentChannelStateService client`, { tags: ['gRPC']});
+    logger.debug('Creating PaymentChannelStateService client', { tags: ['gRPC'] });
     const serviceEndpoint = this._getServiceEndpoint();
     const grpcChannelCredentials = this._getGrpcChannelCredentials(serviceEndpoint);
-    logger.debug(`PaymentChannelStateService pointing to ${serviceEndpoint.host}, `, { tags: ['gRPC']});
+    logger.debug(`PaymentChannelStateService pointing to ${serviceEndpoint.host}, `, { tags: ['gRPC'] });
     return new PaymentChannelStateServiceClient(serviceEndpoint.host, grpcChannelCredentials);
   }
 
   _getGrpcChannelCredentials(serviceEndpoint) {
     if(serviceEndpoint.protocol === 'https:') {
-      logger.debug(`Channel credential created for https`, { tags: ['gRPC']});
+      logger.debug('Channel credential created for https', { tags: ['gRPC'] });
       return grpc.credentials.createSsl();
     }
 
     if(serviceEndpoint.protocol === 'http:') {
-      logger.debug(`Channel credential created for http`, { tags: ['gRPC']});
+      logger.debug('Channel credential created for http', { tags: ['gRPC'] });
       return grpc.credentials.createInsecure();
     }
 
     const errorMessage = `Protocol: ${serviceEndpoint.protocol} not supported`;
-    logger.error(errorMessage, { tags: ['gRPC']});
+    logger.error(errorMessage, { tags: ['gRPC'] });
     throw new Error(errorMessage);
   }
 }

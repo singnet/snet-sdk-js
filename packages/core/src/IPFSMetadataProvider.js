@@ -1,5 +1,5 @@
 import { find, map } from 'lodash';
-import url from "url";
+import url from 'url';
 import IPFSClient from 'ipfs-http-client';
 import RegistryNetworks from 'singularitynet-platform-contracts/networks/Registry.json';
 import RegistryAbi from 'singularitynet-platform-contracts/abi/Registry.json';
@@ -25,35 +25,31 @@ export default class IPFSMetadataProvider {
     logger.debug(`Fetching service metadata [org: ${orgId} | service: ${serviceId}]`);
     const orgIdBytes = this._web3.utils.fromAscii(orgId);
     const serviceIdBytes = this._web3.utils.fromAscii(serviceId);
-
     const orgMetadata = await this._fetchOrgMetadata(orgIdBytes);
     const serviceMetadata = await this._fetchServiceMetadata(orgIdBytes, serviceIdBytes);
-
     return Promise.resolve(this._enhanceServiceGroupDetails(serviceMetadata, orgMetadata));
   }
 
   async _fetchOrgMetadata(orgIdBytes) {
-    logger.debug(`Fetching org metadata URI from registry contract`);
+    logger.debug('Fetching org metadata URI from registry contract');
     const { orgMetadataURI } = await this._registryContract.methods.getOrganizationById(orgIdBytes).call();
 
-    return await this._fetchMetadataFromIpfs(orgMetadataURI);
+    return this._fetchMetadataFromIpfs(orgMetadataURI);
   }
 
   async _fetchServiceMetadata(orgIdBytes, serviceIdBytes) {
-    logger.debug(`Fetching service metadata URI from registry contract`);
+    logger.debug('Fetching service metadata URI from registry contract');
     const { metadataURI: serviceMetadataURI } = await this._registryContract
       .methods
       .getServiceRegistrationById(orgIdBytes, serviceIdBytes)
       .call();
-
-    return await this._fetchMetadataFromIpfs(serviceMetadataURI);
+    return this._fetchMetadataFromIpfs(serviceMetadataURI);
   }
 
   async _fetchMetadataFromIpfs(metadataURI) {
     const ipfsCID = `${this._web3.utils.hexToUtf8(metadataURI).substring(7)}`;
     logger.debug(`Fetching metadata from IPFS[CID: ${ipfsCID}]`);
     const data = await this._ipfsClient.cat(ipfsCID);
-
     return JSON.parse(data.toString());
   }
 
@@ -61,7 +57,7 @@ export default class IPFSMetadataProvider {
     const { groups: orgGroups } = orgMetadata;
     const { groups: serviceGroups } = serviceMetadata;
 
-    const groups = map(serviceGroups, group => {
+    const groups = map(serviceGroups, (group) => {
       const { group_name: serviceGroupName } = group;
       const orgGroup = find(orgGroups, ({ group_name: orgGroupName }) => orgGroupName === serviceGroupName);
       return {

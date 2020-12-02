@@ -167,6 +167,7 @@ class ServiceOptions {
   endpoint: String
   disableBlockchainOperations: Boolean
   metadataGenerator: Function
+  concurrency: Boolean
 }
 
 class BaseServiceClient {
@@ -196,6 +197,7 @@ BaseServiceClient o-- Group
 BaseServiceClient o-- GRPCClient
 BaseServiceClient o-- PaymentChannelManagementStrategy
 BaseServiceClient o-- ServiceOptions
+BaseServiceClient o-- ConcurrencyManager
 
 class ServiceClient {
   + service: GRPCClient
@@ -241,19 +243,14 @@ class ConcurrencyManager {
  + token: String
  + plannedAmount: Number
  + usedAmount: Number
- + getToken(serviceClient, channel, serviceCallPrice, newToken): String
- + getTokenForAmount(serviceClient, channel, amount): String
+ - _serviceClient: ServiceClient
+ + getToken(channel, serviceCallPrice, newToken): String
+ - getNewToken(channel, amount): String
+ - getTokenForAmount(channel, amount): String
  + recordSuccessfulCall()
 }
 
-ConcurrencyManager o-- ConcurrencyStubs
-
-
-interface PrepaidPaymentChannelManagementStrategy {
- - _priceForConcurrentCalls(): Number
- + selectChannel(serviceClient): PaymentChannel
-}
-
+ConcurrencyManager *-- ConcurrencyStubs
 
 interface SnetSDK {
   + account(): Account
