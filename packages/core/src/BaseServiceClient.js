@@ -1,6 +1,8 @@
-import url from "url";
+import url from 'url';
 import { BigNumber } from 'bignumber.js';
-import { find, first, isEmpty, map } from 'lodash';
+import {
+  find, first, isEmpty, map,
+} from 'lodash';
 import logger from './utils/logger';
 
 import { toBNString } from './utils/bignumber_helper';
@@ -13,7 +15,7 @@ class BaseServiceClient {
    * @param {MPEContract} mpeContract
    * @param {ServiceMetadata} metadata
    * @param {Group} group
-   * @param {DefaultPaymentChannelManagementStrategy} paymentChannelManagementStrategy
+   * @param {DefaultPaymentStrategy} paymentChannelManagementStrategy
    * @param {ServiceClientOptions} [options={}]
    */
   constructor(sdk, orgId, serviceId, mpeContract, metadata, group, paymentChannelManagementStrategy, options = {}) {
@@ -56,6 +58,23 @@ class BaseServiceClient {
   }
 
   /**
+   * @type {MPEContract}
+   */
+  get mpeContract() {
+    return this._mpeContract;
+  }
+
+  /**
+   * @type {boolean}
+   */
+  get concurrencyFlag() {
+    if(typeof this._options.concurrency === 'undefined') {
+      return true;
+    }
+    return this._options.concurrency;
+  }
+
+  /**
    * Fetches the latest channel state from the ai service daemon
    * @param channelId
    * @returns {Promise<ChannelStateReply>}
@@ -79,7 +98,7 @@ class BaseServiceClient {
    */
   async loadOpenChannels() {
     const currentBlockNumber = await this._web3.eth.getBlockNumber();
-    const newPaymentChannels = await this._mpeContract.getPastOpenChannels(this._account, this, this._lastReadBlock);
+    const newPaymentChannels = await this._mpeContract.getPastOpenChannels(this.account, this, this._lastReadBlock);
     logger.debug(`Found ${newPaymentChannels.length} payment channel open events`, { tags: ['PaymentChannel'] });
     this._paymentChannels = [...this._paymentChannels, ...newPaymentChannels];
     this._lastReadBlock = currentBlockNumber;
@@ -91,9 +110,7 @@ class BaseServiceClient {
    */
   async updateChannelStates() {
     logger.info('Updating payment channel states', { tags: ['PaymentChannel'] });
-    const currentChannelStatesPromise = map(this._paymentChannels, (paymentChannel) => {
-      return paymentChannel.syncState();
-    });
+    const currentChannelStatesPromise = map(this._paymentChannels, paymentChannel => paymentChannel.syncState());
     await Promise.all(currentChannelStatesPromise);
     return this._paymentChannels;
   }
@@ -105,7 +122,7 @@ class BaseServiceClient {
    * @returns {Promise.<PaymentChannel>}
    */
   async openChannel(amount, expiry) {
-    const newChannelReceipt = await this._mpeContract.openChannel(this._account, this, amount, expiry);
+    const newChannelReceipt = await this._mpeContract.openChannel(this.account, this, amount, expiry);
     return this._getNewlyOpenedChannel(newChannelReceipt);
   }
 
@@ -115,9 +132,72 @@ class BaseServiceClient {
    * @returns {Promise.<PaymentChannel>}
    */
   async depositAndOpenChannel(amount, expiry) {
-    const newFundedChannelReceipt = await this._mpeContract.depositAndOpenChannel(this._account, this, amount, expiry);
+    const newFundedChannelReceipt = await this._mpeContract.depositAndOpenChannel(this.account, this, amount, expiry);
     return this._getNewlyOpenedChannel(newFundedChannelReceipt);
   }
+
+  /**
+   * get the details of the service
+   * @returns {ServiceDetails}
+   */
+  getServiceDetails() {
+    return {
+      orgId: this._metadata.orgId,
+      serviceId: this._metadata.serviceId,
+      groupId: this._group.group_id,
+      groupIdInBytes: this._group.group_id_in_bytes,
+      daemonEndpoint: this._getServiceEndpoint(),
+    };
+  }
+
+  /**
+   * Get the configuration for the freecall
+   * @returns {FreeCallConfig}
+   */
+  getFreeCallConfig() {
+    return {
+      email: this._options.email,
+      tokenToMakeFreeCall: this._options.tokenToMakeFreeCall,
+      tokenExpiryDateBlock: this._options.tokenExpirationBlock,
+    };
+  }
+
+  /**
+   * find the current blocknumber
+   * @returns {Promise<number>}
+   */
+  async getCurrentBlockNumber() {
+    return this._web3.eth.getBlockNumber();
+  }
+
+  /**
+   * @param {...(*|Object)} data
+   * @param {string} data.(t|type) - Type of data. One of the following (string|uint256|int256|bool|bytes)
+   * @param {string} data.(v|value) - Value
+   * @returns {Promise<Buffer>} - Signed binary data
+   * @see {@link https://web3js.readthedocs.io/en/1.0/web3-utils.html#soliditysha3|data}
+   */
+  async signData(...data) {
+    return this.account.signData(...data);
+  }
+
+  /**
+   * @returns {Promise<number>}
+   */
+  async defaultChannelExpiration() {
+    const currentBlockNumber = await this._web3.eth.getBlockNumber();
+    const paymentExpirationThreshold = this._getPaymentExpiryThreshold();
+    return currentBlockNumber + paymentExpirationThreshold;
+  }
+
+  _getPaymentExpiryThreshold() {
+    if(isEmpty(this._group)) {
+      return 0;
+    }
+    const paymentExpirationThreshold = this._group.payment.payment_expiration_threshold;
+    return paymentExpirationThreshold || 0;
+  }
+
 
   _enhanceGroupInfo(group) {
     if(isEmpty(group)) {
@@ -152,10 +232,9 @@ class BaseServiceClient {
       const { currentBlockNumber, signatureBytes } = await this._options.channelStateRequestSigner(channelId);
       return { currentBlockNumber, signatureBytes };
     }
-
     const currentBlockNumber = await this._web3.eth.getBlockNumber();
     const channelIdStr = toBNString(channelId);
-    const signatureBytes = await this._account.signData(
+    const signatureBytes = await this.account.signData(
       { t: 'string', v: '__get_channel_state' },
       { t: 'address', v: this._mpeContract.address },
       { t: 'uint256', v: channelIdStr },
@@ -166,34 +245,43 @@ class BaseServiceClient {
   }
 
   async _fetchPaymentMetadata() {
-    logger.debug('Selecting PaymentChannel using the given strategy', { tags: ['PaymentChannelManagementStrategy, gRPC'] });
-    const channel = await this._paymentChannelManagementStrategy.selectChannel(this);
+    return this._paymentChannelManagementStrategy.getPaymentMetadata(this);
 
-    const { channelId, state: { nonce, currentSignedAmount }} = channel;
-    const signingAmount = currentSignedAmount.plus(this._pricePerServiceCall);
-    const channelIdStr = toBNString(channelId);
-    const nonceStr = toBNString(nonce);
-    const signingAmountStr = toBNString(signingAmount);
-    logger.info(`Using PaymentChannel[id: ${channelIdStr}] with nonce: ${nonceStr} and amount: ${signingAmountStr} and `, { tags: ['PaymentChannelManagementStrategy', 'gRPC'] });
-
-    if (this._options.paidCallMetadataGenerator) {
-      const { signatureBytes } = await this._options.paidCallMetadataGenerator(channelId, signingAmount, nonce);
-      return { channelId, nonce, signingAmount, signatureBytes };
-    }
-
-    const signatureBytes = await this._account.signData(
-      { t: 'string', v: '__MPE_claim_message' },
-      { t: 'address', v: this._mpeContract.address },
-      { t: 'uint256', v: channelIdStr },
-      { t: 'uint256', v: nonceStr },
-      { t: 'uint256', v: signingAmountStr },
-    );
-
-    return { channelId, nonce, signingAmount, signatureBytes };
+    // NOTE: Moved channel selection logic to payment strategy
+    //
+    //
+    // logger.debug('Selecting PaymentChannel using the given strategy', { tags: ['PaymentChannelManagementStrategy, gRPC'] });
+    // const channel = await this._paymentChannelManagementStrategy.selectChannel(this);
+    //
+    // const { channelId, state: { nonce, currentSignedAmount } } = channel;
+    // const signingAmount = currentSignedAmount.plus(this._pricePerServiceCall);
+    // const channelIdStr = toBNString(channelId);
+    // const nonceStr = toBNString(nonce);
+    // const signingAmountStr = toBNString(signingAmount);
+    // logger.info(`Using PaymentChannel[id: ${channelIdStr}] with nonce: ${nonceStr} and amount: ${signingAmountStr} and `, { tags: ['PaymentChannelManagementStrategy', 'gRPC'] });
+    //
+    // if(this._options.paidCallMetadataGenerator) {
+    //   const { signatureBytes } = await this._options.paidCallMetadataGenerator(channelId, signingAmount, nonce);
+    //   return {
+    //     channelId, nonce, signingAmount, signatureBytes,
+    //   };
+    // }
+    //
+    // const signatureBytes = await this.account.signData(
+    //   { t: 'string', v: '__MPE_claim_message' },
+    //   { t: 'address', v: this._mpeContract.address },
+    //   { t: 'uint256', v: channelIdStr },
+    //   { t: 'uint256', v: nonceStr },
+    //   { t: 'uint256', v: signingAmountStr },
+    // );
+    //
+    // return {
+    //   channelId, nonce, signingAmount, signatureBytes,
+    // };
   }
 
   async _getNewlyOpenedChannel(receipt) {
-    const openChannels = await this._mpeContract.getPastOpenChannels(this._account, this, receipt.blockNumber, this);
+    const openChannels = await this._mpeContract.getPastOpenChannels(this.account, this, receipt.blockNumber, this);
     const newPaymentChannel = openChannels[0];
     logger.info(`New PaymentChannel[id: ${newPaymentChannel.channelId}] opened`);
     return newPaymentChannel;
@@ -203,25 +291,28 @@ class BaseServiceClient {
     return this._sdk.web3;
   }
 
-  get _account() {
+  /**
+   * @type {Account}
+   */
+  get account() {
     return this._sdk.account;
   }
 
   get _pricePerServiceCall() {
     const { pricing } = this.group;
-    const fixedPricing = find(pricing, ({ price_model }) => 'fixed_price' === price_model);
+    const fixedPricing = find(pricing, ({ price_model }) => price_model === 'fixed_price');
 
     return new BigNumber(fixedPricing.price_in_cogs);
   }
 
   _getServiceEndpoint() {
-    if (this._options.endpoint) {
+    if(this._options.endpoint) {
       return (url.parse(this._options.endpoint));
     }
 
     const { endpoints } = this.group;
     const endpoint = first(endpoints);
-    logger.debug(`Service endpoint: ${endpoint}`, { tags: ['gRPC']});
+    logger.debug(`Service endpoint: ${endpoint}`, { tags: ['gRPC'] });
 
     return endpoint && url.parse(endpoint);
   }

@@ -3,7 +3,6 @@ import { find, first } from 'lodash';
 
 import Account from './Account';
 import MPEContract from './MPEContract';
-import { DefaultPaymentChannelManagementStrategy } from './payment_channel_management_strategies';
 import logger from './utils/logger';
 import IPFSMetadataProvider from './IPFSMetadataProvider';
 
@@ -72,7 +71,7 @@ class SnetSDK {
     return find(groups, ({ group_name }) => group_name === groupName);
   }
 
-  _constructStrategy(paymentChannelManagementStrategy) {
+  _constructStrategy(paymentChannelManagementStrategy, concurrentCalls = 1) {
     if (paymentChannelManagementStrategy) {
       return paymentChannelManagementStrategy;
     }
@@ -82,8 +81,10 @@ class SnetSDK {
     }
 
     logger.debug('PaymentChannelManagementStrategy not provided, using DefaultPaymentChannelManagementStrategy');
-    return new DefaultPaymentChannelManagementStrategy(this);
+    // return new DefaultPaymentChannelManagementStrategy(this);
+    return new DefaultPaymentStrategy(concurrentCalls)
   }
+
 
   _createIdentity() {
     logger.error('_createIdentity must be implemented in the sub classes');

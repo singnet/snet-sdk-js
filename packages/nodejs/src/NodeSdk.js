@@ -9,12 +9,15 @@ class NodeSdk extends SnetSDK {
    * @param {string} [groupName]
    * @param {PaymentChannelManagementStrategy} [paymentChannelManagementStrategy=DefaultPaymentChannelManagementStrategy]
    * @param {ServiceClientOptions} [options]
+   * @param {number} concurrentCalls
    * @returns {Promise<ServiceClient>}
    */
-  async createServiceClient(orgId, serviceId, ServiceStub, groupName = null, paymentChannelManagementStrategy = null, options = {}) {
+  async createServiceClient(orgId, serviceId, ServiceStub, groupName = null, paymentChannelManagementStrategy = null, options = {}, concurrentCalls = 1) {
     const serviceMetadata = await this._metadataProvider.metadata(orgId, serviceId);
     const group = await this._serviceGroup(serviceMetadata, orgId, serviceId, groupName);
-    return new ServiceClient(this, orgId, serviceId, this._mpeContract, serviceMetadata, group, ServiceStub, this._constructStrategy(paymentChannelManagementStrategy), options);
+    const paymentStrategy = this._constructStrategy(paymentChannelManagementStrategy, concurrentCalls || 1);
+    const serviceClient = new ServiceClient(this, orgId, serviceId, this._mpeContract, serviceMetadata, group, ServiceStub, paymentStrategy, options);
+    return serviceClient;
   }
 
   _createIdentity() {

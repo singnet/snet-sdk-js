@@ -32,7 +32,7 @@ class MPEContract {
    * @type {string}
    */
   get address() {
-    return this.contract.address;
+    return this._contract.options.address;
   }
 
   /**
@@ -91,7 +91,6 @@ class MPEContract {
     const openChannelOperation = this.contract.methods.openChannel;
     const signerAddress = await account.getSignerAddress()
     const openChannelFnArgs = [signerAddress, recipientAddress, groupId, amount, expiryStr];
-
     return account.sendTransaction(this.address, openChannelOperation, ...openChannelFnArgs);
   }
 
@@ -209,6 +208,7 @@ class MPEContract {
   async getPastOpenChannels(account, service, startingBlockNumber) {
     const fromBlock = startingBlockNumber ? startingBlockNumber : await this._deploymentBlockNumber();
     logger.debug(`Fetching all payment channel open events starting at block: ${fromBlock}`, { tags: ['MPE'] });
+
     const address = await account.getAddress()
     const options = {
       filter: {
@@ -220,7 +220,7 @@ class MPEContract {
       toBlock: 'latest'
     };
     const channelsOpened = await this.contract.getPastEvents('ChannelOpen', options);
-    return map(channelsOpened, channelOpenEvent => {
+    return map(channelsOpened, (channelOpenEvent) => {
       const channelId = channelOpenEvent.returnValues.channelId;
       return new PaymentChannel(channelId, this._web3, account, service, this);
     });

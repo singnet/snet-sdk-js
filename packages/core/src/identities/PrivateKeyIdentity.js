@@ -1,5 +1,6 @@
 import Tx from 'ethereumjs-tx';
 import logger from '../utils/logger';
+import blockChainEvents from '../utils/blockchainEvents';
 
 /**
  * @implements Identity
@@ -25,18 +26,32 @@ class PrivateKeyIdentity {
 
   async signData(sha3Message) {
     const { signature } = this._web3.eth.accounts.sign(sha3Message, this._pk);
-    return signature
+    return signature;
   }
 
   async sendTransaction(transactionObject) {
     const signedTransaction = this._signTransaction(transactionObject);
     return new Promise((resolve, reject) => {
-      this._web3.eth.sendSignedTransaction(signedTransaction, (error, txHash) => {
-        if (error) {
-          logger.error(`Couldn't send transaction. ${error}`);
-          reject(error);
+      const method = this._web3.eth.sendSignedTransaction(signedTransaction);
+      method.once(blockChainEvents.CONFIRMATION, async (_confirmationNumber, receipt) => {
+        console.log('blockchain confirmation count', _confirmationNumber);
+        console.log('blockchain confirmation receipt status', receipt.status);
+        if(receipt.status) {
+          resolve(receipt);
+        } else {
+          reject(receipt);
         }
-        resolve(txHash);
+        await method.off();
+      });
+      method.on(blockChainEvents.ERROR, (error) => {
+        console.log('blockchain error', error);
+        reject(error);
+      });
+      method.once(blockChainEvents.TRANSACTION_HASH, (hash) => {
+        console.log('waiting for blockchain txn', hash);
+      });
+      method.once(blockChainEvents.RECEIPT, (receipt) => {
+        console.log('blockchain receipt', receipt.status);
       });
     });
   }
