@@ -39,5 +39,46 @@ Navigate to the specific package which needs to be published and then run the fo
 npm run publish
 ```
 
+# Handling Signature / Binary
+The grpc API metadata is a map of key, value pair to store the headers.  
+The value can be either String or Buffer.  
+ 
+All binary headers should have `-bin` suffix in their names. Vice versa.
+A String header's name must not end with this.  
 
+NodeSDK and WebSDK use [grpc](https://www.npmjs.com/package/grpc) and [@improbable-eng/grpc-web
+](https://www.npmjs.com/package/@improbable-eng/grpc-web) respectively to make grpc API calls.
+
+## NodeSDK
+The grpc package used in node allows to use buffer in the raw binary format without any modification.  
+So the signature returned by the `signData` method in the `Account` class can be directly passed on to the grpc metadata.  
+ e.g. 
+ ```
+ async getPaymentMetadata() {
+    const signature = await this._generateSignature(currentBlockNumber);
+    const metadata = [{ 
+                      'snet-payment-channel-signature-bin': signature 
+                     }];
+    return metadata;
+  }
+```
+## WebSDK
+Browsers don't have native support for http2.0 which is the base for grpc.  
+The package @improbable-eng/grpc-web acts as a wrapper around grpc and allows developers to make grpc calls from the browser.  
+
+In order to transfer buffer signatures in the headers, the value has to converted first to `base64 string`.  
+A buffer can be converted to base64 string using the javascript function `Array.prototype.toString("base64")`.
+
+ e.g.
+ ```
+async getPaymentMetadata() {
+    const signature = await this._generateSignature(channel.channelId, channel.state.nonce, amount);
+    const metadata = [{ 
+                      'snet-payment-channel-signature-bin': signature.toString('base64') 
+                     }];
+    return metadata;
+  }
+```
+
+<br/> 
 [LICENSE](https://github.com/singnet/snet-sdk-js/blob/master/LICENSE) file for details.
