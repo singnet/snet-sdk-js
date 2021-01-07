@@ -1,7 +1,6 @@
 import SnetSDK, { MetaMaskIdentity } from './sdk-core';
 import WebServiceClient from './WebServiceClient';
 import RegistryContract from './RegistryContract';
-import { times } from 'lodash';
 
 class WebSdk extends SnetSDK {
   constructor(...args) {
@@ -14,7 +13,7 @@ class WebSdk extends SnetSDK {
    * @param {string} serviceId
    * @param {string} [groupName]
    * @param {PaymentChannelManagementStrategy} [paymentChannelManagementStrategy=DefaultPaymentChannelManagementStrategy]
-   * @param {ServiceClientOptions} [options]
+   * @param {ServiceClientOptions} options
    * @returns {Promise<WebServiceClient>}
    */
   async createServiceClient(orgId, serviceId, groupName = null, paymentChannelManagementStrategy = null, options = {}) {

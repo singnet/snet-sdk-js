@@ -148,7 +148,8 @@ class Account {
 
   async _getGas(operation) {
     const gasPrice = await this._web3.eth.getGasPrice();
-    const estimatedGas = await operation.estimateGas();
+    const address = await this.getAddress()
+    const estimatedGas = await operation.estimateGas({ from: address });
     return { gasLimit: estimatedGas, gasPrice };
   }
 
