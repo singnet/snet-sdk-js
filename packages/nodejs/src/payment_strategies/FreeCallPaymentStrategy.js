@@ -33,16 +33,13 @@ class FreeCallPaymentStrategy {
     const { email, tokenToMakeFreeCall, tokenExpiryDateBlock } = this._serviceClient.getFreeCallConfig();
     const currentBlockNumber = await this._serviceClient.getCurrentBlockNumber();
     const signature = await this._generateSignature(currentBlockNumber);
-
     const tokenBytes = this._encodingUtils.hexStringToBytes(tokenToMakeFreeCall)
-
     const metadata = [
       { 'snet-free-call-auth-token-bin': tokenBytes },
       { 'snet-free-call-token-expiry-block': `${tokenExpiryDateBlock}` },
       { 'snet-payment-type': 'free-call' },
       { 'snet-free-call-user-id': email },
       { 'snet-current-block-number': `${currentBlockNumber}` },
-      // signatureBytes.toString('base64')
       { 'snet-payment-channel-signature-bin': signature }];
     return metadata;
   }
