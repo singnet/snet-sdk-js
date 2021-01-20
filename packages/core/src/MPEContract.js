@@ -42,7 +42,7 @@ class MPEContract {
    */
   async balance(address) {
     logger.debug('Fetching MPE account balance', { tags: ['MPE'] });
-    return this.contract.methods.balances(address).call()
+    return this.contract.methods.balances(address).call();
   }
 
   /**
@@ -84,12 +84,12 @@ class MPEContract {
     const expiryStr = toBNString(expiry);
     const {
       payment_address: recipientAddress,
-      group_id_in_bytes: groupId
+      group_id_in_bytes: groupId,
     } = service.group;
 
     logger.info(`Opening new payment channel [amount: ${amount}, expiry: ${expiryStr}]`, { tags: ['MPE'] });
     const openChannelOperation = this.contract.methods.openChannel;
-    const signerAddress = await account.getSignerAddress()
+    const signerAddress = await account.getSignerAddress();
     const openChannelFnArgs = [signerAddress, recipientAddress, groupId, amount, expiryStr];
     return account.sendTransaction(this.address, openChannelOperation, ...openChannelFnArgs);
   }
@@ -108,7 +108,7 @@ class MPEContract {
     const expiryStr = toBNString(expiry);
     const {
       payment_address: recipientAddress,
-      group_id_in_bytes: groupId
+      group_id_in_bytes: groupId,
     } = service.group;
     const alreadyApprovedAmount = await account.allowance();
     if(amountInCogs > alreadyApprovedAmount) {
@@ -116,7 +116,7 @@ class MPEContract {
     }
 
     const depositAndOpenChannelOperation = this.contract.methods.depositAndOpenChannel;
-    const signerAddress = await account.getSignerAddress()
+    const signerAddress = await account.getSignerAddress();
     const operationArgs = [signerAddress, recipientAddress, groupId, amount, expiryStr];
     logger.info(`Depositing ${amount}cogs to MPE address and Opening new payment channel [expiry: ${expiryStr}]`, { tags: ['MPE'] });
     return account.sendTransaction(this.address, depositAndOpenChannelOperation, ...operationArgs);
@@ -206,10 +206,10 @@ class MPEContract {
    * @returns {Promise.<PaymentChannel[]>}
    */
   async getPastOpenChannels(account, service, startingBlockNumber) {
-    const fromBlock = startingBlockNumber ? startingBlockNumber : await this._deploymentBlockNumber();
+    const fromBlock = startingBlockNumber || await this._deploymentBlockNumber();
     logger.debug(`Fetching all payment channel open events starting at block: ${fromBlock}`, { tags: ['MPE'] });
 
-    const address = await account.getAddress()
+    const address = await account.getAddress();
     const options = {
       filter: {
         sender: address,
@@ -217,17 +217,17 @@ class MPEContract {
         groupId: service.group.group_id_in_bytes,
       },
       fromBlock,
-      toBlock: 'latest'
+      toBlock: 'latest',
     };
     const channelsOpened = await this.contract.getPastEvents('ChannelOpen', options);
     return map(channelsOpened, (channelOpenEvent) => {
-      const channelId = channelOpenEvent.returnValues.channelId;
+      const { channelId } = channelOpenEvent.returnValues;
       return new PaymentChannel(channelId, this._web3, account, service, this);
     });
   }
 
   async _fundEscrowAccount(account, amountInCogs) {
-    const address = await account.getAddress()
+    const address = await account.getAddress();
     const currentEscrowBalance = await this.balance(address);
     if(amountInCogs > currentEscrowBalance) {
       await account.depositToEscrowAccount(amountInCogs - currentEscrowBalance);

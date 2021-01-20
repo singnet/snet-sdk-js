@@ -1,12 +1,11 @@
-import grpc from 'grpc';
-import services from '../proto/state_service_grpc_pb';
-import { logger, EncodingUtils } from '../sdk-core';
+import { EncodingUtils } from '../sdk-core';
+import { FreeCallStateServiceClient } from '../proto/state_service_pb_service';
 
 class FreeCallPaymentStrategy {
   constructor(serviceClient) {
     this._serviceClient = serviceClient;
     this._freeCallStateServiceClient = this._generateFreeCallStateServiceClient();
-    this._encodingUtils = new EncodingUtils()
+    this._encodingUtils = new EncodingUtils();
   }
 
   /**
@@ -33,14 +32,16 @@ class FreeCallPaymentStrategy {
     const { email, tokenToMakeFreeCall, tokenExpiryDateBlock } = this._serviceClient.getFreeCallConfig();
     const currentBlockNumber = await this._serviceClient.getCurrentBlockNumber();
     const signature = await this._generateSignature(currentBlockNumber);
+
     const tokenBytes = this._encodingUtils.hexStringToBytes(tokenToMakeFreeCall)
+
     const metadata = [
-      { 'snet-free-call-auth-token-bin': tokenBytes },
+      { 'snet-free-call-auth-token-bin': tokenBytes.toString('base64') },
       { 'snet-free-call-token-expiry-block': `${tokenExpiryDateBlock}` },
       { 'snet-payment-type': 'free-call' },
       { 'snet-free-call-user-id': email },
       { 'snet-current-block-number': `${currentBlockNumber}` },
-      { 'snet-payment-channel-signature-bin': signature }];
+      { 'snet-payment-channel-signature-bin': signature.toString('base64') }];
     return metadata;
   }
 
@@ -120,34 +121,14 @@ class FreeCallPaymentStrategy {
 
   /**
    * create the grpc client for free call state service
-   * @returns {module:grpc.Client}
+   * @returns {FreeCallStateServiceClient}
    * @private
    */
   _generateFreeCallStateServiceClient() {
     const serviceEndpoint = this._serviceClient._getServiceEndpoint();
-    const grpcCredentials = this._getGrpcCredentials(serviceEndpoint);
-    return new services.FreeCallStateServiceClient(serviceEndpoint.host, grpcCredentials);
-  }
-
-  /**
-   * generate options for the grpc call for respective protocol
-   * @param {{host:String, protocol:String}} serviceEndpoint
-   * @returns {*} grpcOptions
-   * @private
-   */
-  _getGrpcCredentials(serviceEndpoint) {
-    if(serviceEndpoint.protocol === 'https:') {
-      logger.debug(`Channel credential created for https`, { tags: ['gRPC'] });
-      return grpc.credentials.createSsl();
-    }
-    if(serviceEndpoint.protocol === 'http:') {
-      logger.debug(`Channel credential created for http`, { tags: ['gRPC']});
-      return grpc.credentials.createInsecure();
-    }
-
-    const errorMessage = `Protocol: ${serviceEndpoint.protocol} not supported`;
-    logger.error(errorMessage, { tags: ['gRPC'] });
-    throw new Error(errorMessage);
+    // const grpcCredentials = this._getGrpcCredentials(serviceEndpoint);
+    // return new services.FreeCallStateServiceClient(serviceEndpoint.host, grpcCredentials);
+    return new FreeCallStateServiceClient(serviceEndpoint.host);
   }
 }
 
