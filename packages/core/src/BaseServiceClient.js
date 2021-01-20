@@ -245,6 +245,24 @@ class BaseServiceClient {
   }
 
   async _fetchPaymentMetadata() {
+    if(this._options.paidCallMetadataGenerator){
+      logger.debug('Selecting PaymentChannel using the given strategy', { tags: ['PaypalPaymentMgmtStrategy, gRPC'] });
+      const channel = await this._paymentChannelManagementStrategy.selectChannel(this);
+      const { channelId, state: { nonce, currentSignedAmount } } = channel;
+      const signingAmount = currentSignedAmount.plus(this._pricePerServiceCall);
+      const channelIdStr = toBNString(channelId);
+      const nonceStr = toBNString(nonce);
+      const signingAmountStr = toBNString(signingAmount);
+      logger.info(`Using PaymentChannel[id: ${channelIdStr}] with nonce: ${nonceStr} and amount: ${signingAmountStr} and `, { tags: ['PaymentChannelManagementStrategy', 'gRPC'] });
+      const { signatureBytes } = await this._options.paidCallMetadataGenerator(channelId, signingAmount, nonce);
+      const metadata = [
+        { 'snet-payment-type': 'escrow' },
+        { 'snet-payment-channel-id': `${channelId}` },
+        { 'snet-payment-channel-nonce': `${nonce}` },
+        { 'snet-payment-channel-amount': `${signingAmount}` },
+        { 'snet-payment-channel-signature-bin': signatureBytes.toString('base64') }];
+      return metadata;
+    }
     return this._paymentChannelManagementStrategy.getPaymentMetadata(this);
 
     // NOTE: Moved channel selection logic to payment strategy
