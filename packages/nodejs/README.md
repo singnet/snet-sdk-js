@@ -41,6 +41,66 @@ You can then invoke service specific calls as follows
 client.service.<methodName>(<gRPC.message>, callback);
 ```
 ---
+
+### Concurrency
+We expose two methods to facilitate concurrent service calls. 
+ - getConcurrencyTokenAndChannelId
+ - setConcurrencyTokenAndChannelId
+ 
+ In the consumer, you should call the getConcurrencyTokenAndChannelId() in the master thread.  
+ It will return the concurrency token and the channel id. 
+ Pass both of them to worker threads and the set the same in the respective instances using setConcurrencyTokenAndChannelId.  
+ 
+ We also expose the `class DefaultPaymentStrategy` to handle the payment metadata for concurrent calls. 
+ Initialize the DefaultPaymentStrategy with the number of calls you would want to run concurrently.
+ 
+ e.g
+ ```
+import SnetSDK, { DefaultPaymentStrategy } from "snet-sdk";
+const sdk = new SnetSDK(config);
+import cluster from "cluster";
+
+const main = async () => {
+...
+// Planning for four concurrent calls
+const paymentStrategy = new DefaultPaymentStrategy(4);
+const serviceClient = await sdk.createServiceClient(
+        orgId,
+        serviceId,
+        service.CalculatorClient,
+        groupName,
+        paymentStrategy,
+        serviceClientOptionsFreeCall
+      );
+
+if(cluster.isMaster) {
+ const {concurrencyToken, channelId} = await serviceClient.getConcurrencyTokenAndChannelId()
+ const worker = cluster.fork()
+ worker.on("message", message=>{
+     console.log(`worker:${worker.id}, message:${message}`)
+     worker.send({concurrencyToken,channelId, info:"master: sent you the concurrency token and channel id"})
+ })
+}else {
+ process.send(`send me the token for concurrency`);
+ process.on("message", async (message) => {
+         const { concurrencyToken, info,channelId } = message;
+         console.log(info);
+         serviceClient.setConcurrencyTokenAndChannelId(concurrencyToken,channelId)
+         const numbers = new messages.Numbers();
+         numbers.setA(6);
+         numbers.setB(7);
+         serviceClient.service.mul(numbers, (err, result)=>{
+          if(err) {
+            console.error(`service failed with error ${err}`)
+          }else{
+            console.log(`service response is ${result}`)
+            }
+         });
+ });
+}
+main()
+```
+ 
  
 ### Versioning  
   
