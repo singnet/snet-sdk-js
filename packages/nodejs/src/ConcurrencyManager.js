@@ -7,13 +7,27 @@ class ConcurrencyManager {
     this._concurrentCalls = concurrentCalls;
     this._serviceClient = serviceClient;
     this._tokenServiceClient = this._generateTokenServiceClient();
+    this._token = '';
+    this._usedAmount = 0;
+    this._plannedAmount = 0;
   }
 
   get concurrentCalls() {
     return this._concurrentCalls;
   }
 
+  set token(value) {
+    this._token = value;
+  }
+
+  // set serviceClient(value) {
+  //   this._serviceClient = value;
+  // }
+
   async getToken(channel, serviceCallPrice) {
+    if(this._token) {
+      return this._token;
+    }
     const currentSignedAmount = channel.state.currentSignedAmount.toNumber();
     if(currentSignedAmount !== 0) {
       const { plannedAmount, usedAmount, token } = await this._getTokenForAmount(channel, currentSignedAmount);
@@ -73,10 +87,13 @@ class ConcurrencyManager {
           console.log('token grpc error', error);
           reject(error);
         } else {
+          this._plannedAmount = responseMessage.getPlannedAmount();
+          this._usedAmount = responseMessage.getUsedAmount();
+          this._token = responseMessage.getToken();
           resolve({
-            plannedAmount: responseMessage.getPlannedAmount(),
-            usedAmount: responseMessage.getUsedAmount(),
-            token: responseMessage.getToken(),
+            plannedAmount: this._plannedAmount,
+            usedAmount: this._usedAmount,
+            token: this._token,
           });
         }
       });

@@ -1,6 +1,5 @@
 import FreeCallPaymentStrategy from './FreeCallPaymentStrategy';
 import PrepaidPaymentStrategy from './PrepaidPaymentStrategy';
-import ConcurrencyManager from '../ConcurrencyManager';
 import PaidCallPaymentStrategy from './PaidCallPaymentStrategy';
 
 class DefaultPaymentStrategy {
@@ -10,6 +9,15 @@ class DefaultPaymentStrategy {
    */
   constructor(concurrentCalls = 1) {
     this._concurrentCalls = concurrentCalls;
+    this._channelId = undefined
+  }
+
+  get concurrentCalls() {
+    return this._concurrentCalls;
+  }
+
+  set channelId(value) {
+    this._channelId = value
   }
 
   /**
@@ -24,15 +32,26 @@ class DefaultPaymentStrategy {
     if(isFreeCallsAvailable) {
       metadata = await freeCallPaymentStrategy.getPaymentMetadata();
     } else if(serviceClient.concurrencyFlag) {
-      const concurrencyManager = new ConcurrencyManager(this._concurrentCalls, serviceClient);
-      const paymentStrategy = new PrepaidPaymentStrategy(serviceClient, concurrencyManager);
-      metadata = await paymentStrategy.getPaymentMetadata();
+      const paymentStrategy = new PrepaidPaymentStrategy(serviceClient);
+      metadata = await paymentStrategy.getPaymentMetadata(this._channelId);
     } else {
       const paymentStrategy = new PaidCallPaymentStrategy(serviceClient);
       metadata = await paymentStrategy.getPaymentMetadata();
     }
 
     return metadata;
+  }
+
+  /**
+   * retrieve the concurrency token and the channelID from the daemon
+   * @param {ServiceClient} serviceClient
+   * @returns {Promise<{channelId: BigNumber, concurrencyToken: String}>}
+   */
+  async getConcurrencyTokenAndChannelId(serviceClient) {
+    const paymentStrategy = new PrepaidPaymentStrategy(serviceClient);
+    const channel = await paymentStrategy._selectChannel();
+    const concurrencyToken = await paymentStrategy.getConcurrencyToken(channel);
+    return { channelId: channel.channelId, concurrencyToken };
   }
 }
 

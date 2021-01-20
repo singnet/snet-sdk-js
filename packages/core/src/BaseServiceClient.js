@@ -324,6 +324,10 @@ class BaseServiceClient {
   _getChannelStateRequestMethodDescriptor() {
     logger.error('_getChannelStateRequestMethodDescriptor must be implemented in the sub classes');
   }
+
+  get concurrencyManager() {
+    logger.error('concurrencyManager must be implemented in the sub classes');
+  }
 }
 
 export default BaseServiceClient;

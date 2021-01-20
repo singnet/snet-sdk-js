@@ -1,6 +1,7 @@
 import grpc, { InterceptingCall } from 'grpc';
 import { BaseServiceClient, logger } from './sdk-core';
 import { PaymentChannelStateServiceClient } from './proto/state_service_grpc_pb';
+import ConcurrencyManager from './ConcurrencyManager';
 
 class ServiceClient extends BaseServiceClient {
   /**
@@ -17,6 +18,7 @@ class ServiceClient extends BaseServiceClient {
   constructor(sdk, orgId, serviceId, mpeContract, metadata, group, ServiceStub, paymentChannelManagementStrategy, options) {
     super(sdk, orgId, serviceId, mpeContract, metadata, group, paymentChannelManagementStrategy, options);
     this._grpcService = this._constructGrpcService(ServiceStub);
+    this._concurrencyManager = new ConcurrencyManager(paymentChannelManagementStrategy.concurrentCalls || 1, this);
   }
 
   /**
@@ -24,6 +26,19 @@ class ServiceClient extends BaseServiceClient {
    */
   get service() {
     return this._grpcService;
+  }
+
+  get concurrencyManager() {
+    return this._concurrencyManager;
+  }
+
+  async getConcurrencyTokenAndChannelId() {
+    return this._paymentChannelManagementStrategy.getConcurrencyTokenAndChannelId(this);
+  }
+
+  setConcurrencyTokenAndChannelId(token, channelId) {
+    this.concurrencyManager.token = token
+    this._paymentChannelManagementStrategy.channelId = channelId
   }
 
   _getChannelStateRequestMethodDescriptor() {

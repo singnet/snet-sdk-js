@@ -16,7 +16,7 @@ class BasePaidPaymentStrategy {
    * @returns {Promise<PaymentChannel>}
    * @protected
    */
-  async _selectChannel() {
+  async _selectChannel(preselectChannelId) {
     const { account } = this._serviceClient;
     await this._serviceClient.loadOpenChannels();
     await this._serviceClient.updateChannelStates();
@@ -26,6 +26,13 @@ class BasePaidPaymentStrategy {
     const mpeBalance = await account.escrowBalance();
     const defaultExpiration = await this._serviceClient.defaultChannelExpiration();
     const extendedExpiry = defaultExpiration + this._blockOffset;
+
+    if(preselectChannelId) {
+      const foundPreselectChannel = paymentChannels.find(el => el.channelId === preselectChannelId);
+      if(foundPreselectChannel) {
+        return foundPreselectChannel;
+      }
+    }
 
     let selectedPaymentChannel;
     if(paymentChannels.length < 1) {
