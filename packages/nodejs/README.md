@@ -43,7 +43,7 @@ client.service.<methodName>(<gRPC.message>, callback);
 ---
 
 ### Concurrency
-We expose two methods to facilitate concurrent service calls. 
+SDK exposes two methods to facilitate concurrent service calls. 
  - getConcurrencyTokenAndChannelId
  - setConcurrencyTokenAndChannelId
  
@@ -51,7 +51,7 @@ We expose two methods to facilitate concurrent service calls.
  It will return the concurrency token and the channel id. 
  Pass both of them to worker threads and the set the same in the respective instances using setConcurrencyTokenAndChannelId.  
  
- We also expose the `class DefaultPaymentStrategy` to handle the payment metadata for concurrent calls. 
+ SDK also exposes the `class DefaultPaymentStrategy` to handle the payment metadata for concurrent calls. 
  Initialize the DefaultPaymentStrategy with the number of calls you would want to run concurrently.
  
  e.g
