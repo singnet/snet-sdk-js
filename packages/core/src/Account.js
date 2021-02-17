@@ -27,7 +27,7 @@ class Account {
   async balance() {
     logger.debug('Fetching account balance', { tags: ['Account'] });
     const address = await this.getAddress();
-    return this._getTokenContract().methods.balanceOf(address).call();
+    return this.tokenContract.methods.balanceOf(address).call();
   }
 
   /**
@@ -61,8 +61,8 @@ class Account {
   async approveTransfer(amountInCogs) {
     const amount = toBNString(amountInCogs);
     logger.info(`Approving ${amount}cogs transfer to MPE address`, { tags: ['Account'] });
-    const approveOperation = this._getTokenContract().methods.approve;
-    return this.sendTransaction(this._getTokenContract().address, approveOperation, this._mpeContract.address, amount);
+    const approveOperation = this.tokenContract.methods.approve;
+    return this.sendTransaction(this.tokenAddress, approveOperation, this._mpeContract.address, amount);
   }
 
   /**
@@ -72,7 +72,7 @@ class Account {
   async allowance() {
     logger.debug('Fetching already approved allowance', { tags: ['Account'] });
     const address = await this.getAddress();
-    return this._getTokenContract().methods.allowance(address, this._mpeContract.address).call();
+    return this.tokenContract.methods.allowance(address, this._mpeContract.address).call();
   }
 
   /**
@@ -97,6 +97,8 @@ class Account {
   async getSignerAddress() {
     return this.getAddress();
   }
+
+
 
   /**
    * @param {...(*|Object)} data
@@ -126,8 +128,12 @@ class Account {
     return this._identity.sendTransaction(txObject);
   }
 
-  _getTokenContract() {
+  get tokenContract() {
     return this._tokenContract;
+  }
+
+  get tokenAddress() {
+    return this._tokenContract.options.address
   }
 
   _generateTokenContract() {
