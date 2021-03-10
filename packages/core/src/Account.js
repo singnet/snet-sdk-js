@@ -143,12 +143,14 @@ class Account {
   async _baseTransactionObject(operation, to) {
     const { gasLimit, gasPrice } = await this._getGas(operation);
     const nonce = await this._transactionCount();
+    const chainId = await this._getChainId();
     return {
       nonce: this._web3.utils.toHex(nonce),
       gas: this._web3.utils.toHex(gasLimit),
       gasPrice: this._web3.utils.toHex(gasPrice),
       to,
       data: operation.encodeABI(),
+      chainId
     };
   }
 
@@ -162,6 +164,10 @@ class Account {
   async _transactionCount() {
     const address = await this.getAddress();
     return this._web3.eth.getTransactionCount(address);
+  }
+
+  async _getChainId(){
+    return this._web3.eth.net.getId();
   }
 }
 
