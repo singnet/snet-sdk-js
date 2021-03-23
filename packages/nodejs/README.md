@@ -20,6 +20,20 @@ import config from './config';
 const sdk = new SnetSDK(config);
 ```
 
+You can find a sample config below
+
+```json
+{
+  "web3Provider": "https://ropsten.infura.io/v3/1234567890",
+  "privateKey": "",
+  "signerPrivateKey": "",
+  "networkId": "3",
+  "ipfsEndpoint": "http://ipfs.organization.io:80",
+  "defaultGasPrice": "4700000",
+  "defaultGasLimit": "210000"
+}
+```
+
 Now, the instance of the sdk can be used to instantiate clients for SingularityNET services. To interact with those services, the sdk needs to be supplied with the compiled gRPC client libraries.
   
 To generate the gRPC client libraries, you need the SingularityNET Command Line Interface, or CLI, which you can download from PyPi, see [https://github.com/singnet/snet-cli#installing-with-pip](https://github.com/singnet/snet-cli#installing-with-pip)
