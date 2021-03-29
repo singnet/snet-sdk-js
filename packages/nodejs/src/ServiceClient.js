@@ -1,4 +1,4 @@
-import grpc, { InterceptingCall } from 'grpc';
+import grpc, { InterceptingCall } from '@grpc/grpc-js';
 import { BaseServiceClient, logger } from './sdk-core';
 import { PaymentChannelStateServiceClient } from './proto/state_service_grpc_pb';
 import ConcurrencyManager from './ConcurrencyManager';

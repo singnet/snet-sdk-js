@@ -1,4 +1,4 @@
-import grpc from 'grpc';
+import grpc from '@grpc/grpc-js';
 import services from '../proto/state_service_grpc_pb';
 import { logger, EncodingUtils } from '../sdk-core';
 
