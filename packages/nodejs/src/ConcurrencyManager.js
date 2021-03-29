@@ -1,4 +1,4 @@
-import grpc from 'grpc';
+import grpc from '@grpc/grpc-js';
 import { logger } from './core';
 import services from './proto/token_service_grpc_pb';
 
