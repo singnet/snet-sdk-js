@@ -2,8 +2,6 @@ import grpc, {InterceptingCall} from 'grpc';
 import { BaseServiceClient, logger } from './sdk-core';
 import { PaymentChannelStateServiceClient } from './proto/state_service_grpc_pb';
 import ConcurrencyManager from './ConcurrencyManager';
-
-// const InterceptingCall = grpc.InterceptingCall; 
 class ServiceClient extends BaseServiceClient {
   /**
    * @param {SnetSDK} sdk
