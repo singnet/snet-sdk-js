@@ -1,8 +1,9 @@
-import grpc, { InterceptingCall } from '@grpc/grpc-js';
+import grpc, {InterceptingCall} from 'grpc';
 import { BaseServiceClient, logger } from './sdk-core';
 import { PaymentChannelStateServiceClient } from './proto/state_service_grpc_pb';
 import ConcurrencyManager from './ConcurrencyManager';
 
+// const InterceptingCall = grpc.InterceptingCall; 
 class ServiceClient extends BaseServiceClient {
   /**
    * @param {SnetSDK} sdk
@@ -37,8 +38,8 @@ class ServiceClient extends BaseServiceClient {
   }
 
   setConcurrencyTokenAndChannelId(token, channelId) {
-    this.concurrencyManager.token = token
-    this._paymentChannelManagementStrategy.channelId = channelId
+    this.concurrencyManager.token = token;
+    this._paymentChannelManagementStrategy.channelId = channelId;
   }
 
   _getChannelStateRequestMethodDescriptor() {
@@ -96,7 +97,7 @@ class ServiceClient extends BaseServiceClient {
   _getGrpcChannelCredentials(serviceEndpoint) {
     if(serviceEndpoint.protocol === 'https:') {
       logger.debug('Channel credential created for https', { tags: ['gRPC'] });
-      return grpc.credentials.createSsl();
+      return grpc.credentials.createSsl()
     }
 
     if(serviceEndpoint.protocol === 'http:') {

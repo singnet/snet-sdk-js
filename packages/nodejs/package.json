@@ -28,11 +28,11 @@
   "author": "SingularityNET Foundation",
   "license": "MIT",
   "dependencies": {
-    "@grpc/grpc-js": "^1.2.12",
     "bignumber.js": "^8.1.1",
     "es6-promise": "^4.2.6",
     "ethereumjs-tx": "^1.3.7",
     "ethjs": "^0.4.0",
+    "grpc": "^1.24.6",
     "ipfs-http-client": "^30.1.1",
     "lodash": "latest",
     "singularitynet-platform-contracts": "^0.3.4",

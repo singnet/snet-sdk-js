@@ -1,7 +1,7 @@
 // GENERATED CODE -- DO NOT EDIT!
 /* eslint-disable */
 'use strict';
-var grpc = require('@grpc/grpc-js');
+var grpc = require('grpc');
 var token_service_pb = require('./token_service_pb.js');
 
 function serialize_escrow_TokenReply(arg) {
