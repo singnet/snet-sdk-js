@@ -1,7 +1,7 @@
-import grpc, { InterceptingCall } from "grpc";
-import { BaseServiceClient, logger } from "./sdk-core";
-import { PaymentChannelStateServiceClient } from "./proto/state_service_grpc_pb";
-import ConcurrencyManager from "./ConcurrencyManager";
+import grpc, { InterceptingCall } from 'grpc';
+import { BaseServiceClient, logger } from './sdk-core';
+import { PaymentChannelStateServiceClient } from './proto/state_service_grpc_pb';
+import ConcurrencyManager from './ConcurrencyManager';
 
 class ServiceClient extends BaseServiceClient {
   /**
@@ -56,11 +56,11 @@ class ServiceClient extends BaseServiceClient {
   }
 
   _constructGrpcService(ServiceStub) {
-    logger.debug("Creating service client", { tags: ["gRPC"] });
+    logger.debug('Creating service client', { tags: ['gRPC'] });
     const serviceEndpoint = this._getServiceEndpoint();
     const grpcChannelCredentials = this._getGrpcChannelCredentials(serviceEndpoint);
     const grpcOptions = this._generateGrpcOptions();
-    logger.debug(`Service pointing to ${serviceEndpoint.host}, `, { tags: ["gRPC"] });
+    logger.debug(`Service pointing to ${serviceEndpoint.host}, `, { tags: ['gRPC'] });
     return new ServiceStub(serviceEndpoint.host, grpcChannelCredentials, grpcOptions);
   }
 
@@ -96,26 +96,26 @@ class ServiceClient extends BaseServiceClient {
   }
 
   _generatePaymentChannelStateServiceClient() {
-    logger.debug("Creating PaymentChannelStateService client", { tags: ["gRPC"] });
+    logger.debug('Creating PaymentChannelStateService client', { tags: ['gRPC'] });
     const serviceEndpoint = this._getServiceEndpoint();
     const grpcChannelCredentials = this._getGrpcChannelCredentials(serviceEndpoint);
-    logger.debug(`PaymentChannelStateService pointing to ${serviceEndpoint.host}, `, { tags: ["gRPC"] });
+    logger.debug(`PaymentChannelStateService pointing to ${serviceEndpoint.host}, `, { tags: ['gRPC'] });
     return new PaymentChannelStateServiceClient(serviceEndpoint.host, grpcChannelCredentials);
   }
 
   _getGrpcChannelCredentials(serviceEndpoint) {
-    if (serviceEndpoint.protocol === "https:") {
-      logger.debug("Channel credential created for https", { tags: ["gRPC"] });
+    if (serviceEndpoint.protocol === 'https:') {
+      logger.debug('Channel credential created for https', { tags: ['gRPC'] });
       return grpc.credentials.createSsl();
     }
 
-    if (serviceEndpoint.protocol === "http:") {
-      logger.debug("Channel credential created for http", { tags: ["gRPC"] });
+    if (serviceEndpoint.protocol === 'http:') {
+      logger.debug('Channel credential created for http', { tags: ['gRPC'] });
       return grpc.credentials.createInsecure();
     }
 
     const errorMessage = `Protocol: ${serviceEndpoint.protocol} not supported`;
-    logger.error(errorMessage, { tags: ["gRPC"] });
+    logger.error(errorMessage, { tags: ['gRPC'] });
     throw new Error(errorMessage);
   }
 }
