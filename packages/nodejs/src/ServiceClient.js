@@ -15,17 +15,7 @@ class ServiceClient extends BaseServiceClient {
    * @param {DefaultPaymentChannelManagementStrategy} paymentChannelManagementStrategy
    * @param {ServiceClientOptions} [options={}]
    */
-  constructor(
-    sdk,
-    orgId,
-    serviceId,
-    mpeContract,
-    metadata,
-    group,
-    ServiceStub,
-    paymentChannelManagementStrategy,
-    options,
-  ) {
+  constructor(sdk, orgId, serviceId, mpeContract, metadata, group, ServiceStub, paymentChannelManagementStrategy, options) {
     super(sdk, orgId, serviceId, mpeContract, metadata, group, paymentChannelManagementStrategy, options);
     this._grpcService = this._constructGrpcService(ServiceStub);
     this._concurrencyManager = new ConcurrencyManager(paymentChannelManagementStrategy.concurrentCalls || 1, this);
@@ -47,8 +37,8 @@ class ServiceClient extends BaseServiceClient {
   }
 
   setConcurrencyTokenAndChannelId(token, channelId) {
-    this.concurrencyManager.token = token;
-    this._paymentChannelManagementStrategy.channelId = channelId;
+    this.concurrencyManager.token = token
+    this._paymentChannelManagementStrategy.channelId = channelId
   }
 
   _getChannelStateRequestMethodDescriptor() {
@@ -65,7 +55,7 @@ class ServiceClient extends BaseServiceClient {
   }
 
   _generateGrpcOptions() {
-    if (this._options.disableBlockchainOperations) {
+    if(this._options.disableBlockchainOperations) {
       return {};
     }
 
@@ -78,7 +68,7 @@ class ServiceClient extends BaseServiceClient {
     return (options, nextCall) => {
       const requester = {
         start: async (metadata, listener, next) => {
-          if (!this._paymentChannelManagementStrategy) {
+          if(!this._paymentChannelManagementStrategy) {
             next(metadata, listener);
             return;
           }
@@ -104,12 +94,12 @@ class ServiceClient extends BaseServiceClient {
   }
 
   _getGrpcChannelCredentials(serviceEndpoint) {
-    if (serviceEndpoint.protocol === 'https:') {
+    if(serviceEndpoint.protocol === 'https:') {
       logger.debug('Channel credential created for https', { tags: ['gRPC'] });
       return grpc.credentials.createSsl();
     }
 
-    if (serviceEndpoint.protocol === 'http:') {
+    if(serviceEndpoint.protocol === 'http:') {
       logger.debug('Channel credential created for http', { tags: ['gRPC'] });
       return grpc.credentials.createInsecure();
     }
