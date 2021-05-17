@@ -1,6 +1,6 @@
 {
   "name": "snet-sdk",
-  "version": "1.0.0-beta.8",
+  "version": "2.0.0-beta.0",
   "description": "SingularityNET SDK for Nodejs",
   "main": "./dist/index.js",
   "files": [
@@ -34,7 +34,7 @@
     "grpc": "^1.24.6",
     "ipfs-http-client": "^30.1.1",
     "lodash": "latest",
-    "singularitynet-platform-contracts": "^1.0.0",
+    "singularitynet-platform-contracts": "^1.0.1",
     "singularitynet-token-contracts": "^3.0.0",
     "web3": "^1.3.5",
     "winston": "^3.3.3"
