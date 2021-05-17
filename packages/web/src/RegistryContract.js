@@ -1,5 +1,5 @@
-import RegistryAbi from 'singularitynet-platform-contracts/abi/Registry';
-import RegistryNetworks from 'singularitynet-platform-contracts/networks/Registry';
+import RegistryAbi from "singularitynet-platform-contracts/abi/Registry";
+import RegistryNetworks from "singularitynet-platform-contracts/networks/Registry";
 
 class RegistryContract {
   constructor(web3, networkId) {
@@ -13,7 +13,6 @@ class RegistryContract {
     const paddedHex = this._web3.utils.padRight(hex, bit * (Math.floor(hexLength / bit) + 1));
     return paddedHex;
   }
-
 
   /**
    * Creates a new organization in the blockchain
@@ -64,18 +63,15 @@ class RegistryContract {
    * @param {string} serviceId - Id of the service to create, must be unique organization-wide.
    * @param {string} serviceMetadataURI - Service metadata. metadataURI should contain information for data consistency
    *                      validation (for example hash). We support: IPFS URI.
-   * @param {string[]} tags - Optional array of tags for discoverability.
    */
-  createServiceRegistration(orgId, serviceId, serviceMetadataURI, tags) {
+  createServiceRegistration(orgId, serviceId, serviceMetadataURI) {
     const enhancedOrgId = this._web3.utils.fromAscii(orgId);
     const enhancedServiceId = this._web3.utils.fromAscii(serviceId);
     const enhancedServiceMetadataURI = this._toPaddedHex(serviceMetadataURI);
-    const enhancedTags = tags.map(tag => this._web3.utils.fromAscii(tag));
     return this._contract.methods.createServiceRegistration(
       enhancedOrgId,
       enhancedServiceId,
-      enhancedServiceMetadataURI,
-      enhancedTags,
+      enhancedServiceMetadataURI
     );
   }
 
@@ -93,34 +89,8 @@ class RegistryContract {
     return this._contract.methods.updateServiceRegistration(
       enhancedOrgId,
       enhancedServiceId,
-      enhancedServiceMetadataURI,
+      enhancedServiceMetadataURI
     );
-  }
-
-  /**
-   *
-   * @param {string} orgId -  The unique organization id
-   * @param {string} serviceId - Id of the service to add tags to.
-   * @param {string[]} tags - Array of tags to add to the service registration record.
-   */
-  addTagsToServiceRegistration(orgId, serviceId, tags) {
-    const enhancedOrgId = this._web3.utils.fromAscii(orgId);
-    const enhancedServiceId = this._web3.utils.fromAscii(serviceId);
-    const enhancedTags = tags.map(tag => this._web3.utils.fromAscii(tag));
-    return this._contract.methods.addTagsToServiceRegistration(enhancedOrgId, enhancedServiceId, enhancedTags);
-  }
-
-  /**
-   *
-   * @param {string} orgId - The unique organization id
-   * @param {string} serviceId - Id of the service to remove tags from.
-   * @param {string[]} tags - Array of tags to remove from the service registration record.
-   */
-  removeTagsFromServiceRegistration(orgId, serviceId, tags) {
-    const enhancedOrgId = this._web3.utils.fromAscii(orgId);
-    const enhancedServiceId = this._web3.utils.fromAscii(serviceId);
-    const enhancedTags = tags.map(tag => this._web3.utils.fromAscii(tag));
-    return this._contract.methods.removeTagsFromServiceRegistration(enhancedOrgId, enhancedServiceId, enhancedTags);
   }
 
   listOrganizations() {
@@ -145,7 +115,6 @@ class RegistryContract {
    *                      returned fields should be ignored.
    * @returns {string}  Id of the service, should be the same as the serviceId parameter.
    * @returns {string} metadataURI  Service metadata URI
-   * @returns {string[]} serviceTags  Optional array of tags for discoverability.
    */
   getServiceRegistrationById(orgId, serviceId) {
     const enhancedOrgId = this._web3.utils.fromAscii(orgId);
