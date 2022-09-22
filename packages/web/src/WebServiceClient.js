@@ -128,6 +128,14 @@ class WebServiceClient extends BaseServiceClient {
   _getAuthorizationRequestMethodDescriptor() {
     return training_pb.AuthorizationDetails;
   }
+  
+  _getCreateModelRequestMethodDescriptor() {
+    return Model.create_model.requestType;
+  }
+  
+ _getModelDetailsRequestMethodDescriptor() {
+    return training_pb.ModelDetails;
+  }
 }
 
 export default WebServiceClient;

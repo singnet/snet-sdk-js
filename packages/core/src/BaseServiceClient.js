@@ -97,8 +97,9 @@ class BaseServiceClient {
   }
 
   async _trainingStateRequest(address, grpcMethod) {
-    const { currentBlockNumber, signatureBytes, message } =
-      await this._requestSignForExistingModel(address, grpcMethod);
+    const message = '__get_existing_model';
+    const { currentBlockNumber, signatureBytes } =
+      await this._requestSignForModel(address, message);
     const ModelStateRequest = this._getModelRequestMethodDescriptor();
     const modelStateRequest = new ModelStateRequest();
     modelStateRequest.setGrpcMethodName(grpcMethod);
@@ -114,9 +115,8 @@ class BaseServiceClient {
     return modelStateRequest;
   }
 
-  async _requestSignForExistingModel(address) {
+  async _requestSignForModel(address, message) {
     const currentBlockNumber = await this._web3.eth.getBlockNumber();
-    const message = "__get_existing_model";
     const signatureBytes = await this.account.signData(
       { t: "string", v: message },
       { t: "address", v: address },
@@ -126,8 +126,73 @@ class BaseServiceClient {
     return {
       currentBlockNumber,
       signatureBytes,
-      message,
     };
+  }
+
+  async createModel(method, address) {
+    const request = await this._trainingCreateModel(address, method);
+    logger.debug('request created')
+
+    return new Promise((resolve, reject) => {
+      this._modelServiceClient.create_model(request, (err, response) => {
+        logger.debug(`create model ${err} ${response}`)
+
+        if (err) {
+          reject(err);
+        } else {
+          resolve(response);
+        }
+      });
+    });
+  }
+
+  async _trainingCreateModel(address, method) {
+    const message = '__create_model';
+    const { currentBlockNumber, signatureBytes } =
+      await this._requestSignForModel(address, message);
+    const ModelStateRequest = this._getCreateModelRequestMethodDescriptor();
+    const modelStateRequest = new ModelStateRequest();
+   
+    const AuthorizationRequest =
+      this._getAuthorizationRequestMethodDescriptor();
+    const authorizationRequest = new AuthorizationRequest();
+    const ModelDetailsRequest = this._getModelDetailsRequestMethodDescriptor();
+    const modelDetailsRequest = new ModelDetailsRequest();
+    authorizationRequest.setCurrentBlock(currentBlockNumber);
+    logger.debug("setCurrentBlock")
+
+    authorizationRequest.setMessage(message);
+    authorizationRequest.setSignature(signatureBytes);
+    authorizationRequest.setSignerAddress(address);
+
+    modelDetailsRequest.setModelId("");
+    logger.debug("setModelId")
+
+    modelDetailsRequest.setGrpcMethodName(
+      "/example_service.Calculator/train_add"
+    );
+    modelDetailsRequest.setGrpcServiceName("");
+    modelDetailsRequest.setDescription("");
+    modelDetailsRequest.setIsPubliclyAccessible("");
+    modelDetailsRequest.addAddressList([
+      "0x4e1388Acfd6237aeED2b01Da0d4ccFe242e8F6cA",
+      "0xb192B369ABD93e018e0433a1030AdF08AC6aDfC8",
+    ]);
+    modelDetailsRequest.setTrainingDataLink("www.google.com");
+    modelDetailsRequest.setIsDefaultModel("");
+    modelDetailsRequest.setOrganizationId("snet");
+    modelDetailsRequest.setServiceId("example-service");
+    modelDetailsRequest.setGroupId(
+      "qMdFbyUlpWfOuTn0WpJCpKtQATrU6gxz6Wn9zAB1mxo="
+    );
+
+    modelStateRequest.setAuthorization(authorizationRequest);
+    logger.debug("setAuthorization")
+
+    modelStateRequest.setModelDetails(modelDetailsRequest);
+    logger.debug("setModelDetails")
+   
+    return modelStateRequest;
   }
 
   /**
@@ -472,6 +537,18 @@ class BaseServiceClient {
   _getAuthorizationRequestMethodDescriptor() {
     logger.error(
       "_getAuthorizationRequestMethodDescriptor must be implemented in the sub classes"
+    );
+  }
+
+  _getCreateModelRequestMethodDescriptor() {
+    logger.error(
+      "_getCreateModelRequestMethodDescriptor must be implemented in the sub classes"
+    );
+  }
+
+  _getModelDetailsRequestMethodDescriptor() {
+    logger.error(
+      "_getModelDetailsRequestMethodDescriptor must be implemented in the sub classes"
     );
   }
 
