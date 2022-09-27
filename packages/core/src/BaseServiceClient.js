@@ -129,14 +129,13 @@ class BaseServiceClient {
     };
   }
 
-  async createModel(method, address) {
-    const request = await this._trainingCreateModel(address, method);
-    logger.debug('request created')
 
+  async createModel(trainingMethod, address,trainingModelServiceName,trainingModelDescription,enableAccessModel,ethAddressToPass,trainingDataLink) {
+    const request = await this._trainingCreateModel(address, trainingMethod,trainingModelServiceName,trainingModelDescription,enableAccessModel,ethAddressToPass,trainingDataLink);
+    logger.debug('request created')
     return new Promise((resolve, reject) => {
       this._modelServiceClient.create_model(request, (err, response) => {
         logger.debug(`create model ${err} ${response}`)
-
         if (err) {
           reject(err);
         } else {
@@ -146,7 +145,7 @@ class BaseServiceClient {
     });
   }
 
-  async _trainingCreateModel(address, method) {
+  async _trainingCreateModel(address, trainingMethod,trainingModelServiceName,trainingModelDescription,enableAccessModel,ethAddressToPass,trainingDataLink) {
     const message = '__create_model';
     const { currentBlockNumber, signatureBytes } =
       await this._requestSignForModel(address, message);
@@ -168,17 +167,13 @@ class BaseServiceClient {
     modelDetailsRequest.setModelId("");
     logger.debug("setModelId")
 
-    modelDetailsRequest.setGrpcMethodName(
-      "/example_service.Calculator/train_add"
-    );
-    modelDetailsRequest.setGrpcServiceName("");
-    modelDetailsRequest.setDescription("");
-    modelDetailsRequest.setIsPubliclyAccessible("");
-    modelDetailsRequest.addAddressList([
-      "0x4e1388Acfd6237aeED2b01Da0d4ccFe242e8F6cA",
-      "0xb192B369ABD93e018e0433a1030AdF08AC6aDfC8",
-    ]);
-    modelDetailsRequest.setTrainingDataLink("www.google.com");
+    modelDetailsRequest.setGrpcMethodName( trainingMethod );
+    modelDetailsRequest.setGrpcServiceName(trainingModelServiceName);
+    modelDetailsRequest.setDescription(trainingModelDescription);
+    modelDetailsRequest.setIsPubliclyAccessible(enableAccessModel);
+    // modelDetailsRequest.setAddressListList(ethAddressToPass);
+    // modelDetailsRequest.addAddressList(ethAddressToPass);
+    modelDetailsRequest.setTrainingDataLink(trainingDataLink);
     modelDetailsRequest.setIsDefaultModel("");
     modelDetailsRequest.setOrganizationId("snet");
     modelDetailsRequest.setServiceId("example-service");
