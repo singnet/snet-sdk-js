@@ -171,8 +171,7 @@ class BaseServiceClient {
     modelDetailsRequest.setGrpcServiceName(trainingModelServiceName);
     modelDetailsRequest.setDescription(trainingModelDescription);
     modelDetailsRequest.setIsPubliclyAccessible(enableAccessModel);
-    // modelDetailsRequest.setAddressListList(ethAddressToPass);
-    // modelDetailsRequest.addAddressList(ethAddressToPass);
+    modelDetailsRequest.setAddressListList(ethAddressToPass);
     modelDetailsRequest.setTrainingDataLink(trainingDataLink);
     modelDetailsRequest.setIsDefaultModel("");
     modelDetailsRequest.setOrganizationId("snet");
