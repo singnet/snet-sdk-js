@@ -87,17 +87,26 @@ class BaseServiceClient {
     const request = await this._trainingStateRequest(address, grpcMethod);
     return new Promise((resolve, reject) => {
       this._modelServiceClient.get_all_models(request, (err, response) => {
+        const modelDetails = response.getListOfModelsList();
+        const data = modelDetails.map((item) => {
+          return {
+            modelId: item.getModelId(),
+            description: item.getDescription(),
+            methodName: item.getGrpcMethodName(),
+            addressList: item.getAddressListList(),
+          };
+        });
         if (err) {
           reject(err);
         } else {
-          resolve(response);
+          resolve(data);
         }
       });
     });
   }
 
   async _trainingStateRequest(address, grpcMethod) {
-    const message = '__get_existing_model';
+    const message = "__get_existing_model";
     const { currentBlockNumber, signatureBytes } =
       await this._requestSignForModel(address, message);
     const ModelStateRequest = this._getModelRequestMethodDescriptor();
@@ -129,13 +138,28 @@ class BaseServiceClient {
     };
   }
 
-
-  async createModel(trainingMethod, address,trainingModelServiceName,trainingModelDescription,enableAccessModel,ethAddressToPass,trainingDataLink) {
-    const request = await this._trainingCreateModel(address, trainingMethod,trainingModelServiceName,trainingModelDescription,enableAccessModel,ethAddressToPass,trainingDataLink);
-    logger.debug('request created')
+  async createModel(
+    trainingMethod,
+    address,
+    trainingModelServiceName,
+    trainingModelDescription,
+    enableAccessModel,
+    ethAddressToPass,
+    trainingDataLink
+  ) {
+    const request = await this._trainingCreateModel(
+      address,
+      trainingMethod,
+      trainingModelServiceName,
+      trainingModelDescription,
+      enableAccessModel,
+      ethAddressToPass,
+      trainingDataLink
+    );
+    logger.debug("request created");
     return new Promise((resolve, reject) => {
       this._modelServiceClient.create_model(request, (err, response) => {
-        logger.debug(`create model ${err} ${response}`)
+        logger.debug(`create model ${err} ${response}`);
         if (err) {
           reject(err);
         } else {
@@ -145,29 +169,37 @@ class BaseServiceClient {
     });
   }
 
-  async _trainingCreateModel(address, trainingMethod,trainingModelServiceName,trainingModelDescription,enableAccessModel,ethAddressToPass,trainingDataLink) {
-    const message = '__create_model';
+  async _trainingCreateModel(
+    address,
+    trainingMethod,
+    trainingModelServiceName,
+    trainingModelDescription,
+    enableAccessModel,
+    ethAddressToPass,
+    trainingDataLink
+  ) {
+    const message = "__create_model";
     const { currentBlockNumber, signatureBytes } =
       await this._requestSignForModel(address, message);
     const ModelStateRequest = this._getCreateModelRequestMethodDescriptor();
     const modelStateRequest = new ModelStateRequest();
-   
+
     const AuthorizationRequest =
       this._getAuthorizationRequestMethodDescriptor();
     const authorizationRequest = new AuthorizationRequest();
     const ModelDetailsRequest = this._getModelDetailsRequestMethodDescriptor();
     const modelDetailsRequest = new ModelDetailsRequest();
     authorizationRequest.setCurrentBlock(currentBlockNumber);
-    logger.debug("setCurrentBlock")
+    logger.debug("setCurrentBlock");
 
     authorizationRequest.setMessage(message);
     authorizationRequest.setSignature(signatureBytes);
     authorizationRequest.setSignerAddress(address);
 
     modelDetailsRequest.setModelId("");
-    logger.debug("setModelId")
+    logger.debug("setModelId");
 
-    modelDetailsRequest.setGrpcMethodName( trainingMethod );
+    modelDetailsRequest.setGrpcMethodName(trainingMethod);
     modelDetailsRequest.setGrpcServiceName(trainingModelServiceName);
     modelDetailsRequest.setDescription(trainingModelDescription);
     modelDetailsRequest.setIsPubliclyAccessible(enableAccessModel);
@@ -181,11 +213,11 @@ class BaseServiceClient {
     );
 
     modelStateRequest.setAuthorization(authorizationRequest);
-    logger.debug("setAuthorization")
+    logger.debug("setAuthorization");
 
     modelStateRequest.setModelDetails(modelDetailsRequest);
-    logger.debug("setModelDetails")
-   
+    logger.debug("setModelDetails");
+
     return modelStateRequest;
   }
 
