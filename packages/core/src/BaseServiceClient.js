@@ -138,25 +138,8 @@ class BaseServiceClient {
     };
   }
 
-  async createModel(
-    trainingMethod,
-    address,
-    trainingModelServiceName,
-    trainingModelDescription,
-    enableAccessModel,
-    ethAddressToPass,
-    trainingDataLink
-  ) {
-    const request = await this._trainingCreateModel(
-      address,
-      trainingMethod,
-      trainingModelServiceName,
-      trainingModelDescription,
-      enableAccessModel,
-      ethAddressToPass,
-      trainingDataLink
-    );
-    logger.debug("request created");
+  async createModel(address, params) {
+    const request = await this._trainingCreateModel(address, params);
     return new Promise((resolve, reject) => {
       this._modelServiceClient.create_model(request, (err, response) => {
         logger.debug(`create model ${err} ${response}`);
@@ -169,15 +152,7 @@ class BaseServiceClient {
     });
   }
 
-  async _trainingCreateModel(
-    address,
-    trainingMethod,
-    trainingModelServiceName,
-    trainingModelDescription,
-    enableAccessModel,
-    ethAddressToPass,
-    trainingDataLink
-  ) {
+  async _trainingCreateModel(address, params) {
     const message = "__create_model";
     const { currentBlockNumber, signatureBytes } =
       await this._requestSignForModel(address, message);
@@ -190,34 +165,26 @@ class BaseServiceClient {
     const ModelDetailsRequest = this._getModelDetailsRequestMethodDescriptor();
     const modelDetailsRequest = new ModelDetailsRequest();
     authorizationRequest.setCurrentBlock(currentBlockNumber);
-    logger.debug("setCurrentBlock");
-
     authorizationRequest.setMessage(message);
     authorizationRequest.setSignature(signatureBytes);
     authorizationRequest.setSignerAddress(address);
 
     modelDetailsRequest.setModelId("");
-    logger.debug("setModelId");
-
-    modelDetailsRequest.setGrpcMethodName(trainingMethod);
-    modelDetailsRequest.setGrpcServiceName(trainingModelServiceName);
-    modelDetailsRequest.setDescription(trainingModelDescription);
-    modelDetailsRequest.setIsPubliclyAccessible(enableAccessModel);
-    modelDetailsRequest.setAddressListList(ethAddressToPass);
-    modelDetailsRequest.setTrainingDataLink(trainingDataLink);
+    modelDetailsRequest.setGrpcMethodName(params.method);
+    modelDetailsRequest.setGrpcServiceName(params.name);
+    modelDetailsRequest.setDescription(params.description);
+    modelDetailsRequest.setIsPubliclyAccessible(params.enableAccess);
+    modelDetailsRequest.setAddressListList(params.address);
+    modelDetailsRequest.setTrainingDataLink("");
     modelDetailsRequest.setIsDefaultModel("");
-    modelDetailsRequest.setOrganizationId("snet");
-    modelDetailsRequest.setServiceId("example-service");
-    modelDetailsRequest.setGroupId(
-      "qMdFbyUlpWfOuTn0WpJCpKtQATrU6gxz6Wn9zAB1mxo="
-    );
+
+    const { orgId, serviceId, groupId } = this.getServiceDetails();
+    modelDetailsRequest.setOrganizationId(orgId);
+    modelDetailsRequest.setServiceId(serviceId);
+    modelDetailsRequest.setGroupId(groupId);
 
     modelStateRequest.setAuthorization(authorizationRequest);
-    logger.debug("setAuthorization");
-
     modelStateRequest.setModelDetails(modelDetailsRequest);
-    logger.debug("setModelDetails");
-
     return modelStateRequest;
   }
 
