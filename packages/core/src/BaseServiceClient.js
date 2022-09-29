@@ -142,11 +142,18 @@ class BaseServiceClient {
     const request = await this._trainingCreateModel(address, params);
     return new Promise((resolve, reject) => {
       this._modelServiceClient.create_model(request, (err, response) => {
-        logger.debug(`create model ${err} ${response}`);
+        const modelDetails = response.getModelDetails();
+        logger.debug(`create model ${err} ${modelDetails}`);
+        const data = {
+          modelId: modelDetails.getModelId(),
+          description: modelDetails.getDescription(),
+          methodName: modelDetails.getGrpcMethodName(),
+          addressList: modelDetails.getAddressListList(),
+        };
         if (err) {
           reject(err);
         } else {
-          resolve(response);
+          resolve(data);
         }
       });
     });
