@@ -132,7 +132,11 @@ class WebServiceClient extends BaseServiceClient {
   _getCreateModelRequestMethodDescriptor() {
     return Model.create_model.requestType;
   }
-  
+
+  _getDeleteModelRequestMethodDescriptor() {
+    return Model.delete_model.requestType;
+  }
+      
  _getModelDetailsRequestMethodDescriptor() {
     return training_pb.ModelDetails;
   }
