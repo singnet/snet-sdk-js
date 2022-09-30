@@ -195,6 +195,49 @@ class BaseServiceClient {
     return modelStateRequest;
   }
 
+  
+  async deleteModel(modelId,address,methodName,modelName) {
+    const request = await this._trainingDeleteModel(address,modelId,methodName,modelName);
+    return new Promise((resolve, reject) => {
+      this._modelServiceClient.delete_model(request, (err, response) => {
+        logger.debug(`delete model ${err} ${response}`);
+        if (err) {
+          reject(err);
+        } else {
+          resolve(response);
+        }
+      });
+    });
+  }
+
+  async _trainingDeleteModel(address, modelId,methodName,modelName) {
+    const message = "__delete_model";
+    const { currentBlockNumber, signatureBytes } =
+      await this._requestSignForModel(address, message);
+
+    const ModelStateRequest = this._getDeleteModelRequestMethodDescriptor();
+    const modelStateRequest = new ModelStateRequest();
+    
+    const AuthorizationRequest =
+      this._getAuthorizationRequestMethodDescriptor();
+    const authorizationRequest = new AuthorizationRequest();
+    const ModelDetailsRequest = this._getModelDetailsRequestMethodDescriptor();
+    const modelDetailsRequest = new ModelDetailsRequest();
+
+    authorizationRequest.setCurrentBlock(currentBlockNumber);
+    authorizationRequest.setMessage(message);
+    authorizationRequest.setSignature(signatureBytes);
+    authorizationRequest.setSignerAddress(address);
+    modelDetailsRequest.setModelId(modelId);
+    modelDetailsRequest.setGrpcMethodName(methodName);
+    modelDetailsRequest.setGrpcServiceName(modelName);
+    
+    modelStateRequest.setAuthorization(authorizationRequest);
+    modelStateRequest.setUpdateModelDetails(modelDetailsRequest);
+    return modelStateRequest;
+  }
+
+
   /**
    * Fetches the latest channel state from the ai service daemon
    * @param channelId
@@ -543,6 +586,12 @@ class BaseServiceClient {
   _getCreateModelRequestMethodDescriptor() {
     logger.error(
       "_getCreateModelRequestMethodDescriptor must be implemented in the sub classes"
+    );
+  }
+
+  _getDeleteModelRequestMethodDescriptor() {
+    logger.error(
+      "_getDeleteModelRequestMethodDescriptor must be implemented in the sub classes"
     );
   }
 
