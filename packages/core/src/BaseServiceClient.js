@@ -195,11 +195,9 @@ class BaseServiceClient {
     return modelStateRequest;
   }
 
-  //delete model
-  async deleteModel(modelId,address,method,name) {
-   console.log('hai');
-    const request = await this._trainingDeleteModel(address,modelId,method,name);
-    logger.debug(`delete model request ${request} `);
+  
+  async deleteModel(modelId,address,methodName,modelName) {
+    const request = await this._trainingDeleteModel(address,modelId,methodName,modelName);
     return new Promise((resolve, reject) => {
       this._modelServiceClient.delete_model(request, (err, response) => {
         logger.debug(`delete model ${err} ${response}`);
@@ -212,15 +210,14 @@ class BaseServiceClient {
     });
   }
 
-  async _trainingDeleteModel(address, modelId,method,name) {
+  async _trainingDeleteModel(address, modelId,methodName,modelName) {
     const message = "__delete_model";
     const { currentBlockNumber, signatureBytes } =
       await this._requestSignForModel(address, message);
 
     const ModelStateRequest = this._getDeleteModelRequestMethodDescriptor();
     const modelStateRequest = new ModelStateRequest();
-    // modelStateRequest.getUpdateModelDetails(modelId);
-
+    
     const AuthorizationRequest =
       this._getAuthorizationRequestMethodDescriptor();
     const authorizationRequest = new AuthorizationRequest();
@@ -232,22 +229,14 @@ class BaseServiceClient {
     authorizationRequest.setSignature(signatureBytes);
     authorizationRequest.setSignerAddress(address);
     modelDetailsRequest.setModelId(modelId);
-    modelDetailsRequest.setGrpcMethodName(method);
-    modelDetailsRequest.setGrpcServiceName(name);
+    modelDetailsRequest.setGrpcMethodName(methodName);
+    modelDetailsRequest.setGrpcServiceName(modelName);
     
-
-    // const { orgId, serviceId, groupId } = this.getServiceDetails();
-    // modelDetailsRequest.setOrganizationId(orgId);
-    // modelDetailsRequest.setServiceId(serviceId);
-    // modelDetailsRequest.setGroupId(groupId);
-    //
-
     modelStateRequest.setAuthorization(authorizationRequest);
     modelStateRequest.setUpdateModelDetails(modelDetailsRequest);
     return modelStateRequest;
   }
 
-  //
 
   /**
    * Fetches the latest channel state from the ai service daemon
