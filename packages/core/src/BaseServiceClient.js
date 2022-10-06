@@ -271,8 +271,8 @@ class BaseServiceClient {
     authorizationRequest.setSignature(signatureBytes);
     authorizationRequest.setSignerAddress(params.address);
     modelDetailsRequest.setModelId(params.modelId);
-    modelDetailsRequest.setGrpcMethodName(params.methodName);
-    modelDetailsRequest.setGrpcServiceName(params.modelName);
+    modelDetailsRequest.setGrpcMethodName(params.method);
+    modelDetailsRequest.setGrpcServiceName(params.name);
 
     modelDetailsRequest.setDescription(params.description);
     modelDetailsRequest.setAddressListList(params.addressList);
