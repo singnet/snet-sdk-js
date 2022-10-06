@@ -252,7 +252,7 @@ class BaseServiceClient {
     const request = await this._trainingUpdateModel(params);
     return new Promise((resolve, reject) => {
       this._modelServiceClient.update_model_access(request, (err, response) => {
-        logger.debug(`delete model ${err} ${response}`);
+        logger.debug(`update model ${err} ${response}`);
         if (err) {
           reject(err);
         } else {
@@ -265,7 +265,7 @@ class BaseServiceClient {
   async _trainingUpdateModel(params) {
     const message = "__update_model";
     const { currentBlockNumber, signatureBytes } =
-      await this._requestSignForModel(address, message);
+      await this._requestSignForModel(params.address, message);
 
     const ModelStateRequest = this._getUpdateModelRequestMethodDescriptor();
     const modelStateRequest = new ModelStateRequest();
@@ -287,7 +287,10 @@ class BaseServiceClient {
     modelDetailsRequest.setDescription(params.description);
     modelDetailsRequest.setAddressListList(params.addressList);
     modelDetailsRequest.setTrainingDataLink("");
-    // modelDetailsRequest.setIsDefaultModel("");
+    modelDetailsRequest.setStatus(params.status);
+    modelDetailsRequest.setUpdatedDate(params.updatedDate);
+    modelDetailsRequest.setIsPubliclyAccessible(params.publicAccess);
+
 
     const { orgId, serviceId, groupId } = this.getServiceDetails();
     modelDetailsRequest.setOrganizationId(orgId);
