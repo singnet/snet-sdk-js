@@ -1,7 +1,6 @@
 // package: training
 // file: singnet/snet-daemon/training/training.proto
 
-// var singnet_snet_daemon_training_training_pb = require("../../../singnet/snet-daemon/training/training_pb");
 var singnet_snet_daemon_training_training_pb = require("./training_pb");
 var grpc = require("@improbable-eng/grpc-web").grpc;
 
