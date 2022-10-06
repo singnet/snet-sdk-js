@@ -196,8 +196,8 @@ class BaseServiceClient {
   }
 
   
-  async deleteModel(modelId,address,methodName,modelName) {
-    const request = await this._trainingDeleteModel(address,modelId,methodName,modelName);
+  async deleteModel(params) {
+    const request = await this._trainingDeleteModel(params);
     return new Promise((resolve, reject) => {
       this._modelServiceClient.delete_model(request, (err, response) => {
         logger.debug(`delete model ${err} ${response}`);
@@ -210,7 +210,7 @@ class BaseServiceClient {
     });
   }
 
-  async _trainingDeleteModel(address, modelId,methodName,modelName) {
+  async _trainingDeleteModel(params) {
     const message = "__delete_model";
     const { currentBlockNumber, signatureBytes } =
       await this._requestSignForModel(address, message);
@@ -227,16 +227,68 @@ class BaseServiceClient {
     authorizationRequest.setCurrentBlock(currentBlockNumber);
     authorizationRequest.setMessage(message);
     authorizationRequest.setSignature(signatureBytes);
-    authorizationRequest.setSignerAddress(address);
-    modelDetailsRequest.setModelId(modelId);
-    modelDetailsRequest.setGrpcMethodName(methodName);
-    modelDetailsRequest.setGrpcServiceName(modelName);
+    authorizationRequest.setSignerAddress(params.address);
+    modelDetailsRequest.setModelId(params.modelId);
+    modelDetailsRequest.setGrpcMethodName(params.method);
+    modelDetailsRequest.setGrpcServiceName(params.name);
     
     modelStateRequest.setAuthorization(authorizationRequest);
     modelStateRequest.setUpdateModelDetails(modelDetailsRequest);
     return modelStateRequest;
   }
 
+  
+  async updateModel(params) {
+    const request = await this._trainingUpdateModel(params);
+    return new Promise((resolve, reject) => {
+      this._modelServiceClient.update_model_access(request, (err, response) => {
+        logger.debug(`delete model ${err} ${response}`);
+        if (err) {
+          reject(err);
+        } else {
+          resolve(response);
+        }
+      });
+    });
+  }
+
+  async _trainingUpdateModel(params) {
+    const message = "__update_model";
+    const { currentBlockNumber, signatureBytes } =
+      await this._requestSignForModel(address, message);
+
+    const ModelStateRequest = this._getUpdateModelRequestMethodDescriptor();
+    const modelStateRequest = new ModelStateRequest();
+    
+    const AuthorizationRequest =
+      this._getAuthorizationRequestMethodDescriptor();
+    const authorizationRequest = new AuthorizationRequest();
+    const ModelDetailsRequest = this._getModelDetailsRequestMethodDescriptor();
+    const modelDetailsRequest = new ModelDetailsRequest();
+
+    authorizationRequest.setCurrentBlock(currentBlockNumber);
+    authorizationRequest.setMessage(message);
+    authorizationRequest.setSignature(signatureBytes);
+    authorizationRequest.setSignerAddress(params.address);
+    modelDetailsRequest.setModelId(params.modelId);
+    modelDetailsRequest.setGrpcMethodName(params.methodName);
+    modelDetailsRequest.setGrpcServiceName(params.modelName);
+
+    modelDetailsRequest.setDescription(params.description);
+    modelDetailsRequest.setAddressListList(params.addressList);
+    modelDetailsRequest.setTrainingDataLink("");
+    modelDetailsRequest.setIsDefaultModel("");
+
+    const { orgId, serviceId, groupId } = this.getServiceDetails();
+    modelDetailsRequest.setOrganizationId(orgId);
+    modelDetailsRequest.setServiceId(serviceId);
+    modelDetailsRequest.setGroupId(groupId);
+    
+    modelStateRequest.setAuthorization(authorizationRequest);
+    modelStateRequest.setUpdateModelDetails(modelDetailsRequest);
+    return modelStateRequest;
+  }
+ 
 
   /**
    * Fetches the latest channel state from the ai service daemon
@@ -592,6 +644,12 @@ class BaseServiceClient {
   _getDeleteModelRequestMethodDescriptor() {
     logger.error(
       "_getDeleteModelRequestMethodDescriptor must be implemented in the sub classes"
+    );
+  }
+
+  _getUpdateModelRequestMethodDescriptor(){
+    logger.error(
+      "__getUpdateModelRequestMethodDescriptor must be implemented in the sub classes"
     );
   }
 
