@@ -283,7 +283,7 @@ class BaseServiceClient {
     modelDetailsRequest.setModelId(params.modelId);
     modelDetailsRequest.setGrpcMethodName(params.method);
     modelDetailsRequest.setGrpcServiceName(params.name);
-
+    modelDetailsRequest.setModelName(params.modelName);
     modelDetailsRequest.setDescription(params.description);
     modelDetailsRequest.setAddressListList(params.addressList);
     modelDetailsRequest.setTrainingDataLink("");
