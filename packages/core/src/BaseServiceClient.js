@@ -83,17 +83,22 @@ class BaseServiceClient {
     return this._options.concurrency;
   }
 
-  async getExistingModel(grpcMethod, address) {
-    const request = await this._trainingStateRequest(address, grpcMethod);
+  async getExistingModel(params) {
+    const request = await this._trainingStateRequest(params);
     return new Promise((resolve, reject) => {
       this._modelServiceClient.get_all_models(request, (err, response) => {
         const modelDetails = response.getListOfModelsList();
         const data = modelDetails.map((item) => {
           return {
             modelId: item.getModelId(),
-            description: item.getDescription(),
             methodName: item.getGrpcMethodName(),
+            serviceName: item.getGrpcServiceName(),
+            description: item.getDescription(),
+            status: item.getStatus(),
+            updatedDate: item.getUpdatedDate(),
             addressList: item.getAddressListList(),
+            modelName: item.getModelName(),
+            publicAccess: item.getIsPubliclyAccessible(),
           };
         });
         if (err) {
@@ -105,13 +110,15 @@ class BaseServiceClient {
     });
   }
 
-  async _trainingStateRequest(address, grpcMethod) {
+  async _trainingStateRequest(params) {
     const message = "__get_existing_model";
     const { currentBlockNumber, signatureBytes } =
-      await this._requestSignForModel(address, message);
+      await this._requestSignForModel(params.address, message);
     const ModelStateRequest = this._getModelRequestMethodDescriptor();
     const modelStateRequest = new ModelStateRequest();
-    modelStateRequest.setGrpcMethodName(grpcMethod);
+    modelStateRequest.setGrpcMethodName(params.grpcMethod);
+    modelStateRequest.setGrpcServiceName(params.grpcService);
+
     const AuthorizationRequest =
       this._getAuthorizationRequestMethodDescriptor();
     const authorizationRequest = new AuthorizationRequest();
@@ -119,7 +126,7 @@ class BaseServiceClient {
     authorizationRequest.setCurrentBlock(currentBlockNumber);
     authorizationRequest.setMessage(message);
     authorizationRequest.setSignature(signatureBytes);
-    authorizationRequest.setSignerAddress(address);
+    authorizationRequest.setSignerAddress(params.address);
     modelStateRequest.setAuthorization(authorizationRequest);
     return modelStateRequest;
   }
@@ -142,13 +149,18 @@ class BaseServiceClient {
     const request = await this._trainingCreateModel(address, params);
     return new Promise((resolve, reject) => {
       this._modelServiceClient.create_model(request, (err, response) => {
+        logger.debug(`create model ${err} ${response}`);
         const modelDetails = response.getModelDetails();
-        logger.debug(`create model ${err} ${modelDetails}`);
         const data = {
           modelId: modelDetails.getModelId(),
-          description: modelDetails.getDescription(),
           methodName: modelDetails.getGrpcMethodName(),
+          serviceName: modelDetails.getGrpcServiceName(),
+          description: modelDetails.getDescription(),
+          status: modelDetails.getStatus(),
+          updatedDate: modelDetails.getUpdatedDate(),
           addressList: modelDetails.getAddressListList(),
+          modelName: modelDetails.getModelName(),
+          publicAccess: modelDetails.getIsPubliclyAccessible(),
         };
         if (err) {
           reject(err);
@@ -170,22 +182,22 @@ class BaseServiceClient {
       this._getAuthorizationRequestMethodDescriptor();
     const authorizationRequest = new AuthorizationRequest();
     const ModelDetailsRequest = this._getModelDetailsRequestMethodDescriptor();
+
+    const { orgId, serviceId, groupId } = this.getServiceDetails();
     const modelDetailsRequest = new ModelDetailsRequest();
     authorizationRequest.setCurrentBlock(currentBlockNumber);
     authorizationRequest.setMessage(message);
     authorizationRequest.setSignature(signatureBytes);
     authorizationRequest.setSignerAddress(address);
 
-    modelDetailsRequest.setModelId("");
+    modelDetailsRequest.setModelName(params.modelName);
     modelDetailsRequest.setGrpcMethodName(params.method);
-    modelDetailsRequest.setGrpcServiceName(params.name);
+    modelDetailsRequest.setGrpcServiceName(params.serviceName);
     modelDetailsRequest.setDescription(params.description);
-    modelDetailsRequest.setIsPubliclyAccessible(params.enableAccess);
+    modelDetailsRequest.setIsPubliclyAccessible(params.publicAccess);
     modelDetailsRequest.setAddressListList(params.address);
     modelDetailsRequest.setTrainingDataLink("");
-    modelDetailsRequest.setIsDefaultModel("");
 
-    const { orgId, serviceId, groupId } = this.getServiceDetails();
     modelDetailsRequest.setOrganizationId(orgId);
     modelDetailsRequest.setServiceId(serviceId);
     modelDetailsRequest.setGroupId(groupId);
@@ -195,7 +207,6 @@ class BaseServiceClient {
     return modelStateRequest;
   }
 
-  
   async deleteModel(params) {
     const request = await this._trainingDeleteModel(params);
     return new Promise((resolve, reject) => {
@@ -213,11 +224,11 @@ class BaseServiceClient {
   async _trainingDeleteModel(params) {
     const message = "__delete_model";
     const { currentBlockNumber, signatureBytes } =
-      await this._requestSignForModel(address, message);
+      await this._requestSignForModel(params.address, message);
 
-    const ModelStateRequest = this._getDeleteModelRequestMethodDescriptor();
+    const ModelStateRequest = this._getUpdateModelRequestMethodDescriptor();
     const modelStateRequest = new ModelStateRequest();
-    
+
     const AuthorizationRequest =
       this._getAuthorizationRequestMethodDescriptor();
     const authorizationRequest = new AuthorizationRequest();
@@ -231,13 +242,12 @@ class BaseServiceClient {
     modelDetailsRequest.setModelId(params.modelId);
     modelDetailsRequest.setGrpcMethodName(params.method);
     modelDetailsRequest.setGrpcServiceName(params.name);
-    
+
     modelStateRequest.setAuthorization(authorizationRequest);
     modelStateRequest.setUpdateModelDetails(modelDetailsRequest);
     return modelStateRequest;
   }
 
-  
   async updateModel(params) {
     const request = await this._trainingUpdateModel(params);
     return new Promise((resolve, reject) => {
@@ -259,7 +269,7 @@ class BaseServiceClient {
 
     const ModelStateRequest = this._getUpdateModelRequestMethodDescriptor();
     const modelStateRequest = new ModelStateRequest();
-    
+
     const AuthorizationRequest =
       this._getAuthorizationRequestMethodDescriptor();
     const authorizationRequest = new AuthorizationRequest();
@@ -277,18 +287,17 @@ class BaseServiceClient {
     modelDetailsRequest.setDescription(params.description);
     modelDetailsRequest.setAddressListList(params.addressList);
     modelDetailsRequest.setTrainingDataLink("");
-    modelDetailsRequest.setIsDefaultModel("");
+    // modelDetailsRequest.setIsDefaultModel("");
 
     const { orgId, serviceId, groupId } = this.getServiceDetails();
     modelDetailsRequest.setOrganizationId(orgId);
     modelDetailsRequest.setServiceId(serviceId);
     modelDetailsRequest.setGroupId(groupId);
-    
+
     modelStateRequest.setAuthorization(authorizationRequest);
     modelStateRequest.setUpdateModelDetails(modelDetailsRequest);
     return modelStateRequest;
   }
- 
 
   /**
    * Fetches the latest channel state from the ai service daemon
@@ -647,7 +656,7 @@ class BaseServiceClient {
     );
   }
 
-  _getUpdateModelRequestMethodDescriptor(){
+  _getUpdateModelRequestMethodDescriptor() {
     logger.error(
       "__getUpdateModelRequestMethodDescriptor must be implemented in the sub classes"
     );

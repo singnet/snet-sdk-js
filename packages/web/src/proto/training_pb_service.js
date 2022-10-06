@@ -1,7 +1,7 @@
 // package: training
-// file: training.proto
+// file: singnet/snet-daemon/training/training.proto
 
-var training_pb = require("./training_pb");
+var singnet_snet_daemon_training_training_pb = require("./training_pb");
 var grpc = require("@improbable-eng/grpc-web").grpc;
 
 var Model = (function () {
@@ -15,8 +15,8 @@ Model.create_model = {
   service: Model,
   requestStream: false,
   responseStream: false,
-  requestType: training_pb.CreateModelRequest,
-  responseType: training_pb.ModelDetailsResponse
+  requestType: singnet_snet_daemon_training_training_pb.CreateModelRequest,
+  responseType: singnet_snet_daemon_training_training_pb.ModelDetailsResponse
 };
 
 Model.delete_model = {
@@ -24,8 +24,8 @@ Model.delete_model = {
   service: Model,
   requestStream: false,
   responseStream: false,
-  requestType: training_pb.UpdateModelRequest,
-  responseType: training_pb.ModelDetailsResponse
+  requestType: singnet_snet_daemon_training_training_pb.UpdateModelRequest,
+  responseType: singnet_snet_daemon_training_training_pb.ModelDetailsResponse
 };
 
 Model.get_model_status = {
@@ -33,8 +33,8 @@ Model.get_model_status = {
   service: Model,
   requestStream: false,
   responseStream: false,
-  requestType: training_pb.ModelDetailsRequest,
-  responseType: training_pb.ModelDetailsResponse
+  requestType: singnet_snet_daemon_training_training_pb.ModelDetailsRequest,
+  responseType: singnet_snet_daemon_training_training_pb.ModelDetailsResponse
 };
 
 Model.update_model_access = {
@@ -42,8 +42,8 @@ Model.update_model_access = {
   service: Model,
   requestStream: false,
   responseStream: false,
-  requestType: training_pb.UpdateModelRequest,
-  responseType: training_pb.ModelDetailsResponse
+  requestType: singnet_snet_daemon_training_training_pb.UpdateModelRequest,
+  responseType: singnet_snet_daemon_training_training_pb.ModelDetailsResponse
 };
 
 Model.get_all_models = {
@@ -51,8 +51,8 @@ Model.get_all_models = {
   service: Model,
   requestStream: false,
   responseStream: false,
-  requestType: training_pb.AccessibleModelsRequest,
-  responseType: training_pb.AccessibleModelsResponse
+  requestType: singnet_snet_daemon_training_training_pb.AccessibleModelsRequest,
+  responseType: singnet_snet_daemon_training_training_pb.AccessibleModelsResponse
 };
 
 exports.Model = Model;
