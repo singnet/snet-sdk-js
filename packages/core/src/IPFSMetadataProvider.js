@@ -1,9 +1,8 @@
 import { find, map } from 'lodash';
-import url from 'url';
-import IPFSClient from 'ipfs-http-client';
 import RegistryNetworks from 'singularitynet-platform-contracts/networks/Registry.json';
 import RegistryAbi from 'singularitynet-platform-contracts/abi/Registry.json';
-
+import { createHelia } from 'helia'; //import Helia
+import { json as heliaJson } from '@helia/json';
 import logger from './utils/logger';
 
 export default class IPFSMetadataProvider {
@@ -11,7 +10,8 @@ export default class IPFSMetadataProvider {
     this._web3 = web3;
     this._networkId = networkId;
     this._ipfsEndpoint = ipfsEndpoint;
-    this._ipfsClient = this._constructIpfsClient();
+    this._helia = this._constructHeliaClient(); //initialize Helia
+    this._heliaJson = heliaJson(this._helia);
     const registryAddress = RegistryNetworks[this._networkId].address;
     this._registryContract = new this._web3.eth.Contract(RegistryAbi, registryAddress);
   }
@@ -49,8 +49,7 @@ export default class IPFSMetadataProvider {
   async _fetchMetadataFromIpfs(metadataURI) {
     const ipfsCID = `${this._web3.utils.hexToUtf8(metadataURI).substring(7)}`;
     logger.debug(`Fetching metadata from IPFS[CID: ${ipfsCID}]`);
-    const data = await this._ipfsClient.cat(ipfsCID);
-    return JSON.parse(data.toString());
+    return await this._heliaJson.get(ipfsCID);
   }
 
   _enhanceServiceGroupDetails(serviceMetadata, orgMetadata) {
@@ -69,9 +68,13 @@ export default class IPFSMetadataProvider {
     return { ...serviceMetadata, groups };
   }
 
-  _constructIpfsClient() {
-    const { protocol = 'http', hostname: host, port = 5001 } = url.parse(this._ipfsEndpoint);
-    const ipfsHostOrMultiaddr = { protocol: protocol.replace(':', ''), host, port };
-    return IPFSClient(ipfsHostOrMultiaddr);
+  _constructHeliaClient() {
+    // Initialize Helia client
+    const heliaConfig = {
+      // Helia-specific configuration
+      // Add any additional Helia configurations here
+      // This may include libp2p configuration, datastore, etc.
+    };
+    return createHelia(heliaConfig);
   }
 }
