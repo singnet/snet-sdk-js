@@ -19,10 +19,10 @@ class FreeCallPaymentStrategy {
       const freeCallsAvailableReply = await this._getFreeCallsAvailable();
       // Bypassing free calls if the token is empty
       const freeCallsAvailable = freeCallsAvailableReply ? freeCallsAvailableReply.getFreeCallsAvailable() : 0;
-      console.log('freeCallsAvailable', freeCallsAvailable);
+      logger.debug('freeCallsAvailable', freeCallsAvailable);
       return freeCallsAvailable > 0;
     } catch (error) {
-      console.log('error', error);
+      logger.error('Free call availability error', error);
       return false;
     }
   }
@@ -32,7 +32,6 @@ class FreeCallPaymentStrategy {
    * @returns {Promise<({'snet-free-call-auth-token-bin': FreeCallConfig.tokenToMakeFreeCall}|{'snet-free-call-token-expiry-block': *}|{'snet-payment-type': string}|{'snet-free-call-user-id': *}|{'snet-current-block-number': *})[]>}
    */
   async getPaymentMetadata() {
-    console.log('get payment metadat');
     const { email, tokenToMakeFreeCall, tokenExpiryDateBlock } = this._serviceClient.getFreeCallConfig();
     const currentBlockNumber = await this._serviceClient.getCurrentBlockNumber();
     const signature = await this._generateSignature(currentBlockNumber);
@@ -62,7 +61,7 @@ class FreeCallPaymentStrategy {
     return new Promise((resolve, reject) => {
       this._freeCallStateServiceClient.getFreeCallsAvailable(freeCallStateRequest, (error, responseMessage) => {
         if(error) {
-          console.log('freecalls error', error);
+          logger.error('freecalls error', error);
           reject(error);
         } else {
           resolve(responseMessage);

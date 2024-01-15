@@ -84,7 +84,7 @@ class ConcurrencyManager {
     return new Promise((resolve, reject) => {
       this._tokenServiceClient.getToken(request, (error, responseMessage) => {
         if(error) {
-          console.log('token grpc error', error);
+          logger.error('token grpc error', error);
           reject(error);
         } else {
           this._plannedAmount = responseMessage.getPlannedAmount();

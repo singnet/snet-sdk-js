@@ -13,7 +13,6 @@ class PrivateKeyIdentity {
   constructor(config, web3) {
     this._web3 = web3;
     this._pk = config.privateKey;
-    console.log(this._pk)
     this._setupAccount();
   }
 
@@ -37,8 +36,8 @@ class PrivateKeyIdentity {
       method.once(
         blockChainEvents.CONFIRMATION,
         async (_confirmationNumber, receipt) => {
-          console.log("blockchain confirmation count", _confirmationNumber);
-          console.log("blockchain confirmation receipt status", receipt.status);
+          logger.debug("blockchain confirmation count", _confirmationNumber);
+          logger.debug("blockchain confirmation receipt status", receipt.status);
           if (receipt.status) {
             resolve(receipt);
           } else {
@@ -48,14 +47,14 @@ class PrivateKeyIdentity {
         }
       );
       method.on(blockChainEvents.ERROR, (error) => {
-        console.log("blockchain error", error);
+       logger.error("blockchain error", error);
         reject(error);
       });
       method.once(blockChainEvents.TRANSACTION_HASH, (hash) => {
-        console.log("waiting for blockchain txn", hash);
+        logger.debug("waiting for blockchain txn", hash);
       });
       method.once(blockChainEvents.RECEIPT, (receipt) => {
-        console.log("blockchain receipt", receipt.status);
+        logger.debug("blockchain receipt", receipt.status);
       });
     });
   }
