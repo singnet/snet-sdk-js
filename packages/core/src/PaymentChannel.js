@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import isEmpty from 'lodash/isEmpty';
 
 import logger from './utils/logger';
 
@@ -114,7 +113,7 @@ class PaymentChannel {
   }
 
   static _uint8ArrayToBN(uint8Array) {
-    if(isEmpty(uint8Array)) {
+    if(uint8Array?.length) {
       return new BigNumber(0);
     }
 

@@ -1,6 +1,7 @@
 import url from "url";
 import { BigNumber } from "bignumber.js";
-import { find, first, isEmpty, map } from "lodash";
+// import { map } from "lodash";
+import loadash from "lodash";
 import logger from "./utils/logger";
 
 import { toBNString } from "./utils/bignumber_helper";
@@ -350,7 +351,7 @@ class BaseServiceClient {
     logger.info("Updating payment channel states", {
       tags: ["PaymentChannel"],
     });
-    const currentChannelStatesPromise = map(
+    const currentChannelStatesPromise = loadash.map(
       this._paymentChannels,
       (paymentChannel) => paymentChannel.syncState()
     );
@@ -445,7 +446,7 @@ class BaseServiceClient {
   }
 
   _getPaymentExpiryThreshold() {
-    if (isEmpty(this._group)) {
+    if (loadash.isEmpty(this._group)) {
       return 0;
     }
     const paymentExpirationThreshold =
@@ -454,7 +455,7 @@ class BaseServiceClient {
   }
 
   _enhanceGroupInfo(group) {
-    if (isEmpty(group)) {
+    if (loadash.isEmpty(group)) {
       return group;
     }
 
@@ -598,7 +599,7 @@ class BaseServiceClient {
 
   get _pricePerServiceCall() {
     const { pricing } = this.group;
-    const fixedPricing = find(
+    const fixedPricing = loadash.find(
       pricing,
       ({ price_model }) => price_model === "fixed_price"
     );
@@ -612,7 +613,7 @@ class BaseServiceClient {
     }
 
     const { endpoints } = this.group;
-    const endpoint = first(endpoints);
+    const endpoint = loadash.first(endpoints);
     logger.debug(`Service endpoint: ${endpoint}`, { tags: ["gRPC"] });
 
     return endpoint && url.parse(endpoint);

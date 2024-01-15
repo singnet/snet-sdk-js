@@ -1,6 +1,6 @@
-import grpc from 'grpc';
-import { logger } from './core';
-import services from './proto/token_service_grpc_pb';
+import grpc from '@grpc/grpc-js';
+import { logger } from './core/index';
+import * as services from './proto/token_service_grpc_pb.js';
 
 class ConcurrencyManager {
   constructor(concurrentCalls = 1, serviceClient) {

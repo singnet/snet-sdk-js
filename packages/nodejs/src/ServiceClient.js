@@ -1,6 +1,6 @@
-import grpc, { InterceptingCall } from 'grpc';
+import * as grpc from '@grpc/grpc-js'; //Updating import statement for @grpc/grpc-js
 import { BaseServiceClient, logger } from './sdk-core';
-import { PaymentChannelStateServiceClient } from './proto/state_service_grpc_pb';
+import * as StateServiceGrpcPb from './proto/state_service_grpc_pb.js';
 import ConcurrencyManager from './ConcurrencyManager';
 
 class ServiceClient extends BaseServiceClient {
@@ -90,7 +90,7 @@ class ServiceClient extends BaseServiceClient {
     const serviceEndpoint = this._getServiceEndpoint();
     const grpcChannelCredentials = this._getGrpcChannelCredentials(serviceEndpoint);
     logger.debug(`PaymentChannelStateService pointing to ${serviceEndpoint.host}, `, { tags: ['gRPC'] });
-    return new PaymentChannelStateServiceClient(serviceEndpoint.host, grpcChannelCredentials);
+    return new StateServiceGrpcPb.PaymentChannelStateServiceClient(serviceEndpoint.host, grpcChannelCredentials);
   }
 
   _getGrpcChannelCredentials(serviceEndpoint) {

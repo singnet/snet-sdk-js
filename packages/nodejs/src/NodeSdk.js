@@ -1,7 +1,8 @@
 import SnetSDK, { PrivateKeyIdentity } from './sdk-core';
+import SdkCore from "./sdk-core";
 import ServiceClient from './ServiceClient';
 
-class NodeSdk extends SnetSDK {
+class NodeSdk extends SdkCore {
   /**
    * @param {string} orgId
    * @param {string} serviceId

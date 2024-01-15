@@ -1,5 +1,5 @@
-import AGITokenAbi from 'singularitynet-token-contracts/abi/SingularityNetToken';
-import AGITokenNetworks from 'singularitynet-token-contracts/networks/SingularityNetToken';
+import AGITokenAbi from 'singularitynet-token-contracts/abi/SingularityNetToken.json' assert { type: 'json' };
+import AGITokenNetworks from 'singularitynet-token-contracts/networks/SingularityNetToken.json' assert { type: 'json' };;
 import { BigNumber } from 'bignumber.js';
 import logger from './utils/logger';
 

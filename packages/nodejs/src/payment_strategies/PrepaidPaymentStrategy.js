@@ -1,5 +1,5 @@
 import BasePaidPaymentStrategy from './BasePaidPaymentStrategy';
-import { EncodingUtils } from '../core';
+import EncodingUtils from '../core/src/utils/encodingUtils';
 
 class PrepaidPaymentStrategy extends BasePaidPaymentStrategy {
   /**

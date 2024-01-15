@@ -1,5 +1,5 @@
 import Web3 from 'web3';
-import { find, first } from 'lodash';
+import loadash from 'lodash';
 
 import Account from './Account';
 import MPEContract from './MPEContract';
@@ -65,10 +65,10 @@ class SnetSDK {
 
   _findGroup(groups, groupName) {
     if(!groupName) {
-      return first(groups);
+      return loadash.first(groups);
     }
 
-    return find(groups, ({ group_name }) => group_name === groupName);
+    return loadash.find(groups, ({ group_name }) => group_name === groupName);
   }
 
   _constructStrategy(paymentChannelManagementStrategy, concurrentCalls = 1) {

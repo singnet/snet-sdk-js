@@ -1,6 +1,7 @@
-import grpc from 'grpc';
-import services from '../proto/state_service_grpc_pb';
+import grpc from '@grpc/grpc-js';
+import {FreeCallStateServiceClient} from '../proto/state_service_grpc_pb';
 import { logger, EncodingUtils } from '../sdk-core';
+
 
 class FreeCallPaymentStrategy {
   constructor(serviceClient) {
@@ -138,7 +139,7 @@ class FreeCallPaymentStrategy {
   _generateFreeCallStateServiceClient() {
     const serviceEndpoint = this._serviceClient._getServiceEndpoint();
     const grpcCredentials = this._getGrpcCredentials(serviceEndpoint);
-    return new services.FreeCallStateServiceClient(serviceEndpoint.host, grpcCredentials);
+    return new FreeCallStateServiceClient(serviceEndpoint.host, grpcCredentials);
   }
 
   /**

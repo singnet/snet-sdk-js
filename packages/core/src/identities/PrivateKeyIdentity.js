@@ -1,6 +1,6 @@
-import Tx from 'ethereumjs-tx';
-import logger from '../utils/logger';
-import blockChainEvents from '../utils/blockchainEvents';
+import * as Tx from "@ethereumjs/tx";
+import logger from "../utils/logger";
+import blockChainEvents from "../utils/blockchainEvents";
 
 /**
  * @implements Identity
@@ -13,6 +13,7 @@ class PrivateKeyIdentity {
   constructor(config, web3) {
     this._web3 = web3;
     this._pk = config.privateKey;
+    console.log(this._pk)
     this._setupAccount();
   }
 
@@ -33,35 +34,38 @@ class PrivateKeyIdentity {
     const signedTransaction = this._signTransaction(transactionObject);
     return new Promise((resolve, reject) => {
       const method = this._web3.eth.sendSignedTransaction(signedTransaction);
-      method.once(blockChainEvents.CONFIRMATION, async (_confirmationNumber, receipt) => {
-        console.log('blockchain confirmation count', _confirmationNumber);
-        console.log('blockchain confirmation receipt status', receipt.status);
-        if(receipt.status) {
-          resolve(receipt);
-        } else {
-          reject(receipt);
+      method.once(
+        blockChainEvents.CONFIRMATION,
+        async (_confirmationNumber, receipt) => {
+          console.log("blockchain confirmation count", _confirmationNumber);
+          console.log("blockchain confirmation receipt status", receipt.status);
+          if (receipt.status) {
+            resolve(receipt);
+          } else {
+            reject(receipt);
+          }
+          await method.off();
         }
-        await method.off();
-      });
+      );
       method.on(blockChainEvents.ERROR, (error) => {
-        console.log('blockchain error', error);
+        console.log("blockchain error", error);
         reject(error);
       });
       method.once(blockChainEvents.TRANSACTION_HASH, (hash) => {
-        console.log('waiting for blockchain txn', hash);
+        console.log("waiting for blockchain txn", hash);
       });
       method.once(blockChainEvents.RECEIPT, (receipt) => {
-        console.log('blockchain receipt', receipt.status);
+        console.log("blockchain receipt", receipt.status);
       });
     });
   }
 
   _signTransaction(txObject) {
     const transaction = new Tx(txObject);
-    const privateKey = Buffer.from(this._pk.slice(2), 'hex');
+    const privateKey = Buffer.from(this._pk.slice(2), "hex");
     transaction.sign(privateKey);
     const serializedTransaction = transaction.serialize();
-    return `0x${serializedTransaction.toString('hex')}`;
+    return `0x${serializedTransaction.toString("hex")}`;
   }
 
   _setupAccount() {
