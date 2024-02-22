@@ -1,7 +1,4 @@
-import Tx from 'ethereumjs-tx';
-import logger from '../utils/logger';
 import blockChainEvents from '../utils/blockchainEvents';
-
 /**
  * @implements Identity
  */
@@ -30,18 +27,18 @@ class PrivateKeyIdentity {
   }
 
   async sendTransaction(transactionObject) {
-    const signedTransaction = this._signTransaction(transactionObject);
+    const signedTransaction = await this._signTransaction(transactionObject);
     return new Promise((resolve, reject) => {
       const method = this._web3.eth.sendSignedTransaction(signedTransaction);
       method.once(blockChainEvents.CONFIRMATION, async (_confirmationNumber, receipt) => {
         console.log('blockchain confirmation count', _confirmationNumber);
-        console.log('blockchain confirmation receipt status', receipt.status);
-        if(receipt.status) {
-          resolve(receipt);
+        console.log('blockchain confirmation receipt status', _confirmationNumber.receipt.status);
+        if(_confirmationNumber.receipt.status) {
+          resolve(_confirmationNumber.receipt);
         } else {
-          reject(receipt);
+          reject(_confirmationNumber.receipt);
         }
-        await method.off();
+        // await method.off();
       });
       method.on(blockChainEvents.ERROR, (error) => {
         console.log('blockchain error', error);
@@ -56,12 +53,11 @@ class PrivateKeyIdentity {
     });
   }
 
-  _signTransaction(txObject) {
-    const transaction = new Tx(txObject);
+  async _signTransaction(txObject) {
+    delete txObject.chainId;
     const privateKey = Buffer.from(this._pk.slice(2), 'hex');
-    transaction.sign(privateKey);
-    const serializedTransaction = transaction.serialize();
-    return `0x${serializedTransaction.toString('hex')}`;
+    const signedTx = await this._web3.eth.accounts.signTransaction(txObject, privateKey);
+    return signedTx.rawTransaction;
   }
 
   _setupAccount() {

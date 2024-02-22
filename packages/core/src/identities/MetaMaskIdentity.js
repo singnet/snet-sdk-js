@@ -1,4 +1,4 @@
-import Eth from 'ethjs';
+import Web3 from 'web3';
 import { ethereumMethods } from '../utils/ethereumUtils';
 
 import logger from '../utils/logger';
@@ -13,7 +13,7 @@ class MetaMaskIdentity {
    * @param {Web3} web3
    */
   constructor(config, web3) {
-    this._eth = new Eth(config.web3Provider);
+    this._eth = new Web3(config.web3Provider);
     this._web3 = web3;
     this.setupAccount();
   }
@@ -26,7 +26,12 @@ class MetaMaskIdentity {
 
   async signData(sha3Message) {
     const address = await this.getAddress();
-    return this._eth.personal_sign(sha3Message, address);
+    const { ethereum } = window;
+
+    return ethereum.request({
+      method: 'personal_sign',
+      params: [sha3Message, address],
+})
   }
 
   async sendTransaction(transactionObject) {
@@ -36,12 +41,12 @@ class MetaMaskIdentity {
         reject(error);
       })
         .once(blockChainEvents.CONFIRMATION, async (_confirmationNumber, receipt) => {
-          if(receipt.status) {
-            resolve(receipt);
+          if(_confirmationNumber.receipt.status) {
+            resolve(_confirmationNumber.receipt);
           } else {
-            reject(receipt);
+            reject(_confirmationNumber.receipt);
           }
-          await method.off();
+          // await method.off();
         });
     });
   }

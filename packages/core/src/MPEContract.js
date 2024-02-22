@@ -210,11 +210,13 @@ class MPEContract {
     logger.debug(`Fetching all payment channel open events starting at block: ${fromBlock}`, { tags: ['MPE'] });
 
     const address = await account.getAddress();
+    const decodedData = Buffer.from(service.group.group_id, 'base64').toString('hex');
+    const groupId = `0x${decodedData}`;
     const options = {
       filter: {
         sender: address,
         recipient: service.group.payment_address,
-        groupId: service.group.group_id_in_bytes,
+        groupId,
       },
       fromBlock,
       toBlock: 'latest',

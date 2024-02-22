@@ -5,6 +5,7 @@ import Account from './Account';
 import MPEContract from './MPEContract';
 import logger from './utils/logger';
 import IPFSMetadataProvider from './IPFSMetadataProvider';
+import { DefaultPaymentStrategy } from '../../payment_strategies';
 
 const DEFAULT_CONFIG = {
   defaultGasLimit: 210000,
