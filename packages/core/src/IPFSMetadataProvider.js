@@ -58,7 +58,8 @@ export default class IPFSMetadataProvider {
       const response = await get(fetchUrl);
       return response.data;
     } catch(error) {
-      throw new Error('Error fetching data from IPFS');
+      logger.debug(`Error fetching metadata from IPFS[CID: ${ipfsCID}]`);
+      throw error;
     }
   }
 
