@@ -30,7 +30,7 @@
   "dependencies": {
     "@ethereumjs/tx": "^5.2.1",
     "@grpc/grpc-js": "^1.10.0",
-    "axios": "^1.6.7",
+    "axios": "^0.28.0",
     "bignumber.js": "^9.1.2",
     "es6-promise": "^4.2.8",
     "lodash": "latest",
