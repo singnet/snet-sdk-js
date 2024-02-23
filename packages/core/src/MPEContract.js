@@ -230,7 +230,8 @@ class MPEContract {
 
   async _fundEscrowAccount(account, amountInCogs) {
     const address = await account.getAddress();
-    const currentEscrowBalance = await this.balance(address);
+    let currentEscrowBalance = await this.balance(address);
+    currentEscrowBalance = toBNString(currentEscrowBalance);
     if(amountInCogs > currentEscrowBalance) {
       await account.depositToEscrowAccount(amountInCogs - currentEscrowBalance);
     }
