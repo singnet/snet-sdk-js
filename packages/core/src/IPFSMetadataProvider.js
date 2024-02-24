@@ -1,8 +1,8 @@
 import { find, map } from 'lodash';
 import url from 'url';
-import IPFSClient from 'ipfs-http-client';
 import RegistryNetworks from 'singularitynet-platform-contracts/networks/Registry.json';
 import RegistryAbi from 'singularitynet-platform-contracts/abi/Registry.json';
+import { get } from 'axios';
 
 import logger from './utils/logger';
 
@@ -11,7 +11,6 @@ export default class IPFSMetadataProvider {
     this._web3 = web3;
     this._networkId = networkId;
     this._ipfsEndpoint = ipfsEndpoint;
-    this._ipfsClient = this._constructIpfsClient();
     const registryAddress = RegistryNetworks[this._networkId].address;
     this._registryContract = new this._web3.eth.Contract(RegistryAbi, registryAddress);
   }
@@ -23,8 +22,12 @@ export default class IPFSMetadataProvider {
    */
   async metadata(orgId, serviceId) {
     logger.debug(`Fetching service metadata [org: ${orgId} | service: ${serviceId}]`);
-    const orgIdBytes = this._web3.utils.fromAscii(orgId);
-    const serviceIdBytes = this._web3.utils.fromAscii(serviceId);
+    let orgIdBytes = this._web3.utils.fromAscii(orgId);
+    orgIdBytes = orgIdBytes.padEnd(66, '0'); // 66 = '0x' + 64 hex characters
+
+    let serviceIdBytes = this._web3.utils.fromAscii(serviceId);
+    serviceIdBytes = serviceIdBytes.padEnd(66, '0'); // 66 = '0x' + 64 hex characters
+
     const orgMetadata = await this._fetchOrgMetadata(orgIdBytes);
     const serviceMetadata = await this._fetchServiceMetadata(orgIdBytes, serviceIdBytes);
     return Promise.resolve(this._enhanceServiceGroupDetails(serviceMetadata, orgMetadata));
@@ -47,10 +50,16 @@ export default class IPFSMetadataProvider {
   }
 
   async _fetchMetadataFromIpfs(metadataURI) {
-    const ipfsCID = `${this._web3.utils.hexToUtf8(metadataURI).substring(7)}`;
+    let ipfsCID = `${this._web3.utils.hexToUtf8(metadataURI).substring(7)}`;
+    ipfsCID = ipfsCID.replace(/\0/g, '');
     logger.debug(`Fetching metadata from IPFS[CID: ${ipfsCID}]`);
-    const data = await this._ipfsClient.cat(ipfsCID);
-    return JSON.parse(data.toString());
+    try {
+      const fetchUrl = `${this._ipfsEndpoint}/api/v0/cat?arg=${ipfsCID}`;
+      const response = await get(fetchUrl);
+      return response.data;
+    } catch(error) {
+      throw new Error('Error fetching data from IPFS');
+    }
   }
 
   _enhanceServiceGroupDetails(serviceMetadata, orgMetadata) {

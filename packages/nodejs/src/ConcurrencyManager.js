@@ -1,6 +1,7 @@
-import grpc from 'grpc';
+import * as grpc from '@grpc/grpc-js';
 import { logger } from './core';
 import services from './proto/token_service_grpc_pb';
+import { toBNString } from './core/src/utils/bignumber_helper';
 
 class ConcurrencyManager {
   constructor(concurrentCalls = 1, serviceClient) {
@@ -66,7 +67,7 @@ class ConcurrencyManager {
     request.setCurrentNonce(parseInt(nonce, 10));
     request.setSignedAmount(amount);
     request.setSignature(tokenSignature);
-    request.setCurrentBlock(currentBlockNumber);
+    request.setCurrentBlock(toBNString(currentBlockNumber));
     request.setClaimSignature(mpeSignature);
     return request;
   }
