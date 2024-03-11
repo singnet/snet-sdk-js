@@ -16,7 +16,9 @@ class RegistryContract {
   _toPaddedHex(string, bit = 64) {
     const hex = this._web3.utils.fromAscii(string);
     const hexLength = hex.length;
-    const paddedHex = hex.padEnd((bit * (Math.floor(hexLength / bit) + 1) + 2), '0');
+    const additionalBit = 2; // Due 0x prepend
+    if(hexLength === (bit + additionalBit)) return hex
+    const paddedHex = hex.padEnd((bit * (Math.floor(hexLength / bit) + 1) + additionalBit), '0');
     return paddedHex;
   }
 
