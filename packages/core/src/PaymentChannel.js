@@ -2,6 +2,7 @@ import BigNumber from 'bignumber.js';
 import isEmpty from 'lodash/isEmpty';
 
 import logger from './utils/logger';
+import { toBNString } from './utils/bignumber_helper';
 
 class PaymentChannel {
   /**
@@ -83,7 +84,7 @@ class PaymentChannel {
     const currentState = await this._currentChannelState();
     const { currentSignedAmount, nonce: currentNonce } = currentState;
     const { nonce, expiration: expiry, value: amountDeposited } = latestChannelInfoOnBlockchain;
-    const availableAmount = amountDeposited - currentSignedAmount;
+    const availableAmount = toBNString(amountDeposited) - toBNString(currentSignedAmount);
     this._state = {
       nonce: nonce.toString(),
       currentNonce,

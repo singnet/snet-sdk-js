@@ -1,4 +1,4 @@
-import grpc, { InterceptingCall } from 'grpc';
+import * as grpc from '@grpc/grpc-js';
 import { BaseServiceClient, logger } from './sdk-core';
 import { PaymentChannelStateServiceClient } from './proto/state_service_grpc_pb';
 import ConcurrencyManager from './ConcurrencyManager';
@@ -81,7 +81,7 @@ class ServiceClient extends BaseServiceClient {
           next(metadata, listener);
         },
       };
-      return new InterceptingCall(nextCall(options), requester);
+      return new grpc.InterceptingCall(nextCall(options), requester);
     };
   }
 

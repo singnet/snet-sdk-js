@@ -1,4 +1,5 @@
-import { logger } from './core';
+import { logger } from './sdk-core';
+import { toBNString } from './core/src/utils/bignumber_helper';
 import { TokenService, TokenServiceClient } from './proto/token_service_pb_service';
 
 class ConcurrencyManager {
@@ -50,7 +51,7 @@ class ConcurrencyManager {
     request.setCurrentNonce(parseInt(nonce, 10));
     request.setSignedAmount(amount);
     request.setSignature(tokenSignature);
-    request.setCurrentBlock(currentBlockNumber);
+    request.setCurrentBlock(toBNString(currentBlockNumber));
     request.setClaimSignature(mpeSignature);
     return request;
   }

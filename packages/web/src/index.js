@@ -1,4 +1,5 @@
 import WebSdk from './WebSdk';
+import './utils/logger';
 export default WebSdk;
 
 export * from './sdk-core';

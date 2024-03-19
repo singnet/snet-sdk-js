@@ -11,6 +11,59 @@ These instructions are for the development and use of the SingularityNET SDK for
 ```bash
 npm install snet-sdk-web
 ```
+
+If you are using `create-react-app` then require Node.js polyfills for browser compatibility, To add these polyfills, you can use the `config-overrides.js` file with `react-app-rewired`. This approach allows you to customize the Webpack configuration without ejecting from `create-react-app`.
+
+Install **react-app-rewired** into your application
+```bash
+npm install --save-dev react-app-rewired
+```
+Install the necessary polyfill packages
+```bash
+npm install --save-dev buffer process os-browserify url
+```
+Create **config-overrides.js** in the root of your project with the content:
+```javascript
+const webpack = require("webpack");
+
+module.exports = function override(config) {
+  const fallback = config.resolve.fallback || {};
+  Object.assign(fallback, {
+    os: require.resolve("os-browserify"),
+    url: require.resolve("url"),
+  });
+  config.resolve.fallback = fallback;
+  config.plugins = (config.plugins || []).concat([
+    new webpack.ProvidePlugin({
+      process: "process/browser",
+      Buffer: ["buffer", "Buffer"]
+    }),
+  ]);
+  config.ignoreWarnings = [/Failed to parse source map/];
+  config.module.rules.push({
+    test: /\.(js|mjs|jsx)$/,
+    enforce: "pre",
+    loader: require.resolve("source-map-loader"),
+    resolve: {
+      fullySpecified: false,
+    },
+  });
+  return config;
+};
+```
+Update your **package.json** scripts to use **react-app-rewired** instead of **react-scripts**.
+
+```json
+{
+  "scripts": {
+    "start": "react-app-rewired start",
+    "build": "react-app-rewired build",
+    "test": "react-app-rewired test",
+    "eject": "react-scripts eject"
+  }
+}
+```
+
 ### Usage
 
 The SingularityNET SDK allows you to import compiled client libraries for your service or services of choice and make calls to those services programmatically from your application by setting up state channels with the providers of those services and making gRPC calls to the SingularityNET daemons for those services by selecting a channel with sufficient funding and supplying the appropriate metadata for authentication.
