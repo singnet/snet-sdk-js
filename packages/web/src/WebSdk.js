@@ -1,4 +1,4 @@
-import SnetSDK, { MetaMaskIdentity } from './sdk-core';
+import SnetSDK, { WalletRPCIdentity } from './sdk-core';
 import WebServiceClient from './WebServiceClient';
 import RegistryContract from './RegistryContract';
 
@@ -23,7 +23,7 @@ class WebSdk extends SnetSDK {
   }
 
   _createIdentity() {
-    return new MetaMaskIdentity(this._config, this._web3);
+    return new WalletRPCIdentity(this._config, this._web3);
   }
 
   async setupAccount() {
