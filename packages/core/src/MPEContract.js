@@ -2,7 +2,7 @@ import MPEAbi from 'singularitynet-platform-contracts/abi/MultiPartyEscrow';
 import MPENetworks from 'singularitynet-platform-contracts/networks/MultiPartyEscrow';
 import { BigNumber } from 'bignumber.js';
 import { map } from 'lodash';
-
+import Web3 from 'web3';
 import PaymentChannel from './PaymentChannel';
 import logger from './utils/logger';
 import { toBNString } from './utils/bignumber_helper';
@@ -12,9 +12,10 @@ class MPEContract {
    * @param {Web3} web3
    * @param {number} networkId
    */
-  constructor(web3, networkId) {
+  constructor(web3, networkId, rpcEndpoint) {
     this._web3 = web3;
     this._networkId = networkId;
+    this.rpcEndpoint = rpcEndpoint;
     this._contract = new this._web3.eth.Contract(MPEAbi, MPENetworks[networkId].address);
   }
 
@@ -207,6 +208,11 @@ class MPEContract {
    */
   async getPastOpenChannels(account, service, startingBlockNumber) {
     const fromBlock = startingBlockNumber || await this._deploymentBlockNumber();
+    let contract = this._contract;
+    if(this.rpcEndpoint) {
+      const _web3 = new Web3(this.rpcEndpoint);
+      contract = new _web3.eth.Contract(MPEAbi, MPENetworks[this._networkId].address);
+    }
     logger.debug(`Fetching all payment channel open events starting at block: ${fromBlock}`, { tags: ['MPE'] });
 
     const address = await account.getAddress();
@@ -221,7 +227,7 @@ class MPEContract {
       fromBlock,
       toBlock: 'latest',
     };
-    const channelsOpened = await this.contract.getPastEvents('ChannelOpen', options);
+    const channelsOpened = await contract.getPastEvents('ChannelOpen', options);
     return map(channelsOpened, (channelOpenEvent) => {
       const { channelId } = channelOpenEvent.returnValues;
       return new PaymentChannel(channelId, this._web3, account, service, this);

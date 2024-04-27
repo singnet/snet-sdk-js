@@ -30,7 +30,9 @@ class SnetSDK {
     this._networkId = config.networkId;
     this._web3 = new Web3(config.web3Provider, null, options);
     const identity = this._createIdentity();
-    this._mpeContract = new MPEContract(this._web3, this._networkId);
+    // Some RPCs have a block size limit of 5000, but for the getPastEvents/log function, we need a higher limit. So this parameter will be used in getPastOpenChannels function at packages/core/src/MPEContract.js
+    const rpcEndpoint = config.rpcEndpoint;
+    this._mpeContract = new MPEContract(this._web3, this._networkId, rpcEndpoint);
     this._account = new Account(this._web3, this._networkId, this._mpeContract, identity);
     this._metadataProvider = metadataProvider || new IPFSMetadataProvider(this._web3, this._networkId, this._config.ipfsEndpoint);
   }
