@@ -7,10 +7,73 @@ SingularityNET SDK for Browser (Web)
 ## Getting Started
 
 These instructions are for the development and use of the SingularityNET SDK for JavaScript on web platform like browsers.
+
 ### Installation
+
 ```bash
 npm install snet-sdk-web
 ```
+
+**Note:** This SDK requires Node.js version 18 or higher and `react-scripts` version 5.0.1 or higher for optimal functionality and compatibility.
+
+If you are using `create-react-app` then require Node.js polyfills for browser compatibility, To add these polyfills, you can use the `config-overrides.js` file with `react-app-rewired`. This approach allows you to customize the Webpack configuration without ejecting from `create-react-app`.
+
+Install **react-app-rewired** into your application
+
+```bash
+npm install --save-dev react-app-rewired
+```
+
+Install the necessary polyfill packages
+
+```bash
+npm install --save-dev buffer process os-browserify url
+```
+
+Create **config-overrides.js** in the root of your project with the content:
+
+```javascript
+const webpack = require("webpack");
+
+module.exports = function override(config) {
+  const fallback = config.resolve.fallback || {};
+  Object.assign(fallback, {
+    os: require.resolve("os-browserify"),
+    url: require.resolve("url"),
+  });
+  config.resolve.fallback = fallback;
+  config.plugins = (config.plugins || []).concat([
+    new webpack.ProvidePlugin({
+      process: "process/browser",
+      Buffer: ["buffer", "Buffer"],
+    }),
+  ]);
+  config.ignoreWarnings = [/Failed to parse source map/];
+  config.module.rules.push({
+    test: /\.(js|mjs|jsx)$/,
+    enforce: "pre",
+    loader: require.resolve("source-map-loader"),
+    resolve: {
+      fullySpecified: false,
+    },
+  });
+  return config;
+};
+```
+
+Update your **package.json** scripts to use **react-app-rewired** instead of **react-scripts**.
+
+```json
+{
+  "scripts": {
+    "start": "react-app-rewired start",
+    "build": "react-app-rewired build",
+    "test": "react-app-rewired test",
+    "eject": "react-scripts eject"
+  }
+}
+```
+
 ### Usage
 
 The SingularityNET SDK allows you to import compiled client libraries for your service or services of choice and make calls to those services programmatically from your application by setting up state channels with the providers of those services and making gRPC calls to the SingularityNET daemons for those services by selecting a channel with sufficient funding and supplying the appropriate metadata for authentication.
@@ -22,6 +85,24 @@ import config from "./config";
 
 const sdk = new SnetSDK(config);
 ```
+
+You can find a sample config below
+
+```json
+{
+  "web3Provider": window.web3.currentProvider,
+  "networkId": "3",
+  "ipfsEndpoint": "http://ipfs.organization.io:80",
+  "defaultGasPrice": "4700000",
+  "defaultGasLimit": "210000",
+  "rpcEndpoint": "https://ropsten.infura.io/v3/1234567890"
+}
+
+```
+
+**Note:** `rpcEndpoint` is optional, you should provide this if you are getting block size limit exceeded error. This is usually happens when you are using any web social auth providers.
+
+**Debugging Tip:** To view debug logs, enable verbose mode in your browser's developer console.
 
 Now, the instance of the sdk can be used to instantiate clients for SingularityNET services. To interact with those services, the sdk needs to be supplied with the compiled gRPC client libraries.
 
@@ -38,8 +119,10 @@ import { <Message> } from  '<path_to_grpc_message_file>'
 const  client = sdk.createServiceClient("<org_id>", "<service_id>")
 
 ```
+
 This generates a service client which can be used to make gRPC calls to the desired service.
 You can then invoke service specific calls as follows
+
 ```javascript
 client.invoke(<ServiceName>.<MethodName>, <InvokeRpcOptions>);
 ```

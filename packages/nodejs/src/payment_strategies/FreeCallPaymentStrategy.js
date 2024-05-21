@@ -1,6 +1,7 @@
-import grpc from 'grpc';
+import * as grpc  from '@grpc/grpc-js';
 import services from '../proto/state_service_grpc_pb';
 import { logger, EncodingUtils } from '../sdk-core';
+import { toBNString } from '../core/src/utils/bignumber_helper';
 
 class FreeCallPaymentStrategy {
   constructor(serviceClient) {
@@ -126,7 +127,7 @@ class FreeCallPaymentStrategy {
     const currentBlockNumber = await this._serviceClient.getCurrentBlockNumber();
     const signature = await this._generateSignature(currentBlockNumber);
     return {
-      userId: email, tokenForFreeCall: tokenToMakeFreeCall, tokenExpiryDateBlock, signature, currentBlockNumber,
+      userId: email, tokenForFreeCall: tokenToMakeFreeCall, tokenExpiryDateBlock, signature, currentBlockNumber: toBNString(currentBlockNumber)
     };
   }
 

@@ -16,4 +16,5 @@ const combinedLogger = new transports.File({
   level: 'info'
 });
 
+logger.add(new transports.Console({ level : 'debug'}));
 logger.add(combinedLogger).add(errorLogger);

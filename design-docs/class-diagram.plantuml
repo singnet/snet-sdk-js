@@ -137,17 +137,17 @@ PrivateKeyIdentity o-- Web3
 
 Identity <|-- PrivateKeyIdentity
 
-class MetaMaskIdentity {
+class WalletRPCIdentity {
   + address(): String
   + signData(sha3Message): Bytes
   + sendTransaction(transactionObject): String
   + setupAccount()
 }
 
-MetaMaskIdentity o-- Configuration
-MetaMaskIdentity o-- Web3
+WalletRPCIdentity o-- Configuration
+WalletRPCIdentity o-- Web3
 
-Identity <|-- MetaMaskIdentity
+Identity <|-- WalletRPCIdentity
 
 interface PaymentChannelManagementStrategy {
   + selectChannel(ServiceClient serviceClient): PaymentChannel
