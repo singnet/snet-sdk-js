@@ -441,7 +441,7 @@ class BaseServiceClient {
   async defaultChannelExpiration() {
     const currentBlockNumber = await this._web3.eth.getBlockNumber();
     const paymentExpirationThreshold = this._getPaymentExpiryThreshold();
-    return currentBlockNumber + paymentExpirationThreshold;
+    return toBNString(currentBlockNumber) + paymentExpirationThreshold;
   }
 
   _getPaymentExpiryThreshold() {
@@ -470,15 +470,15 @@ class BaseServiceClient {
 
   async _channelStateRequest(channelId) {
     const { currentBlockNumber, signatureBytes } =
-      await this._channelStateRequestProperties(channelId);
+      await this._channelStateRequestProperties(toBNString(channelId));
     const channelIdBytes = Buffer.alloc(4);
-    channelIdBytes.writeUInt32BE(channelId, 0);
+    channelIdBytes.writeUInt32BE(toBNString(channelId), 0);
 
     const ChannelStateRequest = this._getChannelStateRequestMethodDescriptor();
     const channelStateRequest = new ChannelStateRequest();
     channelStateRequest.setChannelId(channelIdBytes);
     channelStateRequest.setSignature(signatureBytes);
-    channelStateRequest.setCurrentBlock(currentBlockNumber);
+    channelStateRequest.setCurrentBlock(toBNString(currentBlockNumber));
     return channelStateRequest;
   }
 
