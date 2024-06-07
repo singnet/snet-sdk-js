@@ -18,9 +18,9 @@ jobs:
       - name: snet-sdk for node.js
         run: |
           cd packages/nodejs
-          npm run build
+          npm install .
 
       - name: snet-sdk for web
         run: |
           cd packages/web
-          npm run build
+          npm install .
