@@ -6,6 +6,11 @@ SingularityNET SDK for Node.js
 ## Getting Started  
   
 These instructions are for the development and use of the SingularityNET SDK for JavaScript on Node.js platform.
+
+### Node.js and npm Requirements
+
+This package requires **Node.js version 18** or higher and **npm version 8** or higher. Please ensure these versions are installed on your system before using this package.
+
 ### Installation
 ```bash
 npm install snet-sdk
