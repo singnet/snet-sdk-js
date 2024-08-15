@@ -29,15 +29,24 @@ You can find a sample config below
 
 ```json
 {
-  "web3Provider": "https://ropsten.infura.io/v3/1234567890",
+  "web3Provider": "",
   "privateKey": "",
-  "signerPrivateKey": "",
-  "networkId": "3",
-  "ipfsEndpoint": "http://ipfs.organization.io:80",
+  "networkId": "",
+  "ipfsEndpoint": "https://ipfs.singularitynet.io",
   "defaultGasPrice": "4700000",
   "defaultGasLimit": "210000"
 }
 ```
+
+| **Key**            | **Description**                                                          |
+|--------------------|--------------------------------------------------------------------------|
+| `web3Provider`     | The URL of the Web3 provider, used to interact with the Ethereum network.|
+| `privateKey`       | The private key of the Ethereum account used for signing transactions. |
+| `networkId`        | The ID of the Ethereum network to connect to. (1,5 or 11155111)|
+| `ipfsEndpoint`     | The endpoint for connecting to an SingularityNet IPFS node|
+| `defaultGasPrice`  | The gas price (in wei) to be used for transactions.|
+| `defaultGasLimit`  | The gas limit to be set for transactions.|
+
 
 Now, the instance of the sdk can be used to instantiate clients for SingularityNET services. To interact with those services, the sdk needs to be supplied with the compiled gRPC client libraries.
   
@@ -48,16 +57,54 @@ Once you have the CLI installed, run the following command:
 $ snet sdk generate-client-library nodejs <org_id> <service_id>
 ```
 Optionally, you can specify an output path; otherwise it's going to be `./client_libraries/nodejs/<hash>/<org_id>/<service_id>`
+
 Once you have the generated gRPC client libraries, you can create an instance of a SingularityNET service client:
 ```javascript
-import services from '<path_to_grpc_service_file>'
-import messages from '<path_to_grpc_message_file>'
-const client = sdk.createServiceClient("<org_id>", "<service_id>", "<services.<ClientStub>>")
+const SnetSDK = require('snet-sdk');
+// Load the configuration file
+const config = require('./config.json');
+// Import the generated gRPC client library for the specific service
+const grpc = require('./testnet/PCR_grpc_pb.js')
+
+const sdk = new SnetSDK.default(config);
+const client = await sdk.createServiceClient("<org_id>", "<service_id>", grpc.PCRClient)
 ```
 This generates a service client which can be used to make gRPC calls to the desired service.
 You can then invoke service specific calls as follows
 ```javascript
-client.service.<methodName>(<gRPC.message>, callback);
+const methodDescriptor = grpc.PCRService.<methodName>;
+const request = new methodDescriptor.requestType();
+request.setData("<message>");
+client.service.<methodName>(<gRPC.message>, (err, result) => {
+    // Callback receives two parameters: err and result
+});
+```
+
+#### Full Example of a Function Call
+Here’s a complete example demonstrating how to call a service method:
+```javascript
+const SnetSDK = require('snet-sdk');
+const config = require('./config.json');
+const grpc = require('./testnet/PCR_grpc_pb.js')
+
+function parseResponse(err, result) {
+    if (err) {
+        console.log("GRPC call failed");
+        console.error(err);
+    } else {
+        console.log("Result:", result.toString());
+        console.log("<---------->");
+    }
+}
+
+async function test() {
+    const sdk = new SnetSDK.default(config);
+    const client = await sdk.createServiceClient("<org_id>", "<service_id>", grpc.PCRClient)
+    const methodDescriptor = grpc.PCRService.t2t;
+    const request = new methodDescriptor.requestType();
+    request.setData("<message>");
+    await client.service.t2t(request, parseResponse);
+}
 ```
 ---
 
