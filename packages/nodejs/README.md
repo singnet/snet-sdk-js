@@ -38,11 +38,11 @@ You can find a sample config below
 }
 ```
 
-| **Key**            | **Description**                                                          |
-|--------------------|--------------------------------------------------------------------------|
+| **Key**            | **Description**                                                                           |
+|--------------------|-------------------------------------------------------------------------------------------|
 | `web3Provider`     | The URL of the Web3 provider, used to interact with the Ethereum network.|
-| `privateKey`       | The private key of the Ethereum account used for signing transactions. |
-| `networkId`        | The ID of the Ethereum network to connect to. (1,5 or 11155111)|
+| `privateKey`       | The private key of the Ethereum account used for signing transactions. Must start with 0x |
+| `networkId`        | The ID of the Ethereum network to connect to. (1 for Mainnet or 11155111 for Sepolia)|
 | `ipfsEndpoint`     | The endpoint for connecting to an SingularityNet IPFS node|
 | `defaultGasPrice`  | The gas price (in wei) to be used for transactions.|
 | `defaultGasLimit`  | The gas limit to be set for transactions.|
@@ -62,9 +62,9 @@ Once you have the generated gRPC client libraries, you can create an instance of
 ```javascript
 const SnetSDK = require('snet-sdk');
 // Load the configuration file
-const config = require('./config.json');
+const config = require('<path_to_config_file>');
 // Import the generated gRPC client library for the specific service
-const grpc = require('./testnet/PCR_grpc_pb.js')
+const grpc = require('<path_to_generated_grpc_js_file>');
 
 const sdk = new SnetSDK.default(config);
 const client = await sdk.createServiceClient("<org_id>", "<service_id>", grpc.PCRClient)
@@ -84,8 +84,8 @@ client.service.<methodName>(<gRPC.message>, (err, result) => {
 Here’s a complete example demonstrating how to call a service method:
 ```javascript
 const SnetSDK = require('snet-sdk');
-const config = require('./config.json');
-const grpc = require('./testnet/PCR_grpc_pb.js')
+const config = require('<path_to_config_file>');
+const grpc = require('<path_to_generated_grpc_js_file>');
 
 function parseResponse(err, result) {
     if (err) {
