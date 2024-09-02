@@ -74,7 +74,7 @@ You can then invoke service specific calls as follows
 ```javascript
 const methodDescriptor = grpc.PCRService.<methodName>;
 const request = new methodDescriptor.requestType();
-request.setData("<message>");
+request.<serviceSetMethod>("<message>");
 client.service.<methodName>(<gRPC.message>, (err, result) => {
     // Callback receives two parameters: err and result
 });
@@ -100,10 +100,10 @@ function parseResponse(err, result) {
 async function test() {
     const sdk = new SnetSDK.default(config);
     const client = await sdk.createServiceClient("<org_id>", "<service_id>", grpc.PCRClient)
-    const methodDescriptor = grpc.PCRService.t2t;
+    const methodDescriptor = grpc.PCRService.<serviceMethod>;
     const request = new methodDescriptor.requestType();
-    request.setData("<message>");
-    await client.service.t2t(request, parseResponse);
+    request.<serviceSetMethod>("<message>");
+    await client.service.<serviceMethod>(request, parseResponse);
 }
 ```
 ---
