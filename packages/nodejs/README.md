@@ -67,12 +67,12 @@ const config = require('<path_to_config_file>');
 const grpc = require('<path_to_generated_grpc_js_file>');
 
 const sdk = new SnetSDK.default(config);
-const client = await sdk.createServiceClient("<org_id>", "<service_id>", grpc.PCRClient)
+const client = await sdk.createServiceClient("<org_id>", "<service_id>", grpc.<ClientStub>)
 ```
 This generates a service client which can be used to make gRPC calls to the desired service.
 You can then invoke service specific calls as follows
 ```javascript
-const methodDescriptor = grpc.PCRService.<methodName>;
+const methodDescriptor = grpc.<ServiceStub>.<methodName>;
 const request = new methodDescriptor.requestType();
 request.<serviceSetMethod>("<message>");
 client.service.<methodName>(<gRPC.message>, (err, result) => {
@@ -99,8 +99,8 @@ function parseResponse(err, result) {
 
 async function test() {
     const sdk = new SnetSDK.default(config);
-    const client = await sdk.createServiceClient("<org_id>", "<service_id>", grpc.PCRClient)
-    const methodDescriptor = grpc.PCRService.<serviceMethod>;
+    const client = await sdk.createServiceClient("<org_id>", "<service_id>", grpc.<ClientStub>)
+    const methodDescriptor = grpc.<ServiceStub>.<serviceMethod>;
     const request = new methodDescriptor.requestType();
     request.<serviceSetMethod>("<message>");
     await client.service.<serviceMethod>(request, parseResponse);

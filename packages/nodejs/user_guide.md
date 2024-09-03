@@ -89,13 +89,13 @@ const config = require('./config'); // Adjust path as necessary
 const grpc = require('./path_to_generated_grpc_js_file'); // Adjust path as necessary
 
 const sdk = new SnetSDK.default(config);
-const client = await sdk.createServiceClient("<org_id>", "<service_id>", grpc.PCRClient);
+const client = await sdk.createServiceClient("<org_id>", "<service_id>", grpc.<ClientStub>);
 ```
 
 3. **Make Service Calls:**: Use the service client to make calls to the SingularityNET service.
 
 ```javascript
-const methodDescriptor = grpc.PCRService.<methodName>;
+const methodDescriptor = grpc.<ServiceStub>.<methodName>;
 const request = new methodDescriptor.requestType();
 request.<serviceSetMethod>("<message>");
 
