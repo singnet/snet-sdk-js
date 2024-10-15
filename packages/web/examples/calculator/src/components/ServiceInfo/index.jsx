@@ -6,7 +6,7 @@ const ServiceInfo = ({serviceClient}) => {
     if (!serviceClient) {
         return <div className="loader"><Loader isLoading={true} /></div>
     }
-    const metadata = serviceClient._metadata;
+    const metadata = serviceClient.metadata;
 
     return (
         <div className="service-info-container">

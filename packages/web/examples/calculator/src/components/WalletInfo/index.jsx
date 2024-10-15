@@ -21,7 +21,7 @@ const WalletInfo = () => {
 
     return (
         <div className="wallet-info">
-            <button onClick={getWalletInfoFromSDK}>Connect metamask</button>
+            <button onClick={getWalletInfoFromSDK}>Get wallet info</button>
             <Loader isLoading={isLoading} />
             {address && balance &&
             <table className="wallet-info-table">
