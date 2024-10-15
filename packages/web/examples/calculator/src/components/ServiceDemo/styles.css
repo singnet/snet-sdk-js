@@ -1,0 +1,11 @@
+.service-input, .service-output {
+    width: 100%;
+    display: flex;
+    gap: 5%;
+    align-items: center;
+}
+
+.service-output {
+  font-size: 18px;
+  font-weight: 500;
+}

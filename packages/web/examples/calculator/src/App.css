@@ -1,0 +1,52 @@
+.App {
+  font-size: 16px;
+}
+
+:root {
+  --accent-color: rgb(37 89 196);
+}
+
+input, select {
+  width: 100%;
+  border: 1px solid var(--accent-color);
+}
+
+button, input, select {
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button {
+  border: 1px solid var(--accent-color);
+  background: rgb(37, 89, 196, 0.1);
+}
+
+td, th {
+  text-align: left;
+  padding: 3px;
+}
+
+.service-container {
+  margin: 0 auto;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+}
+
+.service-input {
+  width: 100%;
+  display: flex;
+  gap: 5%;
+  align-items: center;
+}
+
+.service-info {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5%;
+  align-items: start;
+}
