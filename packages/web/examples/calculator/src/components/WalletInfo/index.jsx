@@ -2,7 +2,7 @@ import { useState } from "react";
 import { getWalletInfo } from "../../helperFunctions/sdkCallFunctions";
 import { cogsToAgix, tokenName } from "../../helperFunctions/priceHelpers";
 import "./styles.css";
-import Loader from "../Loader";
+import Loader from "../Loader/index.jsx";
 
 const WalletInfo = () => {
     const [address, setAddress] = useState('');
@@ -17,7 +17,13 @@ const WalletInfo = () => {
         setBalance(cogsToAgix(balance))
         setTransactionCount(transactionCount);
         setIsLoading(false);
-      }
+    }
+
+    const walletInfoMeta = [
+        { title: "address", value: address },
+        { title: "balance", value: balance + " " + tokenName },
+        { title: "transactions", value: transactionCount },
+    ]
 
     return (
         <div className="wallet-info">
@@ -26,18 +32,11 @@ const WalletInfo = () => {
             {address && balance &&
             <table className="wallet-info-table">
                 <tbody>
-                    <tr>
-                        <th scope="row">address</th>
-                        <td>{address}</td>
-                    </tr>
-                    <tr>
-                        <th scope="row">balance</th>
-                        <td>{balance}{tokenName}</td>
-                    </tr>
-                    <tr>
-                        <th scope="row">transactions</th>
-                        <td>{transactionCount}</td>
-                    </tr>
+                    {walletInfoMeta.map(infoRow =>
+                    <tr key={infoRow.title}>
+                        <th scope="row">{infoRow.title}</th>
+                        <td>{infoRow.value}</td>
+                    </tr>)}
                 </tbody>
             </table>}
         </div>

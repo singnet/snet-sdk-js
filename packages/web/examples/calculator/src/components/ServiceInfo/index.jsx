@@ -1,5 +1,5 @@
 import { cogsToAgix, tokenName } from "../../helperFunctions/priceHelpers";
-import Loader from "../Loader";
+import Loader from "../Loader/index.jsx";
 import "./styles.css";
 
 const ServiceInfo = ({serviceClient}) => {
@@ -7,6 +7,16 @@ const ServiceInfo = ({serviceClient}) => {
         return <div className="loader"><Loader isLoading={true} /></div>
     }
     const metadata = serviceClient.metadata;
+    const group = serviceClient.group;
+
+    const generatePriceInfoMeta = (priceInfo) => {
+        return [
+            { title: "free calls", value: group.free_calls},
+            { title: "pricing model", value: priceInfo.price_model },
+            { title: "is default", value: String(priceInfo.default) },
+            { title: "price", value: cogsToAgix(priceInfo.price_in_cogs) + " " + tokenName }
+        ]
+    }
 
     return (
         <div className="service-info-container">
@@ -19,33 +29,24 @@ const ServiceInfo = ({serviceClient}) => {
                 <h2>{metadata.display_name}</h2>
             </div>
             <div className="groups-container">
-            {metadata.groups.map(group =>
-                <div key={group.group_id} className="service-image-container">
+                <div className="service-image-container">
                     <h3>{group.group_name}:</h3>
-                    {group.pricing.map(price =>
-                        <table className="pricing-info-table" key={price.price_model}>
-                            <tbody>
-                                <tr>
-                                    <th scope="row">free calls</th>
-                                    <td>{group.free_calls}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">pricing model</th>
-                                    <td>{price.price_model}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">is default</th>
-                                    <td>{String(price.default)}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">price</th>
-                                    <td>{cogsToAgix(price.price_in_cogs)}{tokenName}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    )}
+                    {group.pricing.map(price =>{
+                        const priceInfoMeta = generatePriceInfoMeta(price);
+                        return (
+                            <table className="pricing-info-table" key={price.price_model}>
+                                <tbody>
+                                    {priceInfoMeta.map(priceRow => 
+                                        <tr key={priceRow.title}>
+                                            <th scope="row">{priceRow.title}</th>
+                                            <td>{priceRow.value}</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        )
+                    })}
                 </div>
-            )}
             </div>
         </div>
     )

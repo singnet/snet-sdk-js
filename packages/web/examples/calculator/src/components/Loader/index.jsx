@@ -2,7 +2,7 @@ import "./styles.css";
 
 const Loader = ({isLoading}) => {
     if (!isLoading) {
-        return
+        return null;
     }
     return (
         <div className="loader-container">
