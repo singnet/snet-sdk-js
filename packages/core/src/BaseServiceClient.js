@@ -84,8 +84,58 @@ class BaseServiceClient {
         return this._options.concurrency;
     }
 
+    async getModelStatus(params) {
+        const request = await this._trainingStatusStateRequest(params);
+
+        return new Promise((resolve, reject) => {
+            this._modelServiceClient.get_model_status(
+                request,
+                (err, response) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        const modelStatus = response.getStatus();
+                        resolve(modelStatus);
+                    }
+                }
+            );
+        });
+    }
+
+    async _trainingStatusStateRequest(params) {
+        const message = '__get_model_status';
+        const { currentBlockNumber, signatureBytes } =
+            await this._requestSignForModel(params.address, message);
+
+        const ModelStateRequest = this._getUpdateModelRequestMethodDescriptor();
+        const modelStateRequest = new ModelStateRequest();
+
+        const ModelDetailsRequest =
+            this._getModelDetailsRequestMethodDescriptor();
+        const modelDetailsRequest = new ModelDetailsRequest();
+
+        modelDetailsRequest.setModelId(params.modelId);
+        modelDetailsRequest.setGrpcMethodName(params.method);
+        modelDetailsRequest.setGrpcServiceName(params.name);
+
+        const AuthorizationRequest =
+            this._getAuthorizationRequestMethodDescriptor();
+        const authorizationRequest = new AuthorizationRequest();
+
+        authorizationRequest.setCurrentBlock(Number(currentBlockNumber));
+        authorizationRequest.setMessage(message);
+        authorizationRequest.setSignature(signatureBytes);
+        authorizationRequest.setSignerAddress(params.address);
+
+        modelStateRequest.setAuthorization(authorizationRequest);
+        modelStateRequest.setUpdateModelDetails(modelDetailsRequest);
+        return modelStateRequest;
+    }
+
     async getExistingModel(params) {
         const request = await this._trainingStateRequest(params);
+        request;
+
         return new Promise((resolve, reject) => {
             this._modelServiceClient.get_all_models(
                 request,
@@ -133,6 +183,7 @@ class BaseServiceClient {
         authorizationRequest.setMessage(message);
         authorizationRequest.setSignature(signatureBytes);
         authorizationRequest.setSignerAddress(params.address);
+
         modelStateRequest.setAuthorization(authorizationRequest);
         return modelStateRequest;
     }
