@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "snet-sdk-monorepo",
-  "version": "0.0.0-internal",
+  "version": "0.0.0",
   "description": "SingularityNET SDK for JS",
   "keywords": [
     "snet-sdk",
