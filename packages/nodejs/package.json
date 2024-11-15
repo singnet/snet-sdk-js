@@ -50,5 +50,9 @@
     "google-protobuf": "^3.21.2",
     "rimraf": "^5.0.5",
     "verdaccio": "^5.29.2"
+  },
+  "engines": {
+    "node": ">=18",
+    "npm": ">=8"
   }
 }
