@@ -94,7 +94,8 @@ class BaseServiceClient {
                     if (err) {
                         reject(err);
                     } else {
-                        resolve(response);
+                        const modelStatus = response.getStatus();
+                        resolve(modelStatus);
                     }
                 }
             );
