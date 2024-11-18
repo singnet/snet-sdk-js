@@ -207,24 +207,23 @@ class BaseServiceClient {
         return new Promise((resolve, reject) => {
             this._modelServiceClient.create_model(request, (err, response) => {
                 logger.debug(`create model ${err} ${response}`);
-                const modelDetails = response.getModelDetails();
-
-                const data = {
-                    modelId: modelDetails.getModelId(),
-                    methodName: modelDetails.getGrpcMethodName(),
-                    serviceName: modelDetails.getGrpcServiceName(),
-                    description: modelDetails.getDescription(),
-                    status: modelDetails.getStatus(),
-                    updatedDate: modelDetails.getUpdatedDate(),
-                    addressList: modelDetails.getAddressListList(),
-                    modelName: modelDetails.getModelName(),
-                    publicAccess: modelDetails.getIsPubliclyAccessible(),
-                    dataLink: modelDetails.getTrainingDataLink(),
-                };
-
                 if (err) {
                     reject(err);
                 } else {
+                    const modelDetails = response.getModelDetails();
+
+                    const data = {
+                        modelId: modelDetails.getModelId(),
+                        methodName: modelDetails.getGrpcMethodName(),
+                        serviceName: modelDetails.getGrpcServiceName(),
+                        description: modelDetails.getDescription(),
+                        status: modelDetails.getStatus(),
+                        updatedDate: modelDetails.getUpdatedDate(),
+                        addressList: modelDetails.getAddressListList(),
+                        modelName: modelDetails.getModelName(),
+                        publicAccess: modelDetails.getIsPubliclyAccessible(),
+                        dataLink: modelDetails.getTrainingDataLink(),
+                    };
                     resolve(data);
                 }
             });
