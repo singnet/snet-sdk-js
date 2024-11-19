@@ -4,7 +4,7 @@
  * @property {string} privateKey - The accounts private key for performing token operations.
  * @property {string} signerPrivateKey - The accounts private key for signing grpc calls to service.
  * @property {number} networkId - Ethereum network ID.
- * @property {string} [ipfsEndpoint=http://ipfs.singularitynet.io:80] - A URL for fetching service related metadata.
+ * @property {string} [ipfsEndpoint=https://ipfs.singularitynet.io:443] - A URL for fetching service related metadata.
  * @property {number} [defaultGasPrice=4700000] - The gas price to be used in case of fetching the gas price form the blockchain fails.
  * @property {number} [defaultGasLimit=210000] - The gas limit to be used in case of fetching the gas estimate from the blockchain fails.
  */
