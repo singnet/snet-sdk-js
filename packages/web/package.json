@@ -1,6 +1,6 @@
 {
   "name": "snet-sdk-web",
-  "version": "4.0.4",
+  "version": "4.1.0",
   "description": "SingularityNET SDK for Web",
   "main": "./dist/index.js",
   "files": [
