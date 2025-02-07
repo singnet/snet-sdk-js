@@ -29,7 +29,7 @@ class BaseServiceClient {
       this._group = this._enhanceGroupInfo(group);
       this._paymentChannelManagementStrategy = paymentChannelManagementStrategy;
       this._paymentChannelStateServiceClient = this._generatePaymentChannelStateServiceClient();
-      this._modelServiceClient = this._generateModelServiceClient();
+      this._trainingServiceClient = this._generateTrainigServiceClient();
       this._paymentChannels = [];
       this.unifiedSigns = {};
     }
@@ -113,7 +113,7 @@ class BaseServiceClient {
         const request = this._methodMetadataRequest(params);
 
         return new Promise((resolve, reject) => {
-          this._modelServiceClient.get_method_metadata(request, (err, response) => {
+          this._trainingServiceClient.get_method_metadata(request, (err, response) => {
             if (err) {
               reject(err);
             } else {
@@ -150,7 +150,7 @@ class BaseServiceClient {
     async getServiceMetadata() {
       const request = this._trainingMetadataRequest();
       return new Promise((resolve, reject) => {
-        this._modelServiceClient.get_training_metadata(request, (err, response) => {
+        this._trainingServiceClient.get_training_metadata(request, (err, response) => {
           if (err) {
             reject(err);
           } else {
@@ -194,7 +194,7 @@ class BaseServiceClient {
       const request = await this._trainingStateRequest(params);
       request;
       return new Promise((resolve, reject) => {
-        this._modelServiceClient.get_all_models(request, (err, response) => {
+        this._trainingServiceClient.get_all_models(request, (err, response) => {
           if (err) {
             reject(err);
           } else {
@@ -225,7 +225,7 @@ class BaseServiceClient {
         const request = await this._trainingGetModelStateRequest(params);
   
           return new Promise((resolve, reject) => {
-              this._modelServiceClient.get_model(
+              this._trainingServiceClient.get_model(
                   request,
                   (err, response) => {
                       if (err) {
@@ -243,7 +243,7 @@ class BaseServiceClient {
       const request = await this._trainingGetModelStateRequest(params);
 
         return new Promise((resolve, reject) => {
-            this._modelServiceClient.get_model(
+            this._trainingServiceClient.get_model(
                 request,
                 (err, response) => {
                     if (err) {
@@ -277,7 +277,7 @@ class BaseServiceClient {
     async getTrainModelPrice(params) {
         const request = await this._trainModelPriceRequest(params);
         return new Promise((resolve, reject) => {
-          this._modelServiceClient.train_model_price(request, (err, response) => {
+          this._trainingServiceClient.train_model_price(request, (err, response) => {
             if (err) {
               reject(err);
             } else {
@@ -305,7 +305,7 @@ class BaseServiceClient {
     async trainModel(params) {
         const request = await this._trainModelRequest(params);
         return new Promise((resolve, reject) => {
-          this._modelServiceClient.train_model(request, (err, response) => {
+          this._trainingServiceClient.train_model(request, (err, response) => {
             if (err) {
               reject(err);
             } else {
@@ -336,7 +336,7 @@ class BaseServiceClient {
     async getValidateModelPrice(params) {
       const request = await this._validateModelPriceRequest(params);
       return new Promise((resolve, reject) => {
-        this._modelServiceClient.validate_model_price(request, (err, response) => {
+        this._trainingServiceClient.validate_model_price(request, (err, response) => {
           if (err) {
             reject(err);
           } else {
@@ -393,7 +393,7 @@ class BaseServiceClient {
       const request = await this._validateModelRequest(params);
       const validateModelMetdata = this.getValidatingPaymentMetadata(params.modelId);
       return new Promise((resolve, reject) => {
-        this._modelServiceClient.validate_model(request, validateModelMetdata, (err, response) => {
+        this._trainingServiceClient.validate_model(request, validateModelMetdata, (err, response) => {
           if (err) {
             reject(err);
           } else {
@@ -455,7 +455,7 @@ class BaseServiceClient {
     async createModel(params) {
       const request = await this._trainingCreateModel(params);
       return new Promise((resolve, reject) => {
-        this._modelServiceClient.create_model(request, (err, response) => {
+        this._trainingServiceClient.create_model(request, (err, response) => {
           logger.debug(`create model ${err} ${response}`);
           if (err) {
             reject(err);
@@ -502,7 +502,7 @@ class BaseServiceClient {
     async deleteModel(params) {
       const request = await this._trainingDeleteModel(params);
       return new Promise((resolve, reject) => {
-        this._modelServiceClient.delete_model(request, (err, response) => {
+        this._trainingServiceClient.delete_model(request, (err, response) => {
           logger.debug(`delete model ${err} ${response}`);
           if (err) {
             reject(err);
@@ -533,7 +533,7 @@ class BaseServiceClient {
     async updateModel(params) {
       const request = await this._trainingUpdateModel(params);
       return new Promise((resolve, reject) => {
-        this._modelServiceClient.update_model(request, (err, response) => {
+        this._trainingServiceClient.update_model(request, (err, response) => {
           logger.debug(`update model ${err} ${response}`);
           if (err) {
             reject(err);
@@ -849,7 +849,7 @@ class BaseServiceClient {
       logger.error('_getChannelStateRequestMethodDescriptor must be implemented in the sub classes');
     }
 
-    _generateModelServiceClient() {
+    _generateTrainigServiceClient() {
       logger.error('_generateTrainingStateServiceClient must be implemented in the sub classes');
     }
 

@@ -112,7 +112,7 @@ class WebServiceClient extends BaseServiceClient {
     return PaymentChannelStateService.GetChannelState.requestType;
   }
 
-  _generateModelServiceClient() {
+  _generateTrainigServiceClient() {
     logger.debug("Creating TrainingStateService client", { tags: ["gRPC"] });
     const serviceEndpoint = this._getServiceEndpoint();
     logger.debug(
