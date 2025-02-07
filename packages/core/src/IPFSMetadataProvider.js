@@ -77,7 +77,7 @@ export default class IPFSMetadataProvider {
         let storageInfo = this._getStorageInfoFromURI(metadataURI);
         let storageTypeCID = storageInfo.uri;
         storageTypeCID = storageTypeCID.replace(/\0/g, '');
-        debug(
+        logger.debug(
             `Fetching metadata from ${storageInfo.type} [CID: ${storageTypeCID}]`
         );
         try {
