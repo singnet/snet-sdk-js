@@ -1,0 +1,6 @@
+.table th, .table td {
+    width: 50%;
+}
+.table td {
+    word-break: break-word;
+}

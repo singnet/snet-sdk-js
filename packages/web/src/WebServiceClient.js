@@ -4,8 +4,9 @@ import {
   PaymentChannelStateService,
   PaymentChannelStateServiceClient,
 } from "./proto/state_service_pb_service";
-import { Model, ModelClient } from "./proto/training_pb_service";
-import training_pb from "./proto/training_pb";
+import { Daemon, DaemonClient } from "./proto/training_daemon_pb_service";
+import training_pb from "./proto/training_daemon_pb";
+import trainingV2_pb from "./proto/training_v2_pb";
 import { BaseServiceClient, logger } from "./sdk-core";
 
 class WebServiceClient extends BaseServiceClient {
@@ -119,31 +120,61 @@ class WebServiceClient extends BaseServiceClient {
       { tags: ["gRPC"] }
     );
     const host = `${serviceEndpoint.protocol}//${serviceEndpoint.host}`;
-    return new ModelClient(host);
-  }
+    return new DaemonClient(host);
+  };
 
-  _getModelRequestMethodDescriptor() {
-    return Model.get_all_models.requestType;
-  }
-  _getAuthorizationRequestMethodDescriptor() {
-    return training_pb.AuthorizationDetails;
-  }
+  _getAllModelRequestMethodDescriptor() {
+    return Daemon.get_all_models.requestType;
+  };
   
+  _getTrainingMetadataRequestMethodDescriptor() {
+    return Daemon.get_training_metadata.requestType;
+  };
+
+  _getMethodMetadataRequestMethodDescriptor() {
+    return Daemon.get_method_metadata.requestType;
+  };
+
   _getCreateModelRequestMethodDescriptor() {
-    return Model.create_model.requestType;
-  }
+    return Daemon.create_model.requestType;
+  };
 
   _getDeleteModelRequestMethodDescriptor() {
-    return Model.delete_model.requestType;
-  }
+    return Daemon.delete_model.requestType;
+  };
 
   _getUpdateModelRequestMethodDescriptor() {
-    return Model.update_model_access.requestType;
+    return Daemon.update_model.requestType;
+  };
+
+  _getValidateModelPriceRequestMethodDescriptor() {
+    return Daemon.validate_model_price.requestType;
+  };
+
+  _getTrainModelPriceRequestMethodDescriptor() {
+    return Daemon.train_model_price.requestType;
+  };
+
+  _getTrainModelRequestMethodDescriptor() {
+    return Daemon.train_model.requestType;
+  };
+
+  _getValidateModelRequestMethodDescriptor() {
+    return Daemon.validate_model.requestType;
   }
-      
- _getModelDetailsRequestMethodDescriptor() {
-    return training_pb.ModelDetails;
+  
+  _getModelStatusRequestMethodDescriptor() {
+    return Daemon.get_model.requestType;
   }
+
+  _getNewModelRequestMethodDescriptor() {
+    return trainingV2_pb.NewModel;
+  }
+
+  _getAuthorizationRequestMethodDescriptor() { 
+    return training_pb.AuthorizationDetails;
+  };
+
 }
 
 export default WebServiceClient;

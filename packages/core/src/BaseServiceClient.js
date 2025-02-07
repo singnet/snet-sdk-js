@@ -4,6 +4,7 @@ import { find, first, isEmpty, map } from 'lodash';
 import logger from './utils/logger';
 
 import { toBNString } from './utils/bignumber_helper';
+import { UNIFIED_SIGN_EXPIRY, serviceStatus } from './constants/TrainingConstants';
 
 class BaseServiceClient {
     /**
@@ -16,85 +17,239 @@ class BaseServiceClient {
      * @param {DefaultPaymentStrategy} paymentChannelManagementStrategy
      * @param {ServiceClientOptions} [options={}]
      */
-    constructor(
-        sdk,
+    constructor(sdk, orgId, serviceId, mpeContract, metadata, group, paymentChannelManagementStrategy, options = {}) {
+      this._sdk = sdk;
+      this._mpeContract = mpeContract;
+      this._options = options;
+      this._metadata = {
         orgId,
         serviceId,
-        mpeContract,
-        metadata,
-        group,
-        paymentChannelManagementStrategy,
-        options = {}
-    ) {
-        this._sdk = sdk;
-        this._mpeContract = mpeContract;
-        this._options = options;
-        this._metadata = { orgId, serviceId, ...metadata };
-        this._group = this._enhanceGroupInfo(group);
-        this._paymentChannelManagementStrategy =
-            paymentChannelManagementStrategy;
-        this._paymentChannelStateServiceClient =
-            this._generatePaymentChannelStateServiceClient();
-        this._modelServiceClient = this._generateModelServiceClient();
-        this._paymentChannels = [];
+        ...metadata
+      };
+      this._group = this._enhanceGroupInfo(group);
+      this._paymentChannelManagementStrategy = paymentChannelManagementStrategy;
+      this._paymentChannelStateServiceClient = this._generatePaymentChannelStateServiceClient();
+      this._modelServiceClient = this._generateModelServiceClient();
+      this._paymentChannels = [];
+      this.unifiedSigns = {};
     }
-
+  
     /**
      * @type {Group}
      */
     get group() {
-        return this._group;
+      return this._group;
     }
-
+  
     /**
      * @type {Array.<PaymentChannel>}
      */
     get paymentChannels() {
-        return this._paymentChannels;
+      return this._paymentChannels;
     }
-
+  
     /**
      * @type {ServiceMetadata}
      */
     get metadata() {
-        return this._metadata;
+      return this._metadata;
     }
-
+  
     /**
      * @type {GRPCClient}
      */
     get paymentChannelStateServiceClient() {
-        return this._paymentChannelStateServiceClient;
+      return this._paymentChannelStateServiceClient;
     }
-
+  
     /**
      * @type {MPEContract}
      */
     get mpeContract() {
-        return this._mpeContract;
+      return this._mpeContract;
     }
-
+  
     /**
      * @type {boolean}
      */
     get concurrencyFlag() {
-        if (typeof this._options.concurrency === 'undefined') {
-            return true;
-        }
-        return this._options.concurrency;
+      if (typeof this._options.concurrency === 'undefined') {
+        return true;
+      }
+      return this._options.concurrency;
     }
 
-    async getModelStatus(params) {
-        const request = await this._trainingStatusStateRequest(params);
+    async _getUnifiedSign(address, message) {
+      const keyOfUnofiedSign = address + message;
+      const blockNumber = await this._web3.eth.getBlockNumber();
+      if (this.unifiedSigns[keyOfUnofiedSign] && blockNumber - this.unifiedSigns[keyOfUnofiedSign]?.currentBlockNumber <= UNIFIED_SIGN_EXPIRY) {
+        return this.unifiedSigns[keyOfUnofiedSign];
+      }
+      const {
+        currentBlockNumber,
+        signatureBytes
+      } = await this._requestSignForModel(address, message);
+      this.unifiedSigns[keyOfUnofiedSign] = {
+        currentBlockNumber,
+        signatureBytes
+      };
+      return {
+        currentBlockNumber,
+        signatureBytes
+      };
+    }
+
+    _getAuthorizationRequest(currentBlockNumber, message, signatureBytes, address) {
+      const AuthorizationRequest = this._getAuthorizationRequestMethodDescriptor();
+      const authorizationRequest = new AuthorizationRequest();
+      authorizationRequest.setCurrentBlock(Number(currentBlockNumber));
+      authorizationRequest.setMessage(message);
+      authorizationRequest.setSignature(signatureBytes);
+      authorizationRequest.setSignerAddress(address);
+      return authorizationRequest;
+    }
+
+    async getMethodMetadata(params) {
+        const request = this._methodMetadataRequest(params);
 
         return new Promise((resolve, reject) => {
-            this._modelServiceClient.get_model_status(
+          this._modelServiceClient.get_method_metadata(request, (err, response) => {
+            if (err) {
+              reject(err);
+            } else {
+                const methodMetadata = {
+                    defaultModelId: response.getDefaultModelId(),
+                    maxModelsPerUser: response.getMaxModelsPerUser(),
+                    datasetMaxSizeMb: response.getDatasetMaxSizeMb(),
+                    datasetMaxCountFiles: response.getDatasetMaxCountFiles(),
+                    datasetMaxSizeSingleFileMb: response.getDatasetMaxSizeSingleFileMb(),
+                    datasetFilesType: response.getDatasetFilesType(),
+                    datasetType: response.getDatasetType(),
+                    datasetDescription: response.getDatasetDescription(),
+                };
+                resolve(methodMetadata);
+            }
+          });
+        });
+    }
+
+    _methodMetadataRequest(params) {
+        const ModelStateRequest = this._getMethodMetadataRequestMethodDescriptor();
+        const modelStateRequest = new ModelStateRequest();
+
+        if (params?.modelId) {
+            modelStateRequest.setModelId(params.modelId);
+            return modelStateRequest;
+        }
+        modelStateRequest.setGrpcMethodName(params.grpcMethod);
+        modelStateRequest.setGrpcServiceName(params.serviceName);
+
+        return modelStateRequest;
+    }
+
+    async getServiceMetadata() {
+      const request = this._trainingMetadataRequest();
+      return new Promise((resolve, reject) => {
+        this._modelServiceClient.get_training_metadata(request, (err, response) => {
+          if (err) {
+            reject(err);
+          } else {
+            const trainingmethodsMap = response.getTrainingmethodsMap().map_;
+            const methodsMapKeys = Object.keys(trainingmethodsMap);
+            const trainingServicesAndMethods = {};
+
+            methodsMapKeys.forEach(methodsMapKey => {
+                let trainingMethods = [];
+                trainingmethodsMap[methodsMapKey].value.map(methodsArray => 
+                    methodsArray.forEach(methods => 
+                        methods.forEach(method => {
+                            if (String(method)) {
+                            trainingMethods.push(method);
+                            }
+                        })
+                    )
+                );
+                trainingServicesAndMethods[methodsMapKey] = trainingMethods;
+            });
+
+            const isTrainingEnabled = response.getTrainingenabled();
+            const hasTrainingInProto = response.getTraininginproto();
+            resolve({
+              isTrainingEnabled,
+              hasTrainingInProto,
+              trainingServicesAndMethods
+            });
+          }
+        });
+      });
+    }
+
+    _trainingMetadataRequest() {
+      const ModelStateRequest = this._getTrainingMetadataRequestMethodDescriptor();
+      const modelStateRequest = new ModelStateRequest();
+      return modelStateRequest;
+    }
+
+    async getAllModels(params) {
+      const request = await this._trainingStateRequest(params);
+      request;
+      return new Promise((resolve, reject) => {
+        this._modelServiceClient.get_all_models(request, (err, response) => {
+          if (err) {
+            reject(err);
+          } else {
+            const modelDetails = response.getListOfModelsList();
+            const data = modelDetails.map(item => this._parseModelDetails(item));
+            resolve(data);
+          }
+        });
+      });
+    }
+
+    _parseModelDetails(modelDetails) {
+        return {
+            modelId: modelDetails.getModelId(),
+            methodName: modelDetails.getGrpcMethodName(),
+            serviceName: modelDetails.getGrpcServiceName(),
+            description: modelDetails.getDescription(),
+            status: serviceStatus[modelDetails.getStatus()],
+            updatedDate: modelDetails.getUpdatedDate(),
+            accessAddressList: modelDetails.getAddressListList(),
+            modelName: modelDetails.getName(),
+            publicAccess: modelDetails.getIsPublic(),
+            dataLink: modelDetails.getTrainingDataLink()
+          };
+    }
+
+    async getModel(params) {
+        const request = await this._trainingGetModelStateRequest(params);
+  
+          return new Promise((resolve, reject) => {
+              this._modelServiceClient.get_model(
+                  request,
+                  (err, response) => {
+                      if (err) {
+                          reject(err);
+                      } else {
+                          const model = this._parseModelDetails(response);
+                          resolve(model);
+                      }
+                  }
+              );
+          });
+      }
+
+    async getModelStatus(params) {
+      const request = await this._trainingGetModelStateRequest(params);
+
+        return new Promise((resolve, reject) => {
+            this._modelServiceClient.get_model(
                 request,
                 (err, response) => {
                     if (err) {
                         reject(err);
                     } else {
-                        const modelStatus = response.getStatus();
+                        const modelStatus = serviceStatus[response.getStatus()];
                         resolve(modelStatus);
                     }
                 }
@@ -102,329 +257,358 @@ class BaseServiceClient {
         });
     }
 
-    async _trainingStatusStateRequest(params) {
-        const message = '__get_model_status';
-        const { currentBlockNumber, signatureBytes } =
-            await this._requestSignForModel(params.address, message);
+    async _trainingGetModelStateRequest(params) {
+      const message = '__get';
+      const {
+        currentBlockNumber,
+        signatureBytes
+      } = await this._getUnifiedSign(params.address, message);
 
-        const ModelStateRequest = this._getUpdateModelRequestMethodDescriptor();
+      const ModelStateRequest = this._getModelStatusRequestMethodDescriptor();
+      const modelStateRequest = new ModelStateRequest();
+
+      const authorizationRequest = this._getAuthorizationRequest(currentBlockNumber, message, signatureBytes, params.address);
+
+      modelStateRequest.setAuthorization(authorizationRequest);
+      modelStateRequest.setModelId(params.modelId);
+      return modelStateRequest;
+    }
+
+    async getTrainModelPrice(params) {
+        const request = await this._trainModelPriceRequest(params);
+        return new Promise((resolve, reject) => {
+          this._modelServiceClient.train_model_price(request, (err, response) => {
+            if (err) {
+              reject(err);
+            } else {
+              const price = response.getPrice();
+              resolve(price);
+            }
+          });
+        });
+      }
+  
+    async _trainModelPriceRequest(params) {
+        const message = '__train_model_price';
+        const {
+          currentBlockNumber,
+          signatureBytes
+        } = await this._getUnifiedSign(params.address, message);
+        const ModelStateRequest = this._getTrainModelPriceRequestMethodDescriptor();
         const modelStateRequest = new ModelStateRequest();
-
-        const ModelDetailsRequest =
-            this._getModelDetailsRequestMethodDescriptor();
-        const modelDetailsRequest = new ModelDetailsRequest();
-
-        modelDetailsRequest.setModelId(params.modelId);
-        modelDetailsRequest.setGrpcMethodName(params.method);
-        modelDetailsRequest.setGrpcServiceName(params.name);
-
-        const AuthorizationRequest =
-            this._getAuthorizationRequestMethodDescriptor();
-        const authorizationRequest = new AuthorizationRequest();
-
-        authorizationRequest.setCurrentBlock(Number(currentBlockNumber));
-        authorizationRequest.setMessage(message);
-        authorizationRequest.setSignature(signatureBytes);
-        authorizationRequest.setSignerAddress(params.address);
-
+        const authorizationRequest = this._getAuthorizationRequest(currentBlockNumber, message, signatureBytes, params.address);
         modelStateRequest.setAuthorization(authorizationRequest);
-        modelStateRequest.setUpdateModelDetails(modelDetailsRequest);
+        modelStateRequest.setModelId(params.modelId);
         return modelStateRequest;
     }
 
-    async getExistingModel(params) {
-        const request = await this._trainingStateRequest(params);
-        request;
-
+    async trainModel(params) {
+        const request = await this._trainModelRequest(params);
         return new Promise((resolve, reject) => {
-            this._modelServiceClient.get_all_models(
-                request,
-                (err, response) => {
-                    if (err) {
-                        reject(err);
-                    } else {
-                        const modelDetails = response.getListOfModelsList();
-
-                        const data = modelDetails.map((item) => {
-                            return {
-                                modelId: item.getModelId(),
-                                methodName: item.getGrpcMethodName(),
-                                serviceName: item.getGrpcServiceName(),
-                                description: item.getDescription(),
-                                status: item.getStatus(),
-                                updatedDate: item.getUpdatedDate(),
-                                addressList: item.getAddressListList(),
-                                modelName: item.getModelName(),
-                                publicAccess: item.getIsPubliclyAccessible(),
-                                dataLink: item.getTrainingDataLink(),
-                            };
-                        });
-                        resolve(data);
-                    }
-                }
-            );
+          this._modelServiceClient.train_model(request, (err, response) => {
+            if (err) {
+              reject(err);
+            } else {
+                const modelStatus = serviceStatus[response.getStatus()];
+                resolve(modelStatus);
+            }
+          });
         });
+      }
+  
+    async _trainModelRequest(params) {
+        const message = '__train_model';
+        const {
+          currentBlockNumber,
+          signatureBytes
+        } = await this._requestSignForModel(params.address, message);
+
+        const ModelStateRequest = this._getTrainModelRequestMethodDescriptor();
+        const modelStateRequest = new ModelStateRequest();
+
+        const authorizationRequest = this._getAuthorizationRequest(currentBlockNumber, message, signatureBytes, params.address);
+        modelStateRequest.setAuthorization(authorizationRequest);
+        modelStateRequest.setModelId(params.modelId);
+
+        return modelStateRequest;
+    }
+
+    async getValidateModelPrice(params) {
+      const request = await this._validateModelPriceRequest(params);
+      return new Promise((resolve, reject) => {
+        this._modelServiceClient.validate_model_price(request, (err, response) => {
+          if (err) {
+            reject(err);
+          } else {
+            const price = response.getPrice();
+            resolve(price);
+          }
+        });
+      });
+    }
+
+    async _validateModelPriceRequest(params) {
+      const message = '__validate_model_price';
+      const {
+        currentBlockNumber,
+        signatureBytes
+      } = await this._getUnifiedSign(params.address, message);
+      const authorizationRequest = this._getAuthorizationRequest(currentBlockNumber, message, signatureBytes, params.address);
+
+      const ModelStateRequest = this._getValidateModelPriceRequestMethodDescriptor();
+      const modelStateRequest = new ModelStateRequest();
+      
+      modelStateRequest.setAuthorization(authorizationRequest);
+      modelStateRequest.setModelId(params.modelId);
+      modelStateRequest.setTrainingDataLink(params.trainingDataLink);
+
+      return modelStateRequest;
+    }
+
+    async getValidatingPaymentMetadata(modelId) { //TODO (in progress)
+      console.log("this._paymentChannelManagementStrategy: ", this._paymentChannelManagementStrategy);
+      const {
+        channelId,
+        nonce,
+        signingAmount,
+        signatureBytes
+      } = await this.getChannelParameters();
+      const metadata = [{
+        'snet-payment-type': 'train-call'
+      }, {
+        'snet-train-model-id': modelId
+      }, {
+        'snet-payment-channel-id': `${channelId}`
+      }, {
+        'snet-payment-channel-nonce': `${nonce}`
+      }, {
+        'snet-payment-channel-amount': `${signingAmount}`
+      }, {
+        'snet-payment-channel-signature-bin': signatureBytes.toString('base64')
+      }];
+      return metadata;
+    }
+
+    async validateModel(params) {
+      const request = await this._validateModelRequest(params);
+      const validateModelMetdata = this.getValidatingPaymentMetadata(params.modelId);
+      return new Promise((resolve, reject) => {
+        this._modelServiceClient.validate_model(request, validateModelMetdata, (err, response) => {
+          if (err) {
+            reject(err);
+          } else {
+            const status = serviceStatus[response.getStatus()];
+            resolve(status);
+          }
+        });
+      });
+    }
+
+    async _validateModelRequest(params) {
+      const message = '__validate_model';
+      const {
+        currentBlockNumber,
+        signatureBytes
+      } = await this._requestSignForModel(params.address, message);
+      const ModelStateRequest = this._getValidateModelRequestMethodDescriptor();
+      const modelStateRequest = new ModelStateRequest();
+      
+      const authorizationRequest = this._getAuthorizationRequest(currentBlockNumber, message, signatureBytes, params.address);
+        
+      modelStateRequest.setAuthorization(authorizationRequest);
+      modelStateRequest.setModelId(params.modelId);
+      modelStateRequest.setTrainingDataLink(params.trainingDataLink);
+      return modelStateRequest;
     }
 
     async _trainingStateRequest(params) {
-        const message = '__get_existing_model';
-        const { currentBlockNumber, signatureBytes } =
-            await this._requestSignForModel(params.address, message);
-        const ModelStateRequest = this._getModelRequestMethodDescriptor();
-        const modelStateRequest = new ModelStateRequest();
-        modelStateRequest.setGrpcMethodName(params.grpcMethod);
-        modelStateRequest.setGrpcServiceName(params.grpcService);
-
-        const AuthorizationRequest =
-            this._getAuthorizationRequestMethodDescriptor();
-        const authorizationRequest = new AuthorizationRequest();
-
-        authorizationRequest.setCurrentBlock(Number(currentBlockNumber));
-        authorizationRequest.setMessage(message);
-        authorizationRequest.setSignature(signatureBytes);
-        authorizationRequest.setSignerAddress(params.address);
-
-        modelStateRequest.setAuthorization(authorizationRequest);
-        return modelStateRequest;
+      const message = '__get_existing_model';
+      const {
+        currentBlockNumber,
+        signatureBytes
+      } = await this._requestSignForModel(params.address, message);
+      const ModelStateRequest = this._getAllModelRequestMethodDescriptor();
+      const modelStateRequest = new ModelStateRequest();
+      const authorizationRequest = this._getAuthorizationRequest(currentBlockNumber, message, signatureBytes, params.address);
+      modelStateRequest.setAuthorization(authorizationRequest);
+      return modelStateRequest;
     }
 
     async _requestSignForModel(address, message) {
-        const currentBlockNumber = await this._web3.eth.getBlockNumber();
-        const signatureBytes = await this.account.signData(
-            { t: 'string', v: message },
-            { t: 'address', v: address },
-            { t: 'uint256', v: currentBlockNumber }
-        );
-
-        return {
-            currentBlockNumber,
-            signatureBytes,
-        };
+      const currentBlockNumber = await this._web3.eth.getBlockNumber();
+      const signatureBytes = await this.account.signData({
+        t: 'string',
+        v: message
+      }, {
+        t: 'address',
+        v: address
+      }, {
+        t: 'uint256',
+        v: currentBlockNumber
+      });
+      return {
+        currentBlockNumber,
+        signatureBytes
+      };
     }
 
-    async createModel(address, params) {
-        const request = await this._trainingCreateModel(address, params);
-        return new Promise((resolve, reject) => {
-            this._modelServiceClient.create_model(request, (err, response) => {
-                logger.debug(`create model ${err} ${response}`);
-                if (err) {
-                    reject(err);
-                } else {
-                    const modelDetails = response.getModelDetails();
-
-                    const data = {
-                        modelId: modelDetails.getModelId(),
-                        methodName: modelDetails.getGrpcMethodName(),
-                        serviceName: modelDetails.getGrpcServiceName(),
-                        description: modelDetails.getDescription(),
-                        status: modelDetails.getStatus(),
-                        updatedDate: modelDetails.getUpdatedDate(),
-                        addressList: modelDetails.getAddressListList(),
-                        modelName: modelDetails.getModelName(),
-                        publicAccess: modelDetails.getIsPubliclyAccessible(),
-                        dataLink: modelDetails.getTrainingDataLink(),
-                    };
-                    resolve(data);
-                }
-            });
+    async createModel(params) {
+      const request = await this._trainingCreateModel(params);
+      return new Promise((resolve, reject) => {
+        this._modelServiceClient.create_model(request, (err, response) => {
+          logger.debug(`create model ${err} ${response}`);
+          if (err) {
+            reject(err);
+          } else {
+            const data = {
+              addressList: response.getAddressListList(),
+              description: response.getDescription(),
+              isPublic: response.getIsPublic(),
+              modelId: response.getModelId(),
+              modelName: response.getName(),
+              status: serviceStatus[response.getStatus()],
+              updatedDate: response.getUpdatedDate(),
+              serviceName: response.getGrpcServiceName(),
+              methodName: response.getGrpcMethosName()
+            };
+            resolve(data);
+          }
         });
+      });
     }
 
-    async _trainingCreateModel(address, params) {
-        const message = '__create_model';
-        const { currentBlockNumber, signatureBytes } =
-            await this._requestSignForModel(address, message);
-        const ModelStateRequest = this._getCreateModelRequestMethodDescriptor();
-        const modelStateRequest = new ModelStateRequest();
-
-        const AuthorizationRequest =
-            this._getAuthorizationRequestMethodDescriptor();
-        const authorizationRequest = new AuthorizationRequest();
-        const ModelDetailsRequest =
-            this._getModelDetailsRequestMethodDescriptor();
-
-        const { orgId, serviceId, groupId } = this.getServiceDetails();
-        const modelDetailsRequest = new ModelDetailsRequest();
-        authorizationRequest.setCurrentBlock(Number(currentBlockNumber));
-        authorizationRequest.setMessage(message);
-        authorizationRequest.setSignature(signatureBytes);
-        authorizationRequest.setSignerAddress(address);
-
-        modelDetailsRequest.setModelName(params.modelName);
-        modelDetailsRequest.setGrpcMethodName(params.method);
-        modelDetailsRequest.setGrpcServiceName(params.serviceName);
-        modelDetailsRequest.setDescription(params.description);
-        modelDetailsRequest.setIsPubliclyAccessible(params.publicAccess);
-        modelDetailsRequest.setAddressListList(params.address);
-        modelDetailsRequest.setTrainingDataLink(params.dataLink);
-
-        modelDetailsRequest.setOrganizationId(orgId);
-        modelDetailsRequest.setServiceId(serviceId);
-        modelDetailsRequest.setGroupId(groupId);
-
-        modelStateRequest.setAuthorization(authorizationRequest);
-        modelStateRequest.setModelDetails(modelDetailsRequest);
-        return modelStateRequest;
+    async _trainingCreateModel(params) {
+      const message = '__create_model';
+      const {
+        currentBlockNumber,
+        signatureBytes
+      } = await this._getUnifiedSign(params.address, message);
+      const ModelStateRequest = this._getCreateModelRequestMethodDescriptor();
+      const modelStateRequest = new ModelStateRequest();
+      const NewModelRequest = this._getNewModelRequestMethodDescriptor();
+      const newModelRequest = new NewModelRequest();
+      const authorizationRequest = this._getAuthorizationRequest(currentBlockNumber, message, signatureBytes, params.address);
+      newModelRequest.setName(params.name);
+      newModelRequest.setGrpcMethodName(params.grpcMethod);
+      newModelRequest.setGrpcServiceName(params.serviceName);
+      newModelRequest.setDescription(params.description);
+      newModelRequest.setIsPublic(params.is_public);
+      newModelRequest.setAddressListList(params.address_list);
+      modelStateRequest.setAuthorization(authorizationRequest);
+      modelStateRequest.setModel(newModelRequest);
+      return modelStateRequest;
     }
 
     async deleteModel(params) {
-        const request = await this._trainingDeleteModel(params);
-        return new Promise((resolve, reject) => {
-            this._modelServiceClient.delete_model(request, (err, response) => {
-                logger.debug(`delete model ${err} ${response}`);
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(response);
-                }
-            });
+      const request = await this._trainingDeleteModel(params);
+      return new Promise((resolve, reject) => {
+        this._modelServiceClient.delete_model(request, (err, response) => {
+          logger.debug(`delete model ${err} ${response}`);
+          if (err) {
+            reject(err);
+          } else {
+            const status = serviceStatus[response.getStatus()];
+            resolve(status);
+          }
         });
+      });
     }
 
     async _trainingDeleteModel(params) {
-        const message = '__delete_model';
-        const { currentBlockNumber, signatureBytes } =
-            await this._requestSignForModel(params.address, message);
+      const message = '__delete_model';
+      const {
+        currentBlockNumber,
+        signatureBytes
+      } = await this._requestSignForModel(params.address, message);
+      const ModelStateRequest = this._getDeleteModelRequestMethodDescriptor();
+      const modelStateRequest = new ModelStateRequest();
 
-        const ModelStateRequest = this._getUpdateModelRequestMethodDescriptor();
-        const modelStateRequest = new ModelStateRequest();
+      const authorizationRequest = this._getAuthorizationRequest(currentBlockNumber, message, signatureBytes, params.address);
 
-        const AuthorizationRequest =
-            this._getAuthorizationRequestMethodDescriptor();
-        const authorizationRequest = new AuthorizationRequest();
-        const ModelDetailsRequest =
-            this._getModelDetailsRequestMethodDescriptor();
-        const modelDetailsRequest = new ModelDetailsRequest();
-
-        authorizationRequest.setCurrentBlock(Number(currentBlockNumber));
-        authorizationRequest.setMessage(message);
-        authorizationRequest.setSignature(signatureBytes);
-        authorizationRequest.setSignerAddress(params.address);
-        modelDetailsRequest.setModelId(params.modelId);
-        modelDetailsRequest.setGrpcMethodName(params.method);
-        modelDetailsRequest.setGrpcServiceName(params.name);
-
-        modelStateRequest.setAuthorization(authorizationRequest);
-        modelStateRequest.setUpdateModelDetails(modelDetailsRequest);
-        return modelStateRequest;
+      modelStateRequest.setAuthorization(authorizationRequest);
+      modelStateRequest.setModelId(params.modelId);
+      return modelStateRequest;
     }
 
     async updateModel(params) {
-        const request = await this._trainingUpdateModel(params);
-        return new Promise((resolve, reject) => {
-            this._modelServiceClient.update_model_access(
-                request,
-                (err, response) => {
-                    logger.debug(`update model ${err} ${response}`);
-                    if (err) {
-                        reject(err);
-                    } else {
-                        resolve(response);
-                    }
-                }
-            );
+      const request = await this._trainingUpdateModel(params);
+      return new Promise((resolve, reject) => {
+        this._modelServiceClient.update_model(request, (err, response) => {
+          logger.debug(`update model ${err} ${response}`);
+          if (err) {
+            reject(err);
+          } else {
+            const updatedModel = this._parseModelDetails(response)
+            resolve(updatedModel);
+          }
         });
+      });
     }
 
     async _trainingUpdateModel(params) {
-        const message = '__update_model';
-        const { currentBlockNumber, signatureBytes } =
-            await this._requestSignForModel(params.address, message);
+      const message = '__update_model';
+      const {
+        currentBlockNumber,
+        signatureBytes
+      } = await this._requestSignForModel(params.address, message);
+      const authorizationRequest = this._getAuthorizationRequest(currentBlockNumber, message, signatureBytes, params.address);
 
-        const ModelStateRequest = this._getUpdateModelRequestMethodDescriptor();
-        const modelStateRequest = new ModelStateRequest();
+      const ModelStateRequest = this._getUpdateModelRequestMethodDescriptor();
+      const modelStateRequest = new ModelStateRequest();
+      
+      modelStateRequest.setAuthorization(authorizationRequest);
+      modelStateRequest.setModelName(params.modelName);
+      modelStateRequest.setModelId(params.modelId);
+      modelStateRequest.setDescription(params.description);
+      modelStateRequest.addAddressList(params.addressList);
 
-        const AuthorizationRequest =
-            this._getAuthorizationRequestMethodDescriptor();
-        const authorizationRequest = new AuthorizationRequest();
-        const ModelDetailsRequest =
-            this._getModelDetailsRequestMethodDescriptor();
-        const modelDetailsRequest = new ModelDetailsRequest();
-
-        authorizationRequest.setCurrentBlock(Number(currentBlockNumber));
-        authorizationRequest.setMessage(message);
-        authorizationRequest.setSignature(signatureBytes);
-        authorizationRequest.setSignerAddress(params.address);
-        modelDetailsRequest.setModelId(params.modelId);
-        modelDetailsRequest.setGrpcMethodName(params.method);
-        modelDetailsRequest.setGrpcServiceName(params.name);
-        modelDetailsRequest.setModelName(params.modelName);
-        modelDetailsRequest.setDescription(params.description);
-        modelDetailsRequest.setAddressListList(params.addressList);
-        modelDetailsRequest.setStatus(params.status);
-        modelDetailsRequest.setUpdatedDate(params.updatedDate);
-        modelDetailsRequest.setIsPubliclyAccessible(params.publicAccess);
-        modelDetailsRequest.setTrainingDataLink(params.dataLink);
-
-        const { orgId, serviceId, groupId } = this.getServiceDetails();
-        modelDetailsRequest.setOrganizationId(orgId);
-        modelDetailsRequest.setServiceId(serviceId);
-        modelDetailsRequest.setGroupId(groupId);
-
-        modelStateRequest.setAuthorization(authorizationRequest);
-        modelStateRequest.setUpdateModelDetails(modelDetailsRequest);
-        return modelStateRequest;
+      return modelStateRequest;
     }
-
+  
     /**
      * Fetches the latest channel state from the ai service daemon
      * @param channelId
      * @returns {Promise<ChannelStateReply>}
      */
     async getChannelState(channelId) {
-        const channelStateRequest = await this._channelStateRequest(channelId);
-
-        return new Promise((resolve, reject) => {
-            this.paymentChannelStateServiceClient.getChannelState(
-                channelStateRequest,
-                (err, response) => {
-                    if (err) {
-                        reject(err);
-                    } else {
-                        resolve(response);
-                    }
-                }
-            );
+      const channelStateRequest = await this._channelStateRequest(channelId);
+      return new Promise((resolve, reject) => {
+        this.paymentChannelStateServiceClient.getChannelState(channelStateRequest, (err, response) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(response);
+          }
         });
+      });
     }
-
+  
     /**
      * @returns {Promise.<PaymentChannel[]>}
      */
     async loadOpenChannels() {
-        const currentBlockNumber = await this._web3.eth.getBlockNumber();
-        const newPaymentChannels = await this._mpeContract.getPastOpenChannels(
-            this.account,
-            this,
-            this._lastReadBlock
-        );
-        logger.debug(
-            `Found ${newPaymentChannels.length} payment channel open events`,
-            { tags: ['PaymentChannel'] }
-        );
-        this._paymentChannels = [
-            ...this._paymentChannels,
-            ...newPaymentChannels,
-        ];
-        this._lastReadBlock = currentBlockNumber;
-        return this._paymentChannels;
+      const currentBlockNumber = await this._web3.eth.getBlockNumber();
+      const newPaymentChannels = await this._mpeContract.getPastOpenChannels(this.account, this, this._lastReadBlock);
+      logger.debug(`Found ${newPaymentChannels.length} payment channel open events`, {
+        tags: ['PaymentChannel']
+      });
+      this._paymentChannels = [...this._paymentChannels, ...newPaymentChannels];
+      this._lastReadBlock = currentBlockNumber;
+      return this._paymentChannels;
     }
-
+  
     /**
      * @returns {Promise.<PaymentChannel[]>}
      */
     async updateChannelStates() {
-        logger.info('Updating payment channel states', {
-            tags: ['PaymentChannel'],
-        });
-        const currentChannelStatesPromise = map(
-            this._paymentChannels,
-            (paymentChannel) => paymentChannel.syncState()
-        );
-        await Promise.all(currentChannelStatesPromise);
-        return this._paymentChannels;
+      logger.info('Updating payment channel states', {
+        tags: ['PaymentChannel']
+      });
+      const currentChannelStatesPromise = (0, map)(this._paymentChannels, paymentChannel => paymentChannel.syncState());
+      await Promise.all(currentChannelStatesPromise);
+      return this._paymentChannels;
     }
-
+  
     /**
      *
      * @param {BigNumber} amount
@@ -432,65 +616,54 @@ class BaseServiceClient {
      * @returns {Promise.<PaymentChannel>}
      */
     async openChannel(amount, expiry) {
-        const newChannelReceipt = await this._mpeContract.openChannel(
-            this.account,
-            this,
-            amount,
-            expiry
-        );
-        return this._getNewlyOpenedChannel(newChannelReceipt);
+      const newChannelReceipt = await this._mpeContract.openChannel(this.account, this, amount, expiry);
+      return this._getNewlyOpenedChannel(newChannelReceipt);
     }
-
+  
     /**
      * @param {BigNumber} amount
      * @param {BigNumber} expiry
      * @returns {Promise.<PaymentChannel>}
      */
     async depositAndOpenChannel(amount, expiry) {
-        const newFundedChannelReceipt =
-            await this._mpeContract.depositAndOpenChannel(
-                this.account,
-                this,
-                amount,
-                expiry
-            );
-        return this._getNewlyOpenedChannel(newFundedChannelReceipt);
+      const newFundedChannelReceipt = await this._mpeContract.depositAndOpenChannel(this.account, this, amount, expiry);
+      return this._getNewlyOpenedChannel(newFundedChannelReceipt);
     }
-
+  
     /**
      * get the details of the service
      * @returns {ServiceDetails}
      */
     getServiceDetails() {
-        return {
-            orgId: this._metadata.orgId,
-            serviceId: this._metadata.serviceId,
-            groupId: this._group.group_id,
-            groupIdInBytes: this._group.group_id_in_bytes,
-            daemonEndpoint: this._getServiceEndpoint(),
-        };
+      return {
+        orgId: this._metadata.orgId,
+        serviceId: this._metadata.serviceId,
+        groupId: this._group.group_id,
+        groupIdInBytes: this._group.group_id_in_bytes,
+        daemonEndpoint: this._getServiceEndpoint()
+      };
     }
-
+  
     /**
      * Get the configuration for the freecall
      * @returns {FreeCallConfig}
      */
     getFreeCallConfig() {
-        return {
-            email: this._options.email,
-            tokenToMakeFreeCall: this._options.tokenToMakeFreeCall,
-            tokenExpiryDateBlock: this._options.tokenExpirationBlock,
-        };
+      return {
+        email: this._options.email,
+        tokenToMakeFreeCall: this._options.tokenToMakeFreeCall,
+        tokenExpiryDateBlock: this._options.tokenExpirationBlock
+      };
     }
-
+  
     /**
      * find the current blocknumber
      * @returns {Promise<number>}
      */
     async getCurrentBlockNumber() {
-        return this._web3.eth.getBlockNumber();
+      return this._web3.eth.getBlockNumber();
     }
-
+  
     /**
      * @param {...(*|Object)} data
      * @param {string} data.(t|type) - Type of data. One of the following (string|uint256|int256|bool|bytes)
@@ -499,256 +672,242 @@ class BaseServiceClient {
      * @see {@link https://web3js.readthedocs.io/en/1.0/web3-utils.html#soliditysha3|data}
      */
     async signData(...data) {
-        return this.account.signData(...data);
+      return this.account.signData(...data);
     }
-
+  
     /**
      * @returns {Promise<number>}
      */
     async defaultChannelExpiration() {
-        const currentBlockNumber = await this._web3.eth.getBlockNumber();
-        const paymentExpirationThreshold = this._getPaymentExpiryThreshold();
-        return toBNString(currentBlockNumber) + paymentExpirationThreshold;
+      const currentBlockNumber = await this._web3.eth.getBlockNumber();
+      const paymentExpirationThreshold = this._getPaymentExpiryThreshold();
+      return (0, toBNString)(currentBlockNumber) + paymentExpirationThreshold;
     }
-
     _getPaymentExpiryThreshold() {
-        if (isEmpty(this._group)) {
-            return 0;
-        }
-        const paymentExpirationThreshold =
-            this._group.payment.payment_expiration_threshold;
-        return paymentExpirationThreshold || 0;
+      if ((0, isEmpty)(this._group)) {
+        return 0;
+      }
+      const paymentExpirationThreshold = this._group.payment.payment_expiration_threshold;
+      return paymentExpirationThreshold || 0;
     }
-
     _enhanceGroupInfo(group) {
-        if (isEmpty(group)) {
-            return group;
-        }
-
-        const { payment_address, payment_expiration_threshold } = group.payment;
-
-        return {
-            group_id_in_bytes: Buffer.from(group.group_id, 'base64'),
-            ...group,
-            payment_address,
-            payment_expiration_threshold,
-        };
+      if ((0, isEmpty)(group)) {
+        return group;
+      }
+      const {
+        payment_address,
+        payment_expiration_threshold
+      } = group.payment;
+      return {
+        group_id_in_bytes: Buffer.from(group.group_id, 'base64'),
+        ...group,
+        payment_address,
+        payment_expiration_threshold
+      };
     }
-
     async _channelStateRequest(channelId) {
-        const { currentBlockNumber, signatureBytes } =
-            await this._channelStateRequestProperties(toBNString(channelId));
-        const channelIdBytes = Buffer.alloc(4);
-        channelIdBytes.writeUInt32BE(toBNString(channelId), 0);
-
-        const ChannelStateRequest =
-            this._getChannelStateRequestMethodDescriptor();
-        const channelStateRequest = new ChannelStateRequest();
-        channelStateRequest.setChannelId(channelIdBytes);
-        channelStateRequest.setSignature(signatureBytes);
-        channelStateRequest.setCurrentBlock(toBNString(currentBlockNumber));
-        return channelStateRequest;
+      const {
+        currentBlockNumber,
+        signatureBytes
+      } = await this._channelStateRequestProperties((0, toBNString)(channelId));
+      const channelIdBytes = Buffer.alloc(4);
+      channelIdBytes.writeUInt32BE((0, toBNString)(channelId), 0);
+      const ChannelStateRequest = this._getChannelStateRequestMethodDescriptor();
+      const channelStateRequest = new ChannelStateRequest();
+      channelStateRequest.setChannelId(channelIdBytes);
+      channelStateRequest.setSignature(signatureBytes);
+      channelStateRequest.setCurrentBlock((0, toBNString)(currentBlockNumber));
+      return channelStateRequest;
     }
-
     async _channelStateRequestProperties(channelId) {
-        if (this._options.channelStateRequestSigner) {
-            const { currentBlockNumber, signatureBytes } =
-                await this._options.channelStateRequestSigner(channelId);
-            return { currentBlockNumber, signatureBytes };
-        }
-        const currentBlockNumber = await this._web3.eth.getBlockNumber();
-        const channelIdStr = toBNString(channelId);
-        const signatureBytes = await this.account.signData(
-            { t: 'string', v: '__get_channel_state' },
-            { t: 'address', v: this._mpeContract.address },
-            { t: 'uint256', v: channelIdStr },
-            { t: 'uint256', v: currentBlockNumber }
-        );
-
-        return { currentBlockNumber, signatureBytes };
+      if (this._options.channelStateRequestSigner) {
+        const {
+          currentBlockNumber,
+          signatureBytes
+        } = await this._options.channelStateRequestSigner(channelId);
+        return {
+          currentBlockNumber,
+          signatureBytes
+        };
+      }
+      const currentBlockNumber = await this._web3.eth.getBlockNumber();
+      const channelIdStr = (0, toBNString)(channelId);
+      const signatureBytes = await this.account.signData({
+        t: 'string',
+        v: '__get_channel_state'
+      }, {
+        t: 'address',
+        v: this._mpeContract.address
+      }, {
+        t: 'uint256',
+        v: channelIdStr
+      }, {
+        t: 'uint256',
+        v: currentBlockNumber
+      });
+      return {
+        currentBlockNumber,
+        signatureBytes
+      };
     }
-
+    async getChannelParameters() {
+      const channel = await this._paymentChannelManagementStrategy.selectChannel(this);
+      const {
+        channelId,
+        state: {
+          nonce,
+          currentSignedAmount
+        }
+      } = channel;
+      const signingAmount = currentSignedAmount.plus(this._pricePerServiceCall);
+      const channelIdStr = (0, toBNString)(channelId);
+      const nonceStr = (0, toBNString)(nonce);
+      const signingAmountStr = (0, toBNString)(signingAmount);
+      logger.info(`Using PaymentChannel[id: ${channelIdStr}] with nonce: ${nonceStr} and amount: ${signingAmountStr} and `, {
+        tags: ['PaymentChannelManagementStrategy', 'gRPC']
+      });
+      const {
+        signatureBytes
+      } = await this._options.paidCallMetadataGenerator(channelId, signingAmount, nonce);
+      return {
+        signatureBytes,
+        channelId,
+        signingAmount,
+        nonce
+      };
+    }
     async _fetchPaymentMetadata() {
-        if (this._options.paidCallMetadataGenerator) {
-            logger.debug('Selecting PaymentChannel using the given strategy', {
-                tags: ['PaypalPaymentMgmtStrategy, gRPC'],
-            });
-            const channel =
-                await this._paymentChannelManagementStrategy.selectChannel(
-                    this
-                );
-            const {
-                channelId,
-                state: { nonce, currentSignedAmount },
-            } = channel;
-            const signingAmount = currentSignedAmount.plus(
-                this._pricePerServiceCall
-            );
-            const channelIdStr = toBNString(channelId);
-            const nonceStr = toBNString(nonce);
-            const signingAmountStr = toBNString(signingAmount);
-            logger.info(
-                `Using PaymentChannel[id: ${channelIdStr}] with nonce: ${nonceStr} and amount: ${signingAmountStr} and `,
-                { tags: ['PaymentChannelManagementStrategy', 'gRPC'] }
-            );
-            const { signatureBytes } =
-                await this._options.paidCallMetadataGenerator(
-                    channelId,
-                    signingAmount,
-                    nonce
-                );
-            const metadata = [
-                { 'snet-payment-type': 'escrow' },
-                { 'snet-payment-channel-id': `${channelId}` },
-                { 'snet-payment-channel-nonce': `${nonce}` },
-                { 'snet-payment-channel-amount': `${signingAmount}` },
-                {
-                    'snet-payment-channel-signature-bin':
-                        signatureBytes.toString('base64'),
-                },
-            ];
-            return metadata;
-        }
+      if (!this._options.paidCallMetadataGenerator) {
         return this._paymentChannelManagementStrategy.getPaymentMetadata(this);
-
-        // NOTE: Moved channel selection logic to payment strategy
-        //
-        //
-        // logger.debug('Selecting PaymentChannel using the given strategy', { tags: ['PaymentChannelManagementStrategy, gRPC'] });
-        // const channel = await this._paymentChannelManagementStrategy.selectChannel(this);
-        //
-        // const { channelId, state: { nonce, currentSignedAmount } } = channel;
-        // const signingAmount = currentSignedAmount.plus(this._pricePerServiceCall);
-        // const channelIdStr = toBNString(channelId);
-        // const nonceStr = toBNString(nonce);
-        // const signingAmountStr = toBNString(signingAmount);
-        // logger.info(`Using PaymentChannel[id: ${channelIdStr}] with nonce: ${nonceStr} and amount: ${signingAmountStr} and `, { tags: ['PaymentChannelManagementStrategy', 'gRPC'] });
-        //
-        // if(this._options.paidCallMetadataGenerator) {
-        //   const { signatureBytes } = await this._options.paidCallMetadataGenerator(channelId, signingAmount, nonce);
-        //   return {
-        //     channelId, nonce, signingAmount, signatureBytes,
-        //   };
-        // }
-        //
-        // const signatureBytes = await this.account.signData(
-        //   { t: 'string', v: '__MPE_claim_message' },
-        //   { t: 'address', v: this._mpeContract.address },
-        //   { t: 'uint256', v: channelIdStr },
-        //   { t: 'uint256', v: nonceStr },
-        //   { t: 'uint256', v: signingAmountStr },
-        // );
-        //
-        // return {
-        //   channelId, nonce, signingAmount, signatureBytes,
-        // };
+      }
+      logger.debug('Selecting PaymentChannel using the given strategy', {
+        tags: ['PaypalPaymentMgmtStrategy, gRPC']
+      });
+      const {
+        channelId,
+        nonce,
+        signingAmount,
+        signatureBytes
+      } = await this.getChannelParameters();
+      const metadata = [{
+        'snet-payment-type': 'escrow'
+      }, {
+        'snet-payment-channel-id': `${channelId}`
+      }, {
+        'snet-payment-channel-nonce': `${nonce}`
+      }, {
+        'snet-payment-channel-amount': `${signingAmount}`
+      }, {
+        'snet-payment-channel-signature-bin': signatureBytes.toString('base64')
+      }];
+      return metadata;
     }
-
     async _getNewlyOpenedChannel(receipt) {
-        const openChannels = await this._mpeContract.getPastOpenChannels(
-            this.account,
-            this,
-            receipt.blockNumber,
-            this
-        );
-        const newPaymentChannel = openChannels[0];
-        logger.info(
-            `New PaymentChannel[id: ${newPaymentChannel.channelId}] opened`
-        );
-        return newPaymentChannel;
+      const openChannels = await this._mpeContract.getPastOpenChannels(this.account, this, receipt.blockNumber, this);
+      const newPaymentChannel = openChannels[0];
+      logger.info(`New PaymentChannel[id: ${newPaymentChannel.channelId}] opened`);
+      return newPaymentChannel;
     }
-
     get _web3() {
-        return this._sdk.web3;
+      return this._sdk.web3;
     }
-
+  
     /**
      * @type {Account}
      */
     get account() {
-        return this._sdk.account;
+      return this._sdk.account;
     }
-
     get _pricePerServiceCall() {
-        const { pricing } = this.group;
-        const fixedPricing = find(
-            pricing,
-            ({ price_model }) => price_model === 'fixed_price'
-        );
-
-        return new BigNumber(fixedPricing.price_in_cogs);
+      const {
+        pricing
+      } = this.group;
+      const fixedPricing = (0, find)(pricing, ({
+        price_model
+      }) => price_model === 'fixed_price');
+      return new BigNumber(fixedPricing.price_in_cogs);
     }
-
     _getServiceEndpoint() {
-        if (this._options.endpoint) {
-            return url.parse(this._options.endpoint);
-        }
-
-        const { endpoints } = this.group;
-        const endpoint = first(endpoints);
-        logger.debug(`Service endpoint: ${endpoint}`, { tags: ['gRPC'] });
-
-        return endpoint && url.parse(endpoint);
+      if (this._options.endpoint) {
+        return url.parse(this._options.endpoint);
+      }
+      const {
+        endpoints
+      } = this.group;
+      const endpoint = (0, first)(endpoints);
+      logger.debug(`Service endpoint: ${endpoint}`, {
+        tags: ['gRPC']
+      });
+      return endpoint && url.parse(endpoint);
     }
 
     _generatePaymentChannelStateServiceClient() {
-        logger.error(
-            '_generatePaymentChannelStateServiceClient must be implemented in the sub classes'
-        );
+      logger.error('_generatePaymentChannelStateServiceClient must be implemented in the sub classes');
     }
 
     _getChannelStateRequestMethodDescriptor() {
-        logger.error(
-            '_getChannelStateRequestMethodDescriptor must be implemented in the sub classes'
-        );
+      logger.error('_getChannelStateRequestMethodDescriptor must be implemented in the sub classes');
     }
 
     _generateModelServiceClient() {
-        logger.error(
-            '_generateTrainingStateServiceClient must be implemented in the sub classes'
-        );
+      logger.error('_generateTrainingStateServiceClient must be implemented in the sub classes');
     }
 
-    _getModelRequestMethodDescriptor() {
-        logger.error(
-            '_getModelRequestMethodDescriptor must be implemented in the sub classes'
-        );
+    _getAllModelRequestMethodDescriptor() {
+      logger.error('_getAllModelRequestMethodDescriptor must be implemented in the sub classes');
     }
+
     _getAuthorizationRequestMethodDescriptor() {
-        logger.error(
-            '_getAuthorizationRequestMethodDescriptor must be implemented in the sub classes'
-        );
+      logger.error('_getAuthorizationRequestMethodDescriptor must be implemented in the sub classes');
     }
+
+    _getValidateModelPriceRequestMethodDescriptor() {
+      logger.error('_getValidateModelPriceRequestMethodDescriptor must be implemented in the sub classes');
+    };
+
+    _getTrainModelPriceRequestMethodDescriptor() {
+        logger.error('_getTrainModelPriceRequestMethodDescriptor must be implemented in the sub classes');
+      };
+
+    _getTrainModelRequestMethodDescriptor() {
+        logger.error('_getTrainModelRequestMethodDescriptor must be implemented in the sub classes');
+      };
+
+    _getValidateModelRequestMethodDescriptor() {
+      logger.error('_getValidateModelRequestMethodDescriptor must be implemented in the sub classes');
+    }
+
+    _getTrainingMetadataRequestMethodDescriptor() {
+      logger.error('_getTrainingMetadataRequestMethodDescriptor must be implemented in the sub classes');
+    }
+
+    _getMethodMetadataRequestMethodDescriptor() {
+        logger.error('_getMethodMetadataRequestMethodDescriptor must be implemented in the sub classes');
+      }
+
+    _getNewModelRequestMethodDescriptor() {
+      logger.error('_getNewModelRequestMethodDescriptor must be implemented in the sub classes');
+    }
+
+    _getModelStatusRequestMethodDescriptor() {
+        logger.error('_getModelStatusRequestMethodDescriptor must be implemented in the sub classes');
+      }
 
     _getCreateModelRequestMethodDescriptor() {
-        logger.error(
-            '_getCreateModelRequestMethodDescriptor must be implemented in the sub classes'
-        );
+      logger.error('_getCreateModelRequestMethodDescriptor must be implemented in the sub classes');
     }
 
     _getDeleteModelRequestMethodDescriptor() {
-        logger.error(
-            '_getDeleteModelRequestMethodDescriptor must be implemented in the sub classes'
-        );
+      logger.error('_getDeleteModelRequestMethodDescriptor must be implemented in the sub classes');
     }
 
     _getUpdateModelRequestMethodDescriptor() {
-        logger.error(
-            '__getUpdateModelRequestMethodDescriptor must be implemented in the sub classes'
-        );
-    }
-
-    _getModelDetailsRequestMethodDescriptor() {
-        logger.error(
-            '_getModelDetailsRequestMethodDescriptor must be implemented in the sub classes'
-        );
+      logger.error('_getUpdateModelRequestMethodDescriptor must be implemented in the sub classes');
     }
 
     get concurrencyManager() {
-        logger.error(
-            'concurrencyManager must be implemented in the sub classes'
-        );
+      logger.error('concurrencyManager must be implemented in the sub classes');
     }
-}
+  }
 
 export default BaseServiceClient;

@@ -50,3 +50,8 @@ td, th {
   gap: 5%;
   align-items: start;
 }
+
+.button-group {
+  display: flex;
+  gap: 20px;
+}

@@ -93,7 +93,7 @@ export default class IPFSMetadataProvider {
             }
             return response.json();
         } catch (error) {
-            debug(`Error fetching metadata from IPFS[CID: ${storageTypeCID}]`);
+            logger.debug(`Error fetching metadata from IPFS[CID: ${storageTypeCID}]`);
             throw error;
         }
     }

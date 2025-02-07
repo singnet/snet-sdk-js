@@ -4,6 +4,7 @@ import { getServiceClient } from "./helperFunctions/sdkCallFunctions";
 import ServiceDemo from "./components/ServiceDemo";
 import ServiceInfo from "./components/ServiceInfo";
 import WalletInfo from "./components/WalletInfo";
+import TrainingModel from "./components/TrainingModel";
 
 const ExampleService = () => {
   const [serviceClient, setServiceClient] = useState();
@@ -24,6 +25,7 @@ const ExampleService = () => {
           <WalletInfo />
         </div>
         <ServiceDemo serviceClient={serviceClient}/>
+        <TrainingModel serviceClient={serviceClient}/>
       </div>
     );
 }

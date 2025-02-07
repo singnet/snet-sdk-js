@@ -1,0 +1,30 @@
+h2 {
+    margin: 0.5rem 0;
+}
+
+.models-container, .exciting-models {
+    display: flex;
+    gap: 50px;
+    flex-wrap: wrap;
+}
+
+.training-model-container,
+.model-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.model-container {
+    max-width: 400px;
+}
+
+.delete-button {
+    border: 1px solid #dc0000;
+    background: #ffdfdf;
+    color: #dc0000;
+}
+
+.model-buttons {
+    flex-wrap: wrap;
+}
