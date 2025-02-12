@@ -1,14 +1,14 @@
-// package: training_daemon
+// package: training
 // file: training_daemon.proto
 
 var training_daemon_pb = require("./training_daemon_pb");
-var training_v2_pb = require("./training_v2_pb");
+var training_pb = require("./training_pb");
 var google_protobuf_empty_pb = require("google-protobuf/google/protobuf/empty_pb");
 var grpc = require("@improbable-eng/grpc-web").grpc;
 
 var Daemon = (function () {
   function Daemon() {}
-  Daemon.serviceName = "training_daemon.Daemon";
+  Daemon.serviceName = "training.Daemon";
   return Daemon;
 }());
 
@@ -18,7 +18,7 @@ Daemon.create_model = {
   requestStream: false,
   responseStream: false,
   requestType: training_daemon_pb.NewModelRequest,
-  responseType: training_v2_pb.ModelResponse
+  responseType: training_pb.ModelResponse
 };
 
 Daemon.validate_model_price = {
@@ -27,7 +27,7 @@ Daemon.validate_model_price = {
   requestStream: false,
   responseStream: false,
   requestType: training_daemon_pb.AuthValidateRequest,
-  responseType: training_v2_pb.PriceInBaseUnit
+  responseType: training_pb.PriceInBaseUnit
 };
 
 Daemon.upload_and_validate = {
@@ -36,7 +36,7 @@ Daemon.upload_and_validate = {
   requestStream: true,
   responseStream: false,
   requestType: training_daemon_pb.UploadAndValidateRequest,
-  responseType: training_v2_pb.StatusResponse
+  responseType: training_pb.StatusResponse
 };
 
 Daemon.validate_model = {
@@ -45,7 +45,7 @@ Daemon.validate_model = {
   requestStream: false,
   responseStream: false,
   requestType: training_daemon_pb.AuthValidateRequest,
-  responseType: training_v2_pb.StatusResponse
+  responseType: training_pb.StatusResponse
 };
 
 Daemon.train_model_price = {
@@ -54,7 +54,7 @@ Daemon.train_model_price = {
   requestStream: false,
   responseStream: false,
   requestType: training_daemon_pb.CommonRequest,
-  responseType: training_v2_pb.PriceInBaseUnit
+  responseType: training_pb.PriceInBaseUnit
 };
 
 Daemon.train_model = {
@@ -63,7 +63,7 @@ Daemon.train_model = {
   requestStream: false,
   responseStream: false,
   requestType: training_daemon_pb.CommonRequest,
-  responseType: training_v2_pb.StatusResponse
+  responseType: training_pb.StatusResponse
 };
 
 Daemon.delete_model = {
@@ -72,7 +72,7 @@ Daemon.delete_model = {
   requestStream: false,
   responseStream: false,
   requestType: training_daemon_pb.CommonRequest,
-  responseType: training_v2_pb.StatusResponse
+  responseType: training_pb.StatusResponse
 };
 
 Daemon.get_all_models = {
@@ -90,7 +90,7 @@ Daemon.get_model = {
   requestStream: false,
   responseStream: false,
   requestType: training_daemon_pb.CommonRequest,
-  responseType: training_v2_pb.ModelResponse
+  responseType: training_pb.ModelResponse
 };
 
 Daemon.update_model = {
@@ -99,7 +99,7 @@ Daemon.update_model = {
   requestStream: false,
   responseStream: false,
   requestType: training_daemon_pb.UpdateModelRequest,
-  responseType: training_v2_pb.ModelResponse
+  responseType: training_pb.ModelResponse
 };
 
 Daemon.get_training_metadata = {

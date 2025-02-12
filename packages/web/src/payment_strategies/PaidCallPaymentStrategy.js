@@ -12,6 +12,25 @@ class PaidCallPaymentStrategy extends BasePaidPaymentStrategy {
 
   /**
    * @returns {Promise<[{'snet-payment-type': string}, {'snet-payment-channel-id': string}, {'snet-payment-channel-nonce': string}, {'snet-payment-channel-amount': string}, {'snet-payment-channel-signature-bin': Buffer}]>}
+  */
+    async getTrainingPaymentMetadata(modelId, amount) {
+      const channel = await this._selectChannel(amount);
+      const currentNonce = channel.state.nonce;
+      const signature = await this._generateSignature(channel.channelId, currentNonce, amount); 
+      const metadata = [
+        { 'snet-payment-type': 'train-call' },
+        { 'snet-train-model-id': modelId},
+        { 'snet-payment-channel-id': `${channel.channelId}` },
+        { 'snet-payment-channel-nonce': `${currentNonce}` },
+        { 'snet-payment-channel-amount': `${amount}` },
+        { 'snet-payment-channel-signature-bin': signature.toString('base64') },
+      ];
+  
+      return metadata;
+    }
+
+  /**
+   * @returns {Promise<[{'snet-payment-type': string}, {'snet-payment-channel-id': string}, {'snet-payment-channel-nonce': string}, {'snet-payment-channel-amount': string}, {'snet-payment-channel-signature-bin': Buffer}]>}
    */
   async getPaymentMetadata() {
     const channel = await this._selectChannel();

@@ -5,9 +5,10 @@ import {
   PaymentChannelStateServiceClient,
 } from "./proto/state_service_pb_service";
 import { Daemon, DaemonClient } from "./proto/training_daemon_pb_service";
-import training_pb from "./proto/training_daemon_pb";
-import trainingV2_pb from "./proto/training_v2_pb";
+import training_daemon_pb from "./proto/training_daemon_pb";
+import training_pb from "./proto/training_pb";
 import { BaseServiceClient, logger } from "./sdk-core";
+import { PaidCallPaymentStrategy } from "./payment_strategies";
 
 class WebServiceClient extends BaseServiceClient {
   /**
@@ -57,13 +58,8 @@ class WebServiceClient extends BaseServiceClient {
     };
   }
 
-  async _enhanceMetadata(metadata = new grpc.Metadata(), methodDescriptor) {
-    if (this._options.disableBlockchainOperations) {
-      return metadata;
-    }
-
-    if (this._options.metadataGenerator) {
-      const { serviceName } = methodDescriptor.service;
+  async _enhanceMetadataViaMetadataGenerator(metadata, methodDescriptor) {
+    const { serviceName } = methodDescriptor.service;
       const { methodName } = methodDescriptor;
       const customMetadata = await this._options.metadataGenerator(
         this,
@@ -74,26 +70,41 @@ class WebServiceClient extends BaseServiceClient {
         metadata.append(key, value);
       });
       return metadata;
-    }
+  }
 
-    // const { channelId, nonce, signingAmount, signatureBytes } = await this._fetchPaymentMetadata();
-    // metadata.append('snet-payment-type', 'escrow');
-
-    const paymentMetadata = await this._fetchPaymentMetadata();
+  _enhanceMetadataDefault(metadata, paymentMetadata) {
     paymentMetadata.forEach((paymentMeta) => {
       Object.entries(paymentMeta).forEach(([key, value]) => {
         metadata.append(key, value);
       });
     });
 
-    // metadata.append('snet-payment-channel-id', `${channelId}`);
-    // metadata.append('snet-payment-channel-nonce', `${nonce}`);
-    // metadata.append('snet-payment-channel-amount', `${signingAmount}`);
-    // metadata.append('snet-payment-channel-signature-bin', signatureBytes.toString('base64'));
     metadata.append("snet-payment-mpe-address", this._mpeContract.address);
     console.log("metadata", metadata);
     return metadata;
   }
+
+  async _enhanceMetadata(metadata = new grpc.Metadata(), methodDescriptor) {
+    if (this._options.disableBlockchainOperations) {
+      return metadata;
+    }
+
+    if (this._options.metadataGenerator) {
+      return await this._enhanceMetadataViaMetadataGenerator(metadata, methodDescriptor);
+    }
+
+    const paymentMetadata = await this._fetchPaymentMetadata();
+    return this._enhanceMetadataDefault(metadata, paymentMetadata);
+  }
+
+  async _generateTrainingPaymentMetadata(modelId, amount) {
+    let metadata = new grpc.Metadata();
+    const paidCallPaymentStrategy = new PaidCallPaymentStrategy(this);
+    const paymentMetadata = await paidCallPaymentStrategy.getTrainingPaymentMetadata(modelId, amount);
+    
+    this._enhanceMetadataDefault(metadata, paymentMetadata);
+    return metadata;
+}
 
   _generatePaymentChannelStateServiceClient() {
     logger.debug("Creating PaymentChannelStateService client", {
@@ -120,7 +131,7 @@ class WebServiceClient extends BaseServiceClient {
       { tags: ["gRPC"] }
     );
     const host = `${serviceEndpoint.protocol}//${serviceEndpoint.host}`;
-    return new DaemonClient(host);
+    return new DaemonClient(host); 
   };
 
   _getAllModelRequestMethodDescriptor() {
@@ -168,11 +179,11 @@ class WebServiceClient extends BaseServiceClient {
   }
 
   _getNewModelRequestMethodDescriptor() {
-    return trainingV2_pb.NewModel;
+    return training_pb.NewModel;
   }
 
   _getAuthorizationRequestMethodDescriptor() { 
-    return training_pb.AuthorizationDetails;
+    return training_daemon_pb.AuthorizationDetails;
   };
 
 }

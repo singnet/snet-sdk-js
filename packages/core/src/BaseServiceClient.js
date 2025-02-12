@@ -192,13 +192,12 @@ class BaseServiceClient {
 
     async getAllModels(params) {
       const request = await this._trainingStateRequest(params);
-      request;
       return new Promise((resolve, reject) => {
         this._trainingServiceClient.get_all_models(request, (err, response) => {
           if (err) {
             reject(err);
           } else {
-            const modelDetails = response.getListOfModelsList();
+            const modelDetails = response.getListOfModelsList();  
             const data = modelDetails.map(item => this._parseModelDetails(item));
             resolve(data);
           }
@@ -217,7 +216,8 @@ class BaseServiceClient {
             accessAddressList: modelDetails.getAddressListList(),
             modelName: modelDetails.getName(),
             publicAccess: modelDetails.getIsPublic(),
-            dataLink: modelDetails.getTrainingDataLink()
+            dataLink: modelDetails.getTrainingDataLink(),
+            updatedByAddress: modelDetails.getUpdatedByAddress()
           };
     }
 
@@ -304,8 +304,11 @@ class BaseServiceClient {
 
     async trainModel(params) {
         const request = await this._trainModelRequest(params);
+        const amount = await this.getTrainModelPrice(params);
+        const paymentMetadata = await this._generateTrainingPaymentMetadata(params.modelId, amount);
+
         return new Promise((resolve, reject) => {
-          this._trainingServiceClient.train_model(request, (err, response) => {
+          this._trainingServiceClient.train_model(request, paymentMetadata, (err, response) => {
             if (err) {
               reject(err);
             } else {
@@ -365,35 +368,14 @@ class BaseServiceClient {
       return modelStateRequest;
     }
 
-    async getValidatingPaymentMetadata(modelId) { //TODO (in progress)
-      console.log("this._paymentChannelManagementStrategy: ", this._paymentChannelManagementStrategy);
-      const {
-        channelId,
-        nonce,
-        signingAmount,
-        signatureBytes
-      } = await this.getChannelParameters();
-      const metadata = [{
-        'snet-payment-type': 'train-call'
-      }, {
-        'snet-train-model-id': modelId
-      }, {
-        'snet-payment-channel-id': `${channelId}`
-      }, {
-        'snet-payment-channel-nonce': `${nonce}`
-      }, {
-        'snet-payment-channel-amount': `${signingAmount}`
-      }, {
-        'snet-payment-channel-signature-bin': signatureBytes.toString('base64')
-      }];
-      return metadata;
-    }
-
     async validateModel(params) {
       const request = await this._validateModelRequest(params);
-      const validateModelMetdata = this.getValidatingPaymentMetadata(params.modelId);
+
+      const amount = await this.getValidateModelPrice(params);
+      const paymentMetadata = await this._generateTrainingPaymentMetadata(params.modelId, amount);
+
       return new Promise((resolve, reject) => {
-        this._trainingServiceClient.validate_model(request, validateModelMetdata, (err, response) => {
+        this._trainingServiceClient.validate_model(request, paymentMetadata, (err, response) => {
           if (err) {
             reject(err);
           } else {
@@ -430,22 +412,27 @@ class BaseServiceClient {
       const ModelStateRequest = this._getAllModelRequestMethodDescriptor();
       const modelStateRequest = new ModelStateRequest();
       const authorizationRequest = this._getAuthorizationRequest(currentBlockNumber, message, signatureBytes, params.address);
+      
       modelStateRequest.setAuthorization(authorizationRequest);
+      params?.statuses.forEach(status => modelStateRequest.addStatuses(status));
+      modelStateRequest.setIsPublic(params?.isPublic ? params.isPublic : null);
+      modelStateRequest.setGrpcServiceName(params?.serviceName);
+      modelStateRequest.setGrpcMethodName(params?.grpcMethod);
+      modelStateRequest.setName(params.name);
+      modelStateRequest.setCreatedByAddress(params?.createdByAddress);
+      modelStateRequest.setPageSize(params?.pageSize);
+      modelStateRequest.setPage(params?.page);
+
       return modelStateRequest;
     }
 
     async _requestSignForModel(address, message) {
       const currentBlockNumber = await this._web3.eth.getBlockNumber();
-      const signatureBytes = await this.account.signData({
-        t: 'string',
-        v: message
-      }, {
-        t: 'address',
-        v: address
-      }, {
-        t: 'uint256',
-        v: currentBlockNumber
-      });
+      const signatureBytes = await this.account.signData(
+        { t: 'string', v: message }, 
+        { t: 'address', v: address },
+        { t: 'uint256', v: currentBlockNumber }
+      );
       return {
         currentBlockNumber,
         signatureBytes
@@ -469,7 +456,7 @@ class BaseServiceClient {
               status: serviceStatus[response.getStatus()],
               updatedDate: response.getUpdatedDate(),
               serviceName: response.getGrpcServiceName(),
-              methodName: response.getGrpcMethosName()
+              methodName: response.getGrpcMethodName()
             };
             resolve(data);
           }
@@ -604,7 +591,7 @@ class BaseServiceClient {
       logger.info('Updating payment channel states', {
         tags: ['PaymentChannel']
       });
-      const currentChannelStatesPromise = (0, map)(this._paymentChannels, paymentChannel => paymentChannel.syncState());
+      const currentChannelStatesPromise = this._paymentChannels.map(paymentChannel => paymentChannel.syncState());
       await Promise.all(currentChannelStatesPromise);
       return this._paymentChannels;
     }
@@ -681,17 +668,17 @@ class BaseServiceClient {
     async defaultChannelExpiration() {
       const currentBlockNumber = await this._web3.eth.getBlockNumber();
       const paymentExpirationThreshold = this._getPaymentExpiryThreshold();
-      return (0, toBNString)(currentBlockNumber) + paymentExpirationThreshold;
+      return toBNString(currentBlockNumber) + paymentExpirationThreshold;
     }
     _getPaymentExpiryThreshold() {
-      if ((0, isEmpty)(this._group)) {
+      if (isEmpty(this._group)) {
         return 0;
       }
       const paymentExpirationThreshold = this._group.payment.payment_expiration_threshold;
       return paymentExpirationThreshold || 0;
     }
     _enhanceGroupInfo(group) {
-      if ((0, isEmpty)(group)) {
+      if (isEmpty(group)) {
         return group;
       }
       const {
@@ -709,14 +696,14 @@ class BaseServiceClient {
       const {
         currentBlockNumber,
         signatureBytes
-      } = await this._channelStateRequestProperties((0, toBNString)(channelId));
+      } = await this._channelStateRequestProperties(toBNString(channelId));
       const channelIdBytes = Buffer.alloc(4);
-      channelIdBytes.writeUInt32BE((0, toBNString)(channelId), 0);
+      channelIdBytes.writeUInt32BE(toBNString(channelId), 0);
       const ChannelStateRequest = this._getChannelStateRequestMethodDescriptor();
       const channelStateRequest = new ChannelStateRequest();
       channelStateRequest.setChannelId(channelIdBytes);
       channelStateRequest.setSignature(signatureBytes);
-      channelStateRequest.setCurrentBlock((0, toBNString)(currentBlockNumber));
+      channelStateRequest.setCurrentBlock(toBNString(currentBlockNumber));
       return channelStateRequest;
     }
     async _channelStateRequestProperties(channelId) {
@@ -731,25 +718,19 @@ class BaseServiceClient {
         };
       }
       const currentBlockNumber = await this._web3.eth.getBlockNumber();
-      const channelIdStr = (0, toBNString)(channelId);
-      const signatureBytes = await this.account.signData({
-        t: 'string',
-        v: '__get_channel_state'
-      }, {
-        t: 'address',
-        v: this._mpeContract.address
-      }, {
-        t: 'uint256',
-        v: channelIdStr
-      }, {
-        t: 'uint256',
-        v: currentBlockNumber
-      });
+      const channelIdStr = toBNString(channelId);
+      const signatureBytes = await this.account.signData(
+        { t: 'string', v: '__get_channel_state'},
+        { t: 'address', v: this._mpeContract.address},
+        { t: 'uint256', v: channelIdStr},
+        { t: 'uint256', v: currentBlockNumber}
+      );
       return {
         currentBlockNumber,
         signatureBytes
       };
     }
+
     async getChannelParameters() {
       const channel = await this._paymentChannelManagementStrategy.selectChannel(this);
       const {
@@ -760,9 +741,9 @@ class BaseServiceClient {
         }
       } = channel;
       const signingAmount = currentSignedAmount.plus(this._pricePerServiceCall);
-      const channelIdStr = (0, toBNString)(channelId);
-      const nonceStr = (0, toBNString)(nonce);
-      const signingAmountStr = (0, toBNString)(signingAmount);
+      const channelIdStr = toBNString(channelId);
+      const nonceStr = toBNString(nonce);
+      const signingAmountStr = toBNString(signingAmount);
       logger.info(`Using PaymentChannel[id: ${channelIdStr}] with nonce: ${nonceStr} and amount: ${signingAmountStr} and `, {
         tags: ['PaymentChannelManagementStrategy', 'gRPC']
       });
@@ -776,6 +757,7 @@ class BaseServiceClient {
         nonce
       };
     }
+
     async _fetchPaymentMetadata() {
       if (!this._options.paidCallMetadataGenerator) {
         return this._paymentChannelManagementStrategy.getPaymentMetadata(this);
@@ -789,19 +771,16 @@ class BaseServiceClient {
         signingAmount,
         signatureBytes
       } = await this.getChannelParameters();
-      const metadata = [{
-        'snet-payment-type': 'escrow'
-      }, {
-        'snet-payment-channel-id': `${channelId}`
-      }, {
-        'snet-payment-channel-nonce': `${nonce}`
-      }, {
-        'snet-payment-channel-amount': `${signingAmount}`
-      }, {
-        'snet-payment-channel-signature-bin': signatureBytes.toString('base64')
-      }];
+      const metadata = [
+        {'snet-payment-type': 'escrow'},
+        {'snet-payment-channel-id': `${channelId}`},
+        {'snet-payment-channel-nonce': `${nonce}`},
+        {'snet-payment-channel-amount': `${signingAmount}`},
+        {'snet-payment-channel-signature-bin': signatureBytes.toString('base64')}
+      ]
       return metadata;
     }
+
     async _getNewlyOpenedChannel(receipt) {
       const openChannels = await this._mpeContract.getPastOpenChannels(this.account, this, receipt.blockNumber, this);
       const newPaymentChannel = openChannels[0];
@@ -822,11 +801,10 @@ class BaseServiceClient {
       const {
         pricing
       } = this.group;
-      const fixedPricing = (0, find)(pricing, ({
-        price_model
-      }) => price_model === 'fixed_price');
+      const fixedPricing = pricing.find(price => price.price_model === 'fixed_price');
       return new BigNumber(fixedPricing.price_in_cogs);
     }
+
     _getServiceEndpoint() {
       if (this._options.endpoint) {
         return url.parse(this._options.endpoint);
@@ -834,7 +812,7 @@ class BaseServiceClient {
       const {
         endpoints
       } = this.group;
-      const endpoint = (0, first)(endpoints);
+      const endpoint = endpoints[0];
       logger.debug(`Service endpoint: ${endpoint}`, {
         tags: ['gRPC']
       });
@@ -903,6 +881,10 @@ class BaseServiceClient {
 
     _getUpdateModelRequestMethodDescriptor() {
       logger.error('_getUpdateModelRequestMethodDescriptor must be implemented in the sub classes');
+    }
+
+    _generateTrainingPaymentMetadata() {
+        logger.error('_generateTrainingPaymentMetadata must be implemented in the sub classes');
     }
 
     get concurrencyManager() {

@@ -16,12 +16,11 @@ class BasePaidPaymentStrategy {
    * @returns {Promise<PaymentChannel>}
    * @protected
    */
-  async _selectChannel() {
+  async _selectChannel(serviceCallPrice = this._getPrice()) {
     const { account } = this._serviceClient;
     await this._serviceClient.loadOpenChannels();
     await this._serviceClient.updateChannelStates();
     const { paymentChannels } = this._serviceClient;
-    const serviceCallPrice = this._getPrice();
     const extendedChannelFund = serviceCallPrice * this._callAllowance;
     const mpeBalance = await account.escrowBalance();
     const defaultExpiration = await this._serviceClient.defaultChannelExpiration();
