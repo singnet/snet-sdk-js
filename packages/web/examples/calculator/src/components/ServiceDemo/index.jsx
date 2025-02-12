@@ -46,9 +46,9 @@ const ServiceDemo = ({serviceClient}) => {
             request.setB(values.secondValue);
         
             const props = {
-            request,
-            preventCloseServiceOnEnd: false,
-            onEnd: onActionEnd,
+                request,
+                preventCloseServiceOnEnd: false,
+                onEnd: onActionEnd,
             };
             serviceClient.unary(methodDescriptor, props);
         } catch (err) {
