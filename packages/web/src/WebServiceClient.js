@@ -104,7 +104,7 @@ class WebServiceClient extends BaseServiceClient {
     
     this._enhanceMetadataDefault(metadata, paymentMetadata);
     return metadata;
-}
+  }
 
   _generatePaymentChannelStateServiceClient() {
     logger.debug("Creating PaymentChannelStateService client", {

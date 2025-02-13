@@ -1450,15 +1450,15 @@ proto.training.UpdateModelRequest.serializeBinaryToWriter = function(message, wr
       f
     );
   }
-  f = message.getModelName();
-  if (f.length > 0) {
+  f = /** @type {string} */ (jspb.Message.getField(message, 3));
+  if (f != null) {
     writer.writeString(
       3,
       f
     );
   }
-  f = message.getDescription();
-  if (f.length > 0) {
+  f = /** @type {string} */ (jspb.Message.getField(message, 4));
+  if (f != null) {
     writer.writeString(
       4,
       f
@@ -1543,7 +1543,25 @@ proto.training.UpdateModelRequest.prototype.getModelName = function() {
  * @return {!proto.training.UpdateModelRequest} returns this
  */
 proto.training.UpdateModelRequest.prototype.setModelName = function(value) {
-  return jspb.Message.setProto3StringField(this, 3, value);
+  return jspb.Message.setField(this, 3, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.training.UpdateModelRequest} returns this
+ */
+proto.training.UpdateModelRequest.prototype.clearModelName = function() {
+  return jspb.Message.setField(this, 3, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.training.UpdateModelRequest.prototype.hasModelName = function() {
+  return jspb.Message.getField(this, 3) != null;
 };
 
 
@@ -1561,7 +1579,25 @@ proto.training.UpdateModelRequest.prototype.getDescription = function() {
  * @return {!proto.training.UpdateModelRequest} returns this
  */
 proto.training.UpdateModelRequest.prototype.setDescription = function(value) {
-  return jspb.Message.setProto3StringField(this, 4, value);
+  return jspb.Message.setField(this, 4, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.training.UpdateModelRequest} returns this
+ */
+proto.training.UpdateModelRequest.prototype.clearDescription = function() {
+  return jspb.Message.setField(this, 4, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.training.UpdateModelRequest.prototype.hasDescription = function() {
+  return jspb.Message.getField(this, 4) != null;
 };
 
 

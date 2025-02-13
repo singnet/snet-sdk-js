@@ -41,8 +41,8 @@ message CommonRequest {
 message UpdateModelRequest {
   AuthorizationDetails authorization = 1;
   string model_id = 2;
-  string model_name = 3;
-  string description = 4;
+  optional string model_name = 3;
+  optional string description = 4;
   repeated string address_list = 5;
 }
 
@@ -98,7 +98,7 @@ message MethodMetadataRequest {
 message AllModelsRequest {
   AuthorizationDetails authorization = 1;
   // filters:
-  repeated training.Status statuses = 3;
+  repeated training.Status statuses = 3; // optional
   optional bool is_public = 4; // null - all, false - only private, true - only public models
   string grpc_method_name = 5;
   string grpc_service_name = 6;

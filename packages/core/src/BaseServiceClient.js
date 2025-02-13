@@ -1,6 +1,6 @@
 import url from 'url';
 import { BigNumber } from 'bignumber.js';
-import { find, first, isEmpty, map } from 'lodash';
+import { isEmpty } from 'lodash';
 import logger from './utils/logger';
 
 import { toBNString } from './utils/bignumber_helper';
