@@ -1,3 +1,5 @@
+import BigNumber from "bignumber.js";
+
 export const serviceStatus = {
     0: "CREATED",
     1: "VALIDATING",
@@ -8,4 +10,4 @@ export const serviceStatus = {
     6: "DELETED",
 }
 
-export const UNIFIED_SIGN_EXPIRY = 300; // blocks number after that unified sign is expiry
+export const UNIFIED_SIGN_EXPIRY = new BigNumber(300); // blocks number after that unified sign is expiry

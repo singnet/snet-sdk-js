@@ -4,8 +4,6 @@ import {
 } from '../../../helperFunctions/sdkCallFunctions';
 import Table from "../../Table";
 import Loader from '../../Loader';
-import { PaidCallPaymentStrategy } from 'snet-sdk-web/payment_strategies';
-import { grpc } from "@improbable-eng/grpc-web";
 
 const Model = ({ model, serviceClient, getAllModels }) => {
     const [isLoading, setIsLoading] = useState(false);

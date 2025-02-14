@@ -82,6 +82,7 @@ class BaseServiceClient {
     async _getUnifiedSign(address, message) {
       const keyOfUnofiedSign = address + message;
       const blockNumber = await this._web3.eth.getBlockNumber();
+
       if (this.unifiedSigns[keyOfUnofiedSign] && blockNumber - this.unifiedSigns[keyOfUnofiedSign]?.currentBlockNumber <= UNIFIED_SIGN_EXPIRY) {
         return this.unifiedSigns[keyOfUnofiedSign];
       }
@@ -197,7 +198,7 @@ class BaseServiceClient {
           if (err) {
             reject(err);
           } else {
-            const modelDetails = response.getListOfModelsList();  
+            const modelDetails = response.getListOfModelsList();
             const data = modelDetails.map(item => this._parseModelDetails(item));
             resolve(data);
           }
@@ -289,7 +290,7 @@ class BaseServiceClient {
       }
   
     async _trainModelPriceRequest(params) {
-        const message = '__train_model_price';
+        const message = '__get';
         const {
           currentBlockNumber,
           signatureBytes
@@ -351,7 +352,7 @@ class BaseServiceClient {
     }
 
     async _validateModelPriceRequest(params) {
-      const message = '__validate_model_price';
+      const message = '__get';
       const {
         currentBlockNumber,
         signatureBytes
@@ -404,18 +405,18 @@ class BaseServiceClient {
     }
 
     async _trainingStateRequest(params) {
-      const message = '__get_existing_model';
+      const message = '__get';
       const {
         currentBlockNumber,
         signatureBytes
-      } = await this._requestSignForModel(params.address, message);
+      } = await this._getUnifiedSign(params.address, message);
       const ModelStateRequest = this._getAllModelRequestMethodDescriptor();
       const modelStateRequest = new ModelStateRequest();
       const authorizationRequest = this._getAuthorizationRequest(currentBlockNumber, message, signatureBytes, params.address);
       
       modelStateRequest.setAuthorization(authorizationRequest);
       params?.statuses.forEach(status => modelStateRequest.addStatuses(status));
-      modelStateRequest.setIsPublic(params?.isPublic ? params.isPublic : null);
+      modelStateRequest.setIsPublic(params.isPublic);
       modelStateRequest.setGrpcServiceName(params?.serviceName);
       modelStateRequest.setGrpcMethodName(params?.grpcMethod);
       modelStateRequest.setName(params.name);
@@ -777,7 +778,7 @@ class BaseServiceClient {
         {'snet-payment-channel-nonce': `${nonce}`},
         {'snet-payment-channel-amount': `${signingAmount}`},
         {'snet-payment-channel-signature-bin': signatureBytes.toString('base64')}
-      ]
+      ];
       return metadata;
     }
 

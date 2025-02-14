@@ -6,34 +6,11 @@ import './styles.css';
 import { isNull } from 'lodash';
 import Model from './Model';
 import Loader from "../Loader";
-// import { PaidCallPaymentStrategy } from 'snet-sdk-web/payment_strategies';
-
-// import { grpc } from "@improbable-eng/grpc-web";
 
 const TrainingModel = ({ serviceClient }) => {
     const [isLoading, setIsLoading] = useState(false);
-    // const [createdModel, setCreatedModel] = useState();
-    const [excitingModels, setExcitingModels] = useState();
+    const [models, setModels] = useState();
     const [trainingMetadata, setTrainingMetadata] = useState({isTrainingEnabled: false, hasTrainingInProto: false, trainingServicesAndMethods: []})
-
-
-    // useEffect(() => {
-    //     if (trainingMetadata) {
-    //         return;
-    //     }
-    //     const fetchServiceTrainingDataAPI = async () => {
-    //         try {
-    //             const url = `${serviceEndpoint}heartbeat`;
-    //             const response = await fetch(url);
-    //             const trainingData = await response.json();
-    //             setTrainingMetadata(trainingData?.trainingMethods[0]);
-    //         } catch (error) {
-    //             setTrainingMetadata(null);
-    //         }
-    //     };
-
-    //     fetchServiceTrainingDataAPI();
-    // }, [trainingMetadata])
 
     const createModel = async () => {
         try {
@@ -44,9 +21,9 @@ const TrainingModel = ({ serviceClient }) => {
             const { address } = await getWalletInfo();
             const params = {
                 address,
-                name: 'Model not public',
+                name: 'Model public',
                 description: 'Model description',
-                is_public: false,
+                is_public: true,
                 address_list: ['0x6E7BaCcc00D69eab748eDf661D831cd2c7f3A4DF', '0x0709e9B78756B740ab0C64427f43f8305fD6D1A7'],
                 grpcMethod: trainingMetadata.grpcServiceMethod,
                 serviceName: trainingMetadata.grpcServiceName,
@@ -55,7 +32,6 @@ const TrainingModel = ({ serviceClient }) => {
                 params
             );
             await getAllModels();
-            // setCreatedModel(createdModel);
         } catch (err) {
             console.log(err);
         } finally {
@@ -68,18 +44,18 @@ const TrainingModel = ({ serviceClient }) => {
             setIsLoading(true);
             const { address } = await getWalletInfo();
             const params = {
-                grpcMethod: trainingMetadata.grpcServiceMethod,
-                serviceName: trainingMetadata.grpcServiceName,
+                // grpcMethod: trainingMetadata.grpcServiceMethod,
+                // serviceName: trainingMetadata.grpcServiceName,
                 name: "",
                 statuses: [],
                 isPublic: false,
                 createdByAddress: "",
-                pageSize: 2,
-                page: 1,
+                pageSize: 10,
+                page: 0,
                 address,
             };
             const existingModels = await serviceClient.getAllModels(params);
-            setExcitingModels(existingModels);
+            setModels(existingModels);
         } catch (err) {
             console.log(err);
         } finally {
@@ -106,17 +82,16 @@ const TrainingModel = ({ serviceClient }) => {
 
     const trainingActions = [
         {id: "createModel", label: "Create Model", action: createModel},
-        {id: "getAllModels", label: "Get Existing Models", action: getAllModels},
+        {id: "getAllModels", label: "Get All Models", action: getAllModels},
         {id: "getMethodMetadataByMethod", label: "Get Method Metadata", action: getMethodMetadataByMethod},
     ];
 
-
-    const ExcitingModels = () => {
+    const Models = () => {
         return (
             <div className='exciting-models-container'>
-                <h2>Exciting models</h2>
+                <h2>Models</h2>
                 <div className='exciting-models'>
-                    {excitingModels.map((excitingModel, index) => (
+                    {models.map((excitingModel, index) => (
                         <Model serviceClient={serviceClient} getAllModels={getAllModels} key={index} model={excitingModel} />
                     ))}
                 </div>
@@ -157,7 +132,7 @@ const TrainingModel = ({ serviceClient }) => {
             </div>
             {isLoading && <Loader isLoading={isLoading}/>}
             <div className='models-container'>
-                {excitingModels && <ExcitingModels />}
+                {models && <Models />}
             </div>
         </div>
     );
