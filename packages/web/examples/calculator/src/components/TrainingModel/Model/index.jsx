@@ -38,6 +38,7 @@ const Model = ({ model, serviceClient, getAllModels }) => {
         setIsLoading(true);
         const { address } = await getWalletInfo();
         const params = {
+            isUnifiedSign: true,
             modelId: model.modelId,
             trainingDataLink: 
                 "https://marketplace-user-uploads.s3.us-east-1.amazonaws.com/sandbox_feedback_production/test%40gmail.com_1738853632525_20221209101435_component.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=ASIAXYSEM4MOOPJLNUDR%2F20250206%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250206T145354Z&X-Amz-Expires=600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEEcaCXVzLWVhc3QtMSJHMEUCIE1AGI6%2BjRT0e9XyYVtLNAEsT9qVFD1tox8YY4wzf1DkAiEAhXLLWJNLf4QfYcB7mbfR68nnftCW9GiHRd7ijR7iEhIq%2BgIIYBAEGgw1MzM3OTMxMzc0MzYiDG5H8TEgJcF0ZaKXRCrXAg7X3%2FMJyAXL23P5AFzR014z%2BMqmSZ8Q3IQKAABhVBuTpPcKljlgSaUUBRb6wC53SwGQr0Fqz9ugXqUBTb8i0EGq%2Fa9SKZVnvBU0SdeocbBDPd9a0arP11e7OG8YGmqMkMf%2Fp%2BdcoLHzeIhggIkpUn7DuvL6zQEhalzhFww1sR4fwU5AtnYxk%2BptG895qfV4kGFHVvRpZYjqAaRCLLfb6pIbMaPYR%2FEfGDjccqe1%2F6f78qiioBcJ5O7Xxe5W3D68BrvbBqeItHqDaE2AxMVqp2c3q%2BzefVxi2cw2CwHFbgnWatMh%2B5SQSg%2Bl0iX8cdDYgY1KFOO2RVqZvdAN84zrYaSNuHzgt%2BsSC6AQVuTJC5AV7v6LFsLhxLsYxQLUhZjuifChrHkQDfQf2lpq0ZZ7YVlMHajSeXevWnS9dYr0bwQ8q22zC53XWm%2FipL6pCDslesEeNbaHsOcwgZqTvQY6ngFQCPu%2BXLitqiZyU%2BqNfOSGgES%2BmF5rmUydE1JrROcLo7TOO7CK6frh4K11gdVdJaNUABXcxWcG2CgCE%2B0vJFns7nzMOq8Ynja5XIH2kzYnZQpqKwRVp0wtJndYVWvPOsiX%2B21UiefUOO1wHJXFsyW0vl9%2B%2BmXA4WbZunsi0nhiFDxNnDD%2F%2FdT9JGbyQNc5Dv0PDi6PmUERm7sAu3RPJw%3D%3D&X-Amz-Signature=975294ae053ceb3821b797a5d1f5c875db9cda6a2459843249786b25ef644742&X-Amz-SignedHeaders=host&x-id=PutObject",
@@ -90,6 +91,7 @@ const Model = ({ model, serviceClient, getAllModels }) => {
         setIsLoading(true);
         const { address } = await getWalletInfo();
         const params = {
+            isUnifiedSign: true,
             modelId: model.modelId,
             address,
         };
@@ -102,6 +104,7 @@ const Model = ({ model, serviceClient, getAllModels }) => {
         setIsLoading(true);
         const { address } = await getWalletInfo();
         const params = {
+            isUnifiedSign: true,
             modelId: model.modelId,
             address,
         };
@@ -114,6 +117,7 @@ const Model = ({ model, serviceClient, getAllModels }) => {
         setIsLoading(true);
         const { address } = await getWalletInfo();
         const params = {
+            isUnifiedSign: true,
             modelId: model.modelId,
             address,
         };

@@ -23,7 +23,7 @@ const TrainingModel = ({ serviceClient }) => {
                 address,
                 name: 'Model public',
                 description: 'Model description',
-                is_public: true,
+                isPublic: true,
                 address_list: ['0x6E7BaCcc00D69eab748eDf661D831cd2c7f3A4DF', '0x0709e9B78756B740ab0C64427f43f8305fD6D1A7'],
                 grpcMethod: trainingMetadata.grpcServiceMethod,
                 serviceName: trainingMetadata.grpcServiceName,
@@ -46,6 +46,7 @@ const TrainingModel = ({ serviceClient }) => {
             const params = {
                 // grpcMethod: trainingMetadata.grpcServiceMethod,
                 // serviceName: trainingMetadata.grpcServiceName,
+                isUnifiedSign: true,
                 name: "",
                 statuses: [],
                 isPublic: false,

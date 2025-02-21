@@ -4,7 +4,7 @@ import { isEmpty } from 'lodash';
 import logger from './utils/logger';
 
 import { toBNString } from './utils/bignumber_helper';
-import { UNIFIED_SIGN_EXPIRY, serviceStatus } from './constants/TrainingConstants';
+import { TRANSACTIONS_MESSAGE, UNIFIED_SIGN_EXPIRY, serviceStatus } from './constants/TrainingConstants';
 
 class BaseServiceClient {
     /**
@@ -79,8 +79,22 @@ class BaseServiceClient {
       return this._options.concurrency;
     }
 
-    async _getUnifiedSign(address, message) {
-      const keyOfUnofiedSign = address + message;
+    
+    async _requestSignForModel(address, message) {
+      const currentBlockNumber = await this._web3.eth.getBlockNumber();
+      const signatureBytes = await this.account.signData(
+        { t: 'string', v: message }, 
+        { t: 'address', v: address },
+        { t: 'uint256', v: currentBlockNumber }
+      );
+      return {
+        currentBlockNumber,
+        signatureBytes
+      };
+    }
+
+    async _getUnifiedSign(address) {
+      const keyOfUnofiedSign = address;
       const blockNumber = await this._web3.eth.getBlockNumber();
 
       if (this.unifiedSigns[keyOfUnofiedSign] && blockNumber - this.unifiedSigns[keyOfUnofiedSign]?.currentBlockNumber <= UNIFIED_SIGN_EXPIRY) {
@@ -89,7 +103,7 @@ class BaseServiceClient {
       const {
         currentBlockNumber,
         signatureBytes
-      } = await this._requestSignForModel(address, message);
+      } = await this._requestSignForModel(address, TRANSACTIONS_MESSAGE.UNIFIED_SIGN);
       this.unifiedSigns[keyOfUnofiedSign] = {
         currentBlockNumber,
         signatureBytes
@@ -103,10 +117,42 @@ class BaseServiceClient {
     _getAuthorizationRequest(currentBlockNumber, message, signatureBytes, address) {
       const AuthorizationRequest = this._getAuthorizationRequestMethodDescriptor();
       const authorizationRequest = new AuthorizationRequest();
+
       authorizationRequest.setCurrentBlock(Number(currentBlockNumber));
       authorizationRequest.setMessage(message);
       authorizationRequest.setSignature(signatureBytes);
       authorizationRequest.setSignerAddress(address);
+
+      return authorizationRequest;
+    }
+
+    async _getSignedAuthorizationRequest(address, message) {
+        const {
+          currentBlockNumber,
+          signatureBytes
+        } = await this._requestSignForModel(address, message);
+
+      const authorizationRequest = this._getAuthorizationRequest(
+        currentBlockNumber,
+        message,
+        signatureBytes,
+        address
+      );
+      return authorizationRequest;
+    }
+
+    async _getUnifiedAuthorizationRequest(address) {
+      const {
+        currentBlockNumber,
+        signatureBytes
+      } = await this._getUnifiedSign(address);
+
+      const authorizationRequest = this._getAuthorizationRequest(
+        currentBlockNumber,
+        TRANSACTIONS_MESSAGE.UNIFIED_SIGN,
+        signatureBytes,
+        address
+      );
       return authorizationRequest;
     }
 
@@ -259,16 +305,13 @@ class BaseServiceClient {
     }
 
     async _trainingGetModelStateRequest(params) {
-      const message = '__get';
-      const {
-        currentBlockNumber,
-        signatureBytes
-      } = await this._getUnifiedSign(params.address, message);
-
       const ModelStateRequest = this._getModelStatusRequestMethodDescriptor();
       const modelStateRequest = new ModelStateRequest();
 
-      const authorizationRequest = this._getAuthorizationRequest(currentBlockNumber, message, signatureBytes, params.address);
+      const message = TRANSACTIONS_MESSAGE.GET_MODEL;
+      const authorizationRequest = params.isUnifiedSign ?
+        await this._getUnifiedAuthorizationRequest(params.address)
+        : await this._getSignedAuthorizationRequest(params.address, message);
 
       modelStateRequest.setAuthorization(authorizationRequest);
       modelStateRequest.setModelId(params.modelId);
@@ -290,14 +333,14 @@ class BaseServiceClient {
       }
   
     async _trainModelPriceRequest(params) {
-        const message = '__get';
-        const {
-          currentBlockNumber,
-          signatureBytes
-        } = await this._getUnifiedSign(params.address, message);
         const ModelStateRequest = this._getTrainModelPriceRequestMethodDescriptor();
         const modelStateRequest = new ModelStateRequest();
-        const authorizationRequest = this._getAuthorizationRequest(currentBlockNumber, message, signatureBytes, params.address);
+
+        const message = TRANSACTIONS_MESSAGE.TRAIN_MODEL_PRICE;
+        const authorizationRequest = params.isUnifiedSign ?
+          await this._getUnifiedAuthorizationRequest(params.address)
+          : await this._getSignedAuthorizationRequest(params.address, message);
+
         modelStateRequest.setAuthorization(authorizationRequest);
         modelStateRequest.setModelId(params.modelId);
         return modelStateRequest;
@@ -321,16 +364,12 @@ class BaseServiceClient {
       }
   
     async _trainModelRequest(params) {
-        const message = '__train_model';
-        const {
-          currentBlockNumber,
-          signatureBytes
-        } = await this._requestSignForModel(params.address, message);
+        const message = TRANSACTIONS_MESSAGE.TRAIN_MODEL;
+        const authorizationRequest = await this._getSignedAuthorizationRequest(params.address, message);
 
         const ModelStateRequest = this._getTrainModelRequestMethodDescriptor();
         const modelStateRequest = new ModelStateRequest();
 
-        const authorizationRequest = this._getAuthorizationRequest(currentBlockNumber, message, signatureBytes, params.address);
         modelStateRequest.setAuthorization(authorizationRequest);
         modelStateRequest.setModelId(params.modelId);
 
@@ -352,12 +391,10 @@ class BaseServiceClient {
     }
 
     async _validateModelPriceRequest(params) {
-      const message = '__get';
-      const {
-        currentBlockNumber,
-        signatureBytes
-      } = await this._getUnifiedSign(params.address, message);
-      const authorizationRequest = this._getAuthorizationRequest(currentBlockNumber, message, signatureBytes, params.address);
+      const message = TRANSACTIONS_MESSAGE.VALIDATE_MODEL_PRICE;
+      const authorizationRequest = params.isUnifiedSign ?
+        await this._getUnifiedAuthorizationRequest(params.address)
+        : await this._getSignedAuthorizationRequest(params.address, message);
 
       const ModelStateRequest = this._getValidateModelPriceRequestMethodDescriptor();
       const modelStateRequest = new ModelStateRequest();
@@ -388,31 +425,27 @@ class BaseServiceClient {
     }
 
     async _validateModelRequest(params) {
-      const message = '__validate_model';
-      const {
-        currentBlockNumber,
-        signatureBytes
-      } = await this._requestSignForModel(params.address, message);
+      const message = TRANSACTIONS_MESSAGE.VALIDATE_MODEL;
+      const authorizationRequest = await this._getSignedAuthorizationRequest(params.address, message);
+
       const ModelStateRequest = this._getValidateModelRequestMethodDescriptor();
       const modelStateRequest = new ModelStateRequest();
-      
-      const authorizationRequest = this._getAuthorizationRequest(currentBlockNumber, message, signatureBytes, params.address);
-        
+
       modelStateRequest.setAuthorization(authorizationRequest);
       modelStateRequest.setModelId(params.modelId);
       modelStateRequest.setTrainingDataLink(params.trainingDataLink);
+
       return modelStateRequest;
     }
 
     async _trainingStateRequest(params) {
-      const message = '__get';
-      const {
-        currentBlockNumber,
-        signatureBytes
-      } = await this._getUnifiedSign(params.address, message);
       const ModelStateRequest = this._getAllModelRequestMethodDescriptor();
       const modelStateRequest = new ModelStateRequest();
-      const authorizationRequest = this._getAuthorizationRequest(currentBlockNumber, message, signatureBytes, params.address);
+
+      const message = TRANSACTIONS_MESSAGE.GET_ALL_MODELS;
+      const authorizationRequest = params.isUnifiedSign ?
+        await this._getUnifiedAuthorizationRequest(params.address)
+        : await this._getSignedAuthorizationRequest(params.address, message);
       
       modelStateRequest.setAuthorization(authorizationRequest);
       params?.statuses.forEach(status => modelStateRequest.addStatuses(status));
@@ -425,19 +458,6 @@ class BaseServiceClient {
       modelStateRequest.setPage(params?.page);
 
       return modelStateRequest;
-    }
-
-    async _requestSignForModel(address, message) {
-      const currentBlockNumber = await this._web3.eth.getBlockNumber();
-      const signatureBytes = await this.account.signData(
-        { t: 'string', v: message }, 
-        { t: 'address', v: address },
-        { t: 'uint256', v: currentBlockNumber }
-      );
-      return {
-        currentBlockNumber,
-        signatureBytes
-      };
     }
 
     async createModel(params) {
@@ -466,24 +486,25 @@ class BaseServiceClient {
     }
 
     async _trainingCreateModel(params) {
-      const message = '__create_model';
-      const {
-        currentBlockNumber,
-        signatureBytes
-      } = await this._getUnifiedSign(params.address, message);
+      const message = TRANSACTIONS_MESSAGE.CREATE_MODEL;
+      const authorizationRequest = await this._getSignedAuthorizationRequest(params.address, message);
+
       const ModelStateRequest = this._getCreateModelRequestMethodDescriptor();
       const modelStateRequest = new ModelStateRequest();
+
       const NewModelRequest = this._getNewModelRequestMethodDescriptor();
       const newModelRequest = new NewModelRequest();
-      const authorizationRequest = this._getAuthorizationRequest(currentBlockNumber, message, signatureBytes, params.address);
+      
       newModelRequest.setName(params.name);
       newModelRequest.setGrpcMethodName(params.grpcMethod);
       newModelRequest.setGrpcServiceName(params.serviceName);
       newModelRequest.setDescription(params.description);
-      newModelRequest.setIsPublic(params.is_public);
+      newModelRequest.setIsPublic(params.isPublic);
       newModelRequest.setAddressListList(params.address_list);
+
       modelStateRequest.setAuthorization(authorizationRequest);
       modelStateRequest.setModel(newModelRequest);
+
       return modelStateRequest;
     }
 
@@ -503,15 +524,11 @@ class BaseServiceClient {
     }
 
     async _trainingDeleteModel(params) {
-      const message = '__delete_model';
-      const {
-        currentBlockNumber,
-        signatureBytes
-      } = await this._requestSignForModel(params.address, message);
+      const message = TRANSACTIONS_MESSAGE.DELETE_MODEL;
+      const authorizationRequest = await this._getSignedAuthorizationRequest(params.address, message);
+
       const ModelStateRequest = this._getDeleteModelRequestMethodDescriptor();
       const modelStateRequest = new ModelStateRequest();
-
-      const authorizationRequest = this._getAuthorizationRequest(currentBlockNumber, message, signatureBytes, params.address);
 
       modelStateRequest.setAuthorization(authorizationRequest);
       modelStateRequest.setModelId(params.modelId);
@@ -534,12 +551,8 @@ class BaseServiceClient {
     }
 
     async _trainingUpdateModel(params) {
-      const message = '__update_model';
-      const {
-        currentBlockNumber,
-        signatureBytes
-      } = await this._requestSignForModel(params.address, message);
-      const authorizationRequest = this._getAuthorizationRequest(currentBlockNumber, message, signatureBytes, params.address);
+      const message = TRANSACTIONS_MESSAGE.UPDATE_MODEL;
+      const authorizationRequest = await this._getSignedAuthorizationRequest(params.address, message);
 
       const ModelStateRequest = this._getUpdateModelRequestMethodDescriptor();
       const modelStateRequest = new ModelStateRequest();
