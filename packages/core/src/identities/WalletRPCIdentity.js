@@ -34,6 +34,10 @@ class WalletRPCIdentity {
         .on('transactionHash', (hash) => {
           logger.info(`Transaction hash: ${hash}`);
         })
+        .catch(error => {
+          logger.error(`Couldn't send transaction. ${error}`);
+          reject(error);
+        })
         .on('error', (error) => {
           logger.error(`Couldn't send transaction. ${error}`);
           reject(error);
