@@ -6,6 +6,7 @@ import './styles.css';
 import { isNull } from 'lodash';
 import Model from './Model';
 import Loader from "../Loader";
+import FilterModels from '../FilterModels';
 
 const TrainingModel = ({ serviceClient }) => {
     const [isLoading, setIsLoading] = useState(false);
@@ -39,21 +40,14 @@ const TrainingModel = ({ serviceClient }) => {
         }
     };
 
-    const getAllModels = async () => {
+    const getAllModels = async (filters = {}) => {
         try {
             setIsLoading(true);
             const { address } = await getWalletInfo();
             const params = {
-                // grpcMethod: trainingMetadata.grpcServiceMethod,
-                // serviceName: trainingMetadata.grpcServiceName,
-                isUnifiedSign: true,
-                name: "",
-                statuses: [],
-                isPublic: false,
-                createdByAddress: "",
-                pageSize: 10,
-                page: 0,
-                address,
+                ...filters,
+                isUnifiedSign: true, 
+                address, 
             };
             const existingModels = await serviceClient.getAllModels(params);
             setModels(existingModels);
@@ -83,7 +77,6 @@ const TrainingModel = ({ serviceClient }) => {
 
     const trainingActions = [
         {id: "createModel", label: "Create Model", action: createModel},
-        {id: "getAllModels", label: "Get All Models", action: getAllModels},
         {id: "getMethodMetadataByMethod", label: "Get Method Metadata", action: getMethodMetadataByMethod},
     ];
 
@@ -115,23 +108,32 @@ const TrainingModel = ({ serviceClient }) => {
     return (
         <div className='training-model-container'>
             <div className='button-group'>
-                {!trainingMetadata.grpcServiceName ? (
+                {!trainingMetadata.grpcServiceName && (
                     <button
-                        disabled={!serviceClient || isLoading}
+                        disabled={isLoading}
                         onClick={getTrainingMetadata}
-                        
                     >
                         Get Training Provider
                     </button>
-                ) : (
-                    trainingActions.map(trainingAction => (
-                        <button key={trainingAction.id} onClick={trainingAction.action}>
-                            {trainingAction.label}
-                        </button>
-                    ))
                 )}
+    
+                <FilterModels
+                    trainingMetadata={trainingMetadata}
+                    onFilterApply={getAllModels}
+                />
             </div>
-            {isLoading && <Loader isLoading={isLoading}/>}
+            <div className='action-buttons'>
+                {trainingActions.map(trainingAction => (
+                    <button
+                        key={trainingAction.id}
+                        onClick={trainingAction.action}
+                        disabled={isLoading} 
+                    >
+                        {trainingAction.label}
+                    </button>
+                ))}
+            </div>
+            {isLoading && <Loader isLoading={isLoading} />}
             <div className='models-container'>
                 {models && <Models />}
             </div>
