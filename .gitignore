@@ -86,3 +86,7 @@ docs
 ### misc
 tmp
 _example
+
+### lock files
+package-lock.json
+yarn.lock
