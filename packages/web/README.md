@@ -91,14 +91,19 @@ You can find a sample config below
 ```json
 {
   "web3Provider": window.web3.currentProvider,
-  "networkId": "3",
+  "networkId": "11155111",
   "ipfsEndpoint": "http://ipfs.organization.io:80",
   "defaultGasPrice": "4700000",
   "defaultGasLimit": "210000",
-  "rpcEndpoint": "https://ropsten.infura.io/v3/1234567890"
+  "rpcEndpoint": "https://ropsten.infura.io/v3/1234567890",
+  "tokenName": "FET",
+  "standType": "demo"
 }
 
 ```
+**Note** The `tokenName` can assume the values `FET` and `AGIX`.
+
+**Note** The `standType` attribute for test networks can assume the values `demo`, `dev`, and for Mainnet, it can take on the values `prod`.
 
 **Note:** `rpcEndpoint` is optional, you should provide this if you are getting block size limit exceeded error. This is usually happens when you are using any web social auth providers.
 
