@@ -2,7 +2,6 @@ import { find, map } from 'lodash';
 import url from 'url';
 import RegistryNetworks from 'singularitynet-platform-contracts/networks/Registry.json';
 import RegistryAbi from 'singularitynet-platform-contracts/abi/Registry.json';
-import { get } from 'axios';
 import {
     LIGHTHOUSE_ENDPOINT,
     STORAGE_TYPE_FILECOIN,
@@ -14,11 +13,11 @@ import {
 import logger from './utils/logger';
 
 export default class IPFSMetadataProvider {
-    constructor(web3, networkId, ipfsEndpoint) {
+    constructor(web3, networkId, ipfsEndpoint, tokenName, standType) {
         this._web3 = web3;
         this._networkId = networkId;
         this._ipfsEndpoint = ipfsEndpoint;
-        const registryAddress = RegistryNetworks[this._networkId].address;
+        const registryAddress = RegistryNetworks[this._networkId][tokenName][standType].address;
         this._registryContract = new this._web3.eth.Contract(
             RegistryAbi,
             registryAddress

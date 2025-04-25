@@ -34,8 +34,8 @@
     "bignumber.js": "^9.1.2",
     "es6-promise": "^4.2.8",
     "lodash": "latest",
-    "singularitynet-platform-contracts": "^1.0.4",
-    "singularitynet-token-contracts": "^3.0.3",
+    "singularitynet-platform-contracts": "2.0.2",
+    "singularitynet-token-contracts": "3.1.0",
     "web3": "^4.4.0",
     "winston": "^3.2.1",
     "winston-transport": "^4.7.0"
