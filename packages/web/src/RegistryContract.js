@@ -2,9 +2,9 @@ import RegistryAbi from "singularitynet-platform-contracts/abi/Registry";
 import RegistryNetworks from "singularitynet-platform-contracts/networks/Registry";
 
 class RegistryContract {
-  constructor(web3, networkId) {
+  constructor(web3, networkId, tokenName, standType) {
     this._web3 = web3;
-    this._contract = new this._web3.eth.Contract(RegistryAbi, RegistryNetworks[networkId].address);
+    this._contract = new this._web3.eth.Contract(RegistryAbi, RegistryNetworks[networkId][tokenName][standType].address);
   }
 
   /**
