@@ -16,6 +16,8 @@ class MPEContract {
     this._web3 = web3;
     this._networkId = networkId;
     this.rpcEndpoint = rpcEndpoint;
+    this.tokenName = tokenName;
+    this.standType = standType;
     this._contract = new this._web3.eth.Contract(MPEAbi, MPENetworks[networkId][tokenName][standType].address);
   }
 
@@ -245,7 +247,7 @@ class MPEContract {
   }
 
   async _deploymentBlockNumber() {
-    const { transactionHash } = MPENetworks[this._networkId];
+    const { transactionHash } = MPENetworks[this._networkId][this.tokenName][this.standType];
     const { blockNumber } = await this._web3.eth.getTransactionReceipt(transactionHash);
     return blockNumber;
   }
