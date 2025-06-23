@@ -1,3 +1,14 @@
+# ⚠️ DEPRECATION WARNING ⚠️
+
+**This repository has been deprecated and archived, all documentation and code here can be considered as outdated.**
+
+SNET SDK JS was split into three separate parts with separate repository for each part: SDK Core, NodeJS SDK, WEB SDK.
+
+➡️ **Please follow fresh updates and releases of the SNET SDK JS in the repositories below**:
+- Core - [singnet/snet-sdk-js-core](https://github.com/singnet/snet-sdk-js-core)
+- NodeJS SDK - [singnet/snet-sdk-js-node](https://github.com/singnet/snet-sdk-js-node)
+- WEB SDK - [singnet/snet-sdk-js-web](https://github.com/singnet/snet-sdk-js-web)
+
 # snet-sdk-js
 SingularityNET SDK for JavaScript
   
